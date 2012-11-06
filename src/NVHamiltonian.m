@@ -130,7 +130,7 @@ $e3=RotMatZ[4Pi/3].$e1;
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*NV Geometry*)
 
 
@@ -575,7 +575,7 @@ R.A.R\[Transpose]
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Pieces of the Total NV Hamiltonian*)
 
 
@@ -593,6 +593,7 @@ CarbonHyperfineHamiltonian::usage = "CarbonHyperfineHamiltonian[As, nitrogenIsot
 NitrogenCarbonDipolarHamiltonian::usage = "NitrogenCarbonDipolarHamiltonian[nitrogenIsotope,carbonPositions] returns the dipolar Hamiltonian of a bunch of carbons in the position list with a nitrogen atom. See CarbonPositions.";
 CarbonCarbonDipolarHamiltonian::usage = "CarbonCarbonDipolarHamiltonian[carbonPositions] returns the dipolar Hamiltonian between all of the Carbons in the position list. See CarbonPositions.";
 DipolarHyperfineTensor::usage = "DipolarHyperfineTensor[pos] computes the hyperfine tensor due to a dipole-dipole coupling between a spin at cartesian coordinate pos (in PAS frame) and an electron at $vacancyPosition.";
+DipolarVector::usage = "DipolarVector[carbonposition,inputunit:$nm,outputunit:$kHz] returns the Cartesian dipole coupling vector between a spin at cartesian coordinate carbonposition (in PAS frame) and an electron at the origin. Default input units are nm, and output units are kHz.";
 
 
 (* ::Subsection:: *)
@@ -699,6 +700,16 @@ DipolarHyperfineTensor[pos_]:=Module[{R,r},
 r=\[Lambda]*(pos-$vacancyPosition);R=Sqrt[r.r];
 (((-\[Mu]0 \[Gamma]c \[Gamma]e \[HBar])/(4\[Pi] R^3))*(Subscript[\[DoubleStruckOne], 3]-3*{r}\[Transpose].{r}/R^2))/(2\[Pi])
 ]
+
+
+DipolarVector[carbonposition_,inputunit_:$nm,outputunit_:$kHz]:=
+	Module[
+		{R,r,e},
+		r=carbonposition*inputunit;
+		R=Norm[r];
+		e=r/R;
+		(\[Mu]0 \[Gamma]e \[Gamma]c \[HBar])/(8 \[Pi]^2 R^3) {3e[[3]]e[[1]],3e[[3]]e[[2]],3e[[3]]^2-1}/outputunit
+	]
 
 
 End[];
@@ -948,7 +959,7 @@ NVHamiltonian[params___]:=NVHamiltonian[{params}];
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Other*)
 
 
