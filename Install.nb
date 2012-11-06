@@ -1,0 +1,366 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 8.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       157,          7]
+NotebookDataLength[     12541,        357]
+NotebookOptionsPosition[     11050,        302]
+NotebookOutlinePosition[     11404,        318]
+CellTagsIndexPosition[     11361,        315]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[TextData[StyleBox["NVSim Installer", "Section"]], "Subtitle",
+ CellChangeTimes->{{3.525435306978644*^9, 3.5254353108091707`*^9}, {
+  3.549207065811818*^9, 3.549207066561104*^9}}],
+
+Cell["\<\
+To run this installer, please use the menu option \
+\[OpenCurlyDoubleQuote]Evaluation \[Rule] Evaluate Notebook.\
+\[CloseCurlyDoubleQuote]\
+\>", "Text",
+ CellChangeTimes->{{3.525435319618247*^9, 3.525435354473632*^9}, {
+  3.525435788389865*^9, 3.525435789686059*^9}}],
+
+Cell[CellGroupData[{
+
+Cell["Known Limitations", "Subsection",
+ CellChangeTimes->{{3.525446500284173*^9, 3.52544650373918*^9}}],
+
+Cell["\<\
+The symbolic link installer requires Windows Vista or 2008+ when under a \
+Windows host. All Unix-like operating systems should be supported, but this \
+is not tested.\
+\>", "Text",
+ CellDingbat->"\[FilledSmallCircle]",
+ CellChangeTimes->{{3.525446504688546*^9, 3.525446549683077*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Manifest", "Subsection",
+ CellChangeTimes->{{3.5254354567930307`*^9, 3.525435458280403*^9}, {
+  3.5508425996742373`*^9, 3.5508426023253403`*^9}}],
+
+Cell["The following files will be installed by this notebook.", "Text",
+ CellChangeTimes->{{3.525435477848207*^9, 3.525435491800005*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"$NVSimManifest", "=", 
+   RowBox[{
+    RowBox[{"(", 
+     RowBox[{
+      RowBox[{"FileNameJoin", "[", 
+       RowBox[{"Flatten", "[", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"NotebookDirectory", "[", "]"}], ",", "#"}], "}"}], "]"}], 
+       "]"}], "&"}], ")"}], "/@", 
+    RowBox[{"{", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"\"\<src\>\"", ",", "\"\<NVSim.m\>\""}], "}"}], ",", 
+      "\[IndentingNewLine]", 
+      RowBox[{"{", 
+       RowBox[{"\"\<src\>\"", ",", "\"\<NVHamiltonian.m\>\""}], "}"}], ",", 
+      "\[IndentingNewLine]", 
+      RowBox[{"{", 
+       RowBox[{"\"\<src\>\"", ",", "\"\<NVCalibrationTools.m\>\""}], "}"}], 
+      ",", "\[IndentingNewLine]", 
+      RowBox[{"{", "\"\<nvdoc\>\"", "}"}], ",", "\[IndentingNewLine]", 
+      RowBox[{"{", "\"\<data\>\"", "}"}]}], "\[IndentingNewLine]", "}"}]}]}], 
+  ";"}]], "Input",
+ CellChangeTimes->{{3.525435460945401*^9, 3.525435474616168*^9}, {
+   3.525436279523308*^9, 3.525436292080901*^9}, {3.5275319840706244`*^9, 
+   3.5275319914551907`*^9}, {3.538424658630368*^9, 3.538424665643517*^9}, {
+   3.539015377900811*^9, 3.539015398666514*^9}, {3.544541802379562*^9, 
+   3.544541807044261*^9}, {3.54920707589826*^9, 3.549207108469632*^9}, {
+   3.550839276054521*^9, 3.550839302199316*^9}, {3.5508393680912848`*^9, 
+   3.5508393726852303`*^9}, 3.55084259877071*^9, {3.5508426288140383`*^9, 
+   3.55084270214047*^9}, {3.550914647046626*^9, 3.5509146480046673`*^9}, {
+   3.551211949732646*^9, 3.551211957227024*^9}, {3.5533496468612328`*^9, 
+   3.5533496561966333`*^9}, {3.553682532808467*^9, 3.5536825394090977`*^9}, {
+   3.55716816575772*^9, 3.5571681775896807`*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Installation Paths", "Subsection",
+ CellChangeTimes->{{3.525435499040495*^9, 3.525435513415448*^9}}],
+
+Cell["\<\
+This installer will place notebooks into the following directory:\
+\>", "Text",
+ CellChangeTimes->{{3.52543555501688*^9, 3.525435566383361*^9}, {
+  3.525435668879895*^9, 3.525435669790971*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"$NVSimInstallPath", " ", "=", " ", 
+   RowBox[{"FileNameJoin", "[", 
+    RowBox[{"{", 
+     RowBox[{"$UserBaseDirectory", " ", ",", " ", "\"\</Applications\>\""}], 
+     "}"}], "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.5254355153637877`*^9, 3.525435551557489*^9}, {
+   3.5254356734103937`*^9, 3.525435747588125*^9}, {3.5275320821303473`*^9, 
+   3.527532089593379*^9}, 3.5492070959089317`*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Default Installation Methods", "Subsection",
+ CellChangeTimes->{{3.525435943485697*^9, 3.525435948052216*^9}}],
+
+Cell["\<\
+Under Windows, we will install via copying whereas under Unix-like hosts, we \
+will default to installing by symlinks. This way, we remain consistent with \
+expected behavior under each respective operating system. In either case, \
+uninstalling consists of simply removing the files or symlinks placed by this \
+notebook.\
+\>", "Text",
+ CellChangeTimes->{{3.525435953837185*^9, 3.525435966204111*^9}, 
+   3.52543603513251*^9, {3.525436065307613*^9, 3.525436088291637*^9}, {
+   3.525444214890197*^9, 3.525444241212552*^9}, {3.5254463212617197`*^9, 
+   3.5254463260941133`*^9}, {3.5254463738772697`*^9, 3.525446417716638*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"$NVSimDefaultInstallationMethods", "=", 
+   RowBox[{"{", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"\"\<Windows\>\"", "\[Rule]", "CopyInstaller"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"\"\<MacOSX\>\"", "\[Rule]", "SymLinkInstaller"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"\"\<Unix\>\"", "\[Rule]", "SymLinkInstaller"}]}], 
+    "\[IndentingNewLine]", "}"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.525436089553322*^9, 3.52543612270824*^9}, 
+   3.549207095925441*^9}],
+
+Cell["\<\
+To override the defaults, change this line:\
+\>", "Text",
+ CellChangeTimes->{{3.525436132812014*^9, 3.525436139442808*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"InstallationMethod", "=", 
+   RowBox[{"$OperatingSystem", "/.", "$NVSimDefaultInstallationMethods"}]}], 
+  ";"}]], "Input",
+ CellChangeTimes->{{3.525436125966613*^9, 3.5254361846987877`*^9}, 
+   3.549207095942966*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Installation via Copying", "Section",
+ CellChangeTimes->{{3.525435416186328*^9, 3.525435419144558*^9}, {
+  3.525435775190999*^9, 3.525435780269595*^9}}],
+
+Cell[TextData[{
+ "This method copies the current version of all NVSim notebooks into the ",
+ StyleBox["Mathematica",
+  FontSlant->"Italic"],
+ " applications directory. Thus, ",
+ "NVSim",
+ " must be reinstalled whenever updates are to be applied. This is the only \
+installation method supported by Windows at the moment."
+}], "Text",
+ CellChangeTimes->{{3.525435792822315*^9, 3.525435863316667*^9}, {
+  3.549207095963328*^9, 3.549207095993362*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"CopyInstaller", "[", "]"}], ":=", 
+   RowBox[{"Module", "[", 
+    RowBox[{
+     RowBox[{"{", "copyfn", "}"}], ",", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"copyfn", "[", "file_", "]"}], ":=", 
+       RowBox[{"CopyFile", "[", 
+        RowBox[{"file", ",", 
+         RowBox[{"FileNameJoin", "[", 
+          RowBox[{"{", 
+           RowBox[{"$NVSimInstallPath", ",", " ", 
+            RowBox[{
+             RowBox[{"FileNameSplit", "[", "file", "]"}], 
+             "\[LeftDoubleBracket]", 
+             RowBox[{"-", "1"}], "\[RightDoubleBracket]"}]}], "}"}], "]"}]}], 
+        "]"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"Map", "[", 
+       RowBox[{"copyfn", ",", "$NVSimManifest"}], "]"}], ";"}]}], 
+    "\[IndentingNewLine]", "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.5254359685954533`*^9, 3.525435971968472*^9}, {
+  3.525436218358471*^9, 3.5254362587643757`*^9}, {3.525436296355434*^9, 
+  3.5254363311133423`*^9}, {3.52753201540971*^9, 3.527532035821933*^9}, {
+  3.5492070960148907`*^9, 3.549207096030834*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Installation via Symbolic Link", "Section",
+ CellChangeTimes->{{3.525435421553417*^9, 3.525435430408475*^9}, {
+  3.5254357690714703`*^9, 3.5254357734775143`*^9}}],
+
+Cell["\<\
+The following function adds quotations to string expressions so that special \
+characters in directory names will be run correction.\
+\>", "Text",
+ CellChangeTimes->{{3.557057551647327*^9, 3.557057574588867*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"StringQuote", "[", "expr_", "]"}], ":=", 
+   RowBox[{"StringJoin", "[", 
+    RowBox[{"\"\<\\\"\>\"", ",", "expr", ",", "\"\<\\\"\>\""}], "]"}]}], 
+  ";"}]], "Input",
+ CellChangeTimes->{{3.557057368280011*^9, 3.5570573954575853`*^9}}],
+
+Cell[TextData[{
+ "This method",
+ StyleBox[" ",
+  FontSlant->"Italic"],
+ "places links to NVSim into the ",
+ StyleBox["Mathematica",
+  FontSlant->"Italic"],
+ " applications directory. As such, updates to ",
+ "NVSim",
+ " are automatically reflected."
+}], "Text",
+ CellChangeTimes->{{3.525435431825179*^9, 3.525435453672186*^9}, {
+  3.525435866222183*^9, 3.525435935020404*^9}, {3.525446316144227*^9, 
+  3.525446316494594*^9}, {3.54920709605125*^9, 3.549207096078918*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"SymLinkInstaller", "[", "]"}], ":=", " ", 
+   RowBox[{"Module", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"cmdname", ",", " ", "symlinkfn"}], "}"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"cmdname", " ", "=", " ", 
+       RowBox[{"$OperatingSystem", " ", "/.", " ", 
+        RowBox[{"{", "\[IndentingNewLine]", 
+         RowBox[{
+          RowBox[{"\"\<Windows\>\"", "\[Rule]", "\"\<mklink\>\""}], ",", 
+          "\[IndentingNewLine]", 
+          RowBox[{"\"\<MacOSX\>\"", "\[Rule]", "\"\<ln -s\>\""}], ",", 
+          "\[IndentingNewLine]", 
+          RowBox[{"\"\<Unix\>\"", "\[Rule]", "\"\<ln -s\>\""}]}], 
+         "\[IndentingNewLine]", "}"}]}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"symlinkfn", "[", "file_", "]"}], ":=", " ", 
+       RowBox[{"Run", "[", 
+        RowBox[{"cmdname", ",", " ", 
+         RowBox[{"StringQuote", "[", "file", "]"}], ",", 
+         RowBox[{"StringQuote", "[", "$NVSimInstallPath", "]"}]}], "]"}]}], 
+      ";", "\[IndentingNewLine]", 
+      RowBox[{"Map", "[", 
+       RowBox[{"symlinkfn", ",", " ", "$NVSimManifest"}], "]"}], ";"}]}], 
+    "\[IndentingNewLine]", "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.525435979160592*^9, 3.525435983480468*^9}, {
+  3.5254363840857162`*^9, 3.5254364033218527`*^9}, {3.525436521020783*^9, 
+  3.525436546501786*^9}, {3.5254462446849337`*^9, 3.52544629532658*^9}, {
+  3.549207096101768*^9, 3.54920709612143*^9}, {3.557057240705117*^9, 
+  3.5570572469092817`*^9}, {3.557057399145865*^9, 3.557057406427895*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Actual Installation", "Section",
+ CellChangeTimes->{{3.5254359898933783`*^9, 3.52543600998776*^9}}],
+
+Cell["\<\
+We have now defined everything we need to run the installer, and will proceed \
+to do so.\
+\>", "Text",
+ CellChangeTimes->{{3.5254360112205343`*^9, 3.525436025451297*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"InstallationMethod", "[", "]"}], ";"}]], "Input",
+ CellChangeTimes->{{3.525436026387775*^9, 3.525436055128552*^9}}]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{693, 1000},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+FrontEndVersion->"8.0 for Mac OS X x86 (32-bit, 64-bit Kernel) (October 5, \
+2011)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[579, 22, 183, 2, 42, "Subtitle"],
+Cell[765, 26, 277, 6, 26, "Text"],
+Cell[CellGroupData[{
+Cell[1067, 36, 104, 1, 34, "Subsection"],
+Cell[1174, 39, 295, 6, 41, "Text"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1506, 50, 151, 2, 34, "Subsection"],
+Cell[1660, 54, 137, 1, 26, "Text"],
+Cell[1800, 57, 1713, 36, 118, "Input"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3550, 98, 106, 1, 34, "Subsection"],
+Cell[3659, 101, 203, 4, 26, "Text"],
+Cell[3865, 107, 433, 9, 27, "Input"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[4335, 121, 116, 1, 34, "Subsection"],
+Cell[4454, 124, 635, 10, 56, "Text"],
+Cell[5092, 136, 533, 12, 88, "Input"],
+Cell[5628, 150, 133, 3, 26, "Text"],
+Cell[5764, 155, 252, 6, 27, "Input"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[6053, 166, 158, 2, 67, "Section"],
+Cell[6214, 170, 448, 10, 56, "Text"],
+Cell[6665, 182, 1100, 26, 103, "Input"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[7802, 213, 168, 2, 67, "Section"],
+Cell[7973, 217, 222, 4, 41, "Text"],
+Cell[8198, 223, 280, 7, 27, "Input"],
+Cell[8481, 232, 469, 13, 41, "Text"],
+Cell[8953, 247, 1590, 34, 163, "Input"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[10580, 286, 105, 1, 67, "Section"],
+Cell[10688, 289, 181, 4, 26, "Text"],
+Cell[10872, 295, 150, 3, 27, "Input"]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)

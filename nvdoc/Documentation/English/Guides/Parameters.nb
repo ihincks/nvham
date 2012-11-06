@@ -1,0 +1,908 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 8.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       157,          7]
+NotebookDataLength[     25784,        898]
+NotebookOptionsPosition[     18501,        673]
+NotebookOutlinePosition[     19695,        704]
+CellTagsIndexPosition[     19652,        701]
+WindowTitle->Parameters - Wolfram Mathematica
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[" ", "GuideColorBar",
+ CellMargins->{{Inherited, Inherited}, {-5, 0}}],
+
+Cell[TextData[{
+ ButtonBox["Mathematica",
+  BaseStyle->{"Link", "LinkTrail"},
+  ButtonData->"paclet:nvdoc/guide/nvdoc"],
+ StyleBox[" > ", "LinkTrailSeparator"]
+}], "LinkTrail"],
+
+Cell[CellGroupData[{
+
+Cell["Parameters", "GuideTitle",
+ CellID->942062912],
+
+Cell[TextData[{
+ "This guide describes the possible parameters that can be set when creating \
+an ",
+ ButtonBox["NVHamiltonian",
+  BaseStyle->"Link",
+  ButtonData->"paclet:nvdoc/ref/NVHamiltonian"],
+ ". These same parameters can be entered into ",
+ ButtonBox["VisualizeNVParameters",
+  BaseStyle->"Link",
+  ButtonData->"paclet:nvdoc/ref/VisualizeNVParameters"],
+ " to get a visual picture of where the carbons you are including are, etc."
+}], "GuideAbstract",
+ CellID->2001916300],
+
+Cell["\<\
+Both NVHamiltonian and VisualizeNVParameters can be called in one of two ways:\
+\>", "GuideText",
+ CellID->1252789451],
+
+Cell["\<\
+NVHamiltonian[{\"param1\"->value1,\"param2\"->value2,...}]
+NVHamiltonian[\"param1\"->value1,\"param2\"->value2,...]\
+\>", "Code",
+ CellID->58640501],
+
+Cell[TextData[{
+ "The advantage of the first method is that you can store all of your \
+parameters in some variable, and then just call ",
+ StyleBox["NVHamiltonian or VisualizeNVParameters ", "InlineCode"],
+ "on this variable."
+}], "GuideText",
+ CellID->1440892427],
+
+Cell[TextData[StyleBox["The order of inputs does not matter.",
+ FontWeight->"Bold"]], "GuideText",
+ CellID->865681667],
+
+Cell[TextData[StyleBox["All parameters are optional; if you do not enter \
+something, a default value will be chosen for you.",
+ FontWeight->"Bold"]], "GuideText",
+ CellID->221147587],
+
+Cell["\<\
+Parameter names are always enetered as strings (this was chosen for a couple \
+of good reasons).\
+\>", "GuideText",
+ CellID->481882528],
+
+Cell["\t", "GuideDelimiter",
+ CellID->2083185662],
+
+Cell[TextData[{
+ StyleBox["\"analyticForm", "MenuName"],
+ StyleBox["\" ", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" Whether or not to substitute numerical values where applicable",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->1735754910],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Input Formats", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->118226394],
+
+Cell[TextData[{
+ "Either ",
+ StyleBox["True", "InlineCode"],
+ " or ",
+ StyleBox["False", "InlineCode"],
+ "."
+}], "GuideText",
+ CellID->1148442649],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Default Value", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->1337152405],
+
+Cell[TextData[StyleBox["False", "InlineCode"]], "GuideText",
+ CellID->1593584753],
+
+Cell["\t", "GuideDelimiter",
+ CellID->1571625797],
+
+Cell[TextData[{
+ StyleBox["\"\[CapitalDelta]", "MenuName"],
+ StyleBox["\" ", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" The Zero Field splitting",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->1094415106],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Input Formats", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->329273926],
+
+Cell[TextData[{
+ "   \[SelectionPlaceholder]  A single number or symbol, e.g. ",
+ Cell[BoxData[
+  StyleBox[
+   RowBox[{"3", "*", 
+    SuperscriptBox["10", "9"]}], "InlineCode"]], "InlineFormula"],
+ " or ",
+ StyleBox["\[CapitalPhi]", "InlineCode"]
+}], "GuideText",
+ CellID->76309447],
+
+Cell[TextData[{
+ "   \[SelectionPlaceholder]  A list of of the diagonal tensor values, e.g. \
+",
+ StyleBox["{1,2,3}", "InlineCode"],
+ " or ",
+ StyleBox["{A,B,C}", "InlineCode"]
+}], "GuideText",
+ CellID->1607273733],
+
+Cell["\<\
+   \[SelectionPlaceholder]  The full 3x3 matrix tensor\
+\>", "GuideText",
+ CellID->792792156],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Default Value", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->890861464],
+
+Cell[TextData[{
+ "   \[SelectionPlaceholder]  The symbol",
+ StyleBox[" \[CapitalDelta]", "InlineCode"],
+ " if the \"analyticForm\" option is set to True"
+}], "GuideText",
+ CellID->1420061437],
+
+Cell[TextData[{
+ "   \[SelectionPlaceholder]  The symbol ",
+ StyleBox["\[CapitalDelta]", "InlineCode"],
+ " is replaced by ",
+ StyleBox["$defaultZFS ", "InlineCode"],
+ "otherwise (which is default)"
+}], "GuideText",
+ CellID->12505892],
+
+Cell["\t", "GuideDelimiter",
+ CellID->1285279927],
+
+Cell[TextData[{
+ StyleBox["\"B", "MenuName"],
+ StyleBox["\" ", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" The Magnetic Field",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->1755071621],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Input Formats", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->1336680393],
+
+Cell[TextData[{
+ "A vector in spherical coordinates in the lab frame, ",
+ StyleBox["{B,\[Theta],\[Phi]}", "InlineCode"],
+ ", where B is field strength in Gauss, \[Theta] is the azimuthal angle, and \
+\[Phi] is the polar angle."
+}], "GuideText",
+ CellID->1991284677],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Default Value", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->570771341],
+
+Cell[TextData[StyleBox["{0,0,0}", "InlineCode"]], "GuideText",
+ CellID->1886564435],
+
+Cell["\t", "GuideDelimiter",
+ CellID->501859098],
+
+Cell[TextData[{
+ StyleBox["\"crystalOrientation", "MenuName"],
+ StyleBox["\" ", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" The orientation of the crystal with respect to the lab frame",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->1038623714],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Input Formats", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->574608058],
+
+Cell[TextData[{
+ "A list ",
+ Cell[BoxData[
+  RowBox[{"{", 
+   RowBox[{
+    SubscriptBox["\[Theta]", "Z"], ",", 
+    SubscriptBox["\[Theta]", "Y"], ",", 
+    SubscriptBox["\[Theta]", "Z"]}], "}"}]], "InlineCode", "InlineFormula"],
+ " of Euler angles in extrinsic ZYZ convention. this just means that the 3x3 \
+matrix rotation ",
+ Cell[BoxData[
+  RowBox[{
+   RowBox[{"RotMatZ", "[", 
+    SubscriptBox["\[Theta]", "Z"], "]"}], ".", 
+   RowBox[{"RotMatY", "[", 
+    SubscriptBox["\[Theta]", "Y"], "]"}], ".", 
+   RowBox[{"RotMatZ", "[", 
+    SubscriptBox["\[Theta]", "Z"], "]"}]}]], "InlineFormula"],
+ "is applied to get from the lab frame to the crystal frame."
+}], "GuideText",
+ CellID->1754159111],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Default Value", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->2024921172],
+
+Cell[TextData[StyleBox["{0,0,0}", "InlineCode"]], "GuideText",
+ CellID->1388610651],
+
+Cell["\t", "GuideDelimiter",
+ CellID->367670803],
+
+Cell[TextData[{
+ StyleBox["\"nvOrientation", "MenuName"],
+ StyleBox["\" ", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" The NV PAS orientation with respect to the crystal",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->1189483873],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Input Formats", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->498384326],
+
+Cell[TextData[{
+ "An integer between ",
+ StyleBox["1", "InlineCode"],
+ " and ",
+ StyleBox["8", "InlineCode"],
+ ". This integer is converted to Euler angles in the extrinsic ZYZ convention \
+via the function ",
+ StyleBox["NVAngles", "InlineCode"],
+ "."
+}], "GuideText",
+ CellID->2076861600],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Default Value", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->2096810412],
+
+Cell[TextData[StyleBox["1", "InlineCode"]], "GuideText",
+ CellID->1545454537],
+
+Cell["\t", "GuideDelimiter",
+ CellID->1765982528],
+
+Cell[TextData[{
+ StyleBox["\"nitrogenIsotope", "MenuName"],
+ StyleBox["\" ", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" The isotope of nitrogen to use (or not use)",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->1826554606],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Input Formats", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->2076081871],
+
+Cell[TextData[{
+ "One of the three integers ",
+ StyleBox["0", "InlineCode"],
+ ", ",
+ StyleBox["14", "InlineCode"],
+ ", or ",
+ StyleBox["15", "InlineCode"],
+ ". The input ",
+ StyleBox["0", "InlineCode"],
+ " indicates not to include the nitrogen at all."
+}], "GuideText",
+ CellID->618209476],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Default Value", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->743471612],
+
+Cell[TextData[StyleBox["0", "InlineCode"]], "GuideText",
+ CellID->1818884481],
+
+Cell["\t", "GuideDelimiter",
+ CellID->2132341692],
+
+Cell[TextData[{
+ StyleBox["\"nitrogenHyerfineTensor", "MenuName"],
+ StyleBox["\" ", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" The nitrogen hyperfine tensor",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->1525507],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Input Formats", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->1354821704],
+
+Cell[TextData[{
+ "   \[SelectionPlaceholder]  A source string specifying which source to pull \
+the Hyperfine from. See ",
+ StyleBox["$nitrogenHyperfineTensorSources", "InlineCode"],
+ " for a list of sources."
+}], "GuideText",
+ CellID->537030882],
+
+Cell[TextData[{
+ "   \[SelectionPlaceholder]  A list of of the diagonal tensor values, e.g. \
+",
+ StyleBox["{1,2,3}", "InlineCode"],
+ " or ",
+ StyleBox["{A,B,C}", "InlineCode"]
+}], "GuideText",
+ CellID->414466220],
+
+Cell["\<\
+   \[SelectionPlaceholder]  The full 3x3 matrix tensor\
+\>", "GuideText",
+ CellID->1247672626],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Default Value", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->371020519],
+
+Cell[TextData[{
+ "$defaultNitrogenHyperfineTensorSource. Note that if ",
+ StyleBox["\"nitrogenIsotope\"", "InlineCode"],
+ " is set to 0, then this parameter is irrelevant."
+}], "GuideText",
+ CellID->2111944124],
+
+Cell["\t", "GuideDelimiter",
+ CellID->1707221194],
+
+Cell[TextData[{
+ StyleBox["\"nitrogenQuadrapolarTensor", "MenuName"],
+ StyleBox["\" ", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" The nitrogen quadrapolar tensor",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->544872225],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Input Formats", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->1979887181],
+
+Cell[TextData[{
+ "   \[SelectionPlaceholder]  A source string specifying which source to pull \
+the Hyperfine from. See ",
+ StyleBox["$nitrogenQuadrapolarTensorSources", "InlineCode"],
+ " for a list of sources."
+}], "GuideText",
+ CellID->2017033861],
+
+Cell[TextData[{
+ "   \[SelectionPlaceholder]  A list of of the diagonal tensor values, e.g. \
+",
+ StyleBox["{1,2,3}", "InlineCode"],
+ " or ",
+ StyleBox["{A,B,C}", "InlineCode"]
+}], "GuideText",
+ CellID->745979221],
+
+Cell["\<\
+   \[SelectionPlaceholder]  The full 3x3 matrix tensor\
+\>", "GuideText",
+ CellID->1098310532],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Default Value", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->2060802162],
+
+Cell["$defaultNitrogenQuadrapolarTensorSource", "GuideText",
+ CellID->794223715],
+
+Cell["\t", "GuideDelimiter",
+ CellID->378114117],
+
+Cell[TextData[{
+ StyleBox["\"carbonPositions", "MenuName"],
+ StyleBox["\" ", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" A list of carbon position descriptions",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->1714920349],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Input Formats", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->928975926],
+
+Cell[TextData[{
+ "A list of the form ",
+ StyleBox["{pos1,pos2,pos3,...}", "InlineCode"],
+ " where the ",
+ StyleBox["pos", "InlineCode"],
+ " inputs are in one of the two following formats:"
+}], "GuideText",
+ CellID->689887702],
+
+Cell[TextData[{
+ "   \[SelectionPlaceholder] ",
+ StyleBox[" {shell,index} ", "InlineCode"],
+ "where ",
+ StyleBox["shell", "InlineCode"],
+ " is an integer describing which equivalent hyperfine shell the carbon lies \
+in, and ",
+ StyleBox["index", "InlineCode"],
+ " indexes through the carbons in this shell. See ",
+ StyleBox["CarbonDirections", "InlineCode"],
+ " and",
+ StyleBox[" CarbonPositions", "InlineCode"],
+ "."
+}], "GuideText",
+ CellID->1191353934],
+
+Cell[TextData[{
+ "   \[SelectionPlaceholder]  ",
+ StyleBox["{x,y,z}", "InlineCode"],
+ ",  the cartesian coordinates of the carbon in the NV PAS. These coordinates \
+should be normalized to the bond length between two sites in a diamond \
+lattice. See ",
+ StyleBox["$physicalConstants", "InlineCode"]
+}], "GuideText",
+ CellID->615981978],
+
+Cell[TextData[StyleBox["The order of these positions is important:",
+ FontWeight->"Bold"]], "GuideText",
+ CellID->1883111822],
+
+Cell[TextData[{
+ "   \[SelectionPlaceholder]  You need to know the order if you want to \
+manually input the hyperfine tensors in \"carbonHyperfineTensors\".\n   \
+\[SelectionPlaceholder]  ",
+ StyleBox["{x,y,z}", "InlineCode"],
+ ",  The tensor product structure is determing by the order, see ",
+ StyleBox[ButtonBox["NVHamiltonian.",
+  BaseStyle->"Link",
+  ButtonData->"paclet:nvdoc/ref/NVHamiltonian"], "InlineCode"]
+}], "GuideText",
+ CellID->2035604196],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Default Value", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->654805203],
+
+Cell[TextData[StyleBox["{}", "InlineCode"]], "GuideText",
+ CellID->1248990109],
+
+Cell["\t", "GuideDelimiter",
+ CellID->1963329716],
+
+Cell[TextData[{
+ StyleBox["\"carbonHyperfineTensors", "MenuName"],
+ StyleBox["\" ", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" A list of carbon position descriptions",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->781268441],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Input Formats", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->1636136837],
+
+Cell[TextData[{
+ "A list (in no particular order) of the form ",
+ StyleBox["{{c1,tens1},{c2,tens2},{c3,tens3},...}", "InlineCode"],
+ " where the ",
+ StyleBox["c", "InlineCode"],
+ " inputs are integers refering to positions in ",
+ StyleBox["\"carbonPositions\"", "InlineCode"],
+ ", and the ",
+ StyleBox["tens", "InlineCode"],
+ " inputs are all in one of the following forms:"
+}], "GuideText",
+ CellID->280313077],
+
+Cell[TextData[{
+ "   \[SelectionPlaceholder]  A source string specifying which source to pull \
+the Hyperfine from. See ",
+ StyleBox["$carbonHyperfineTensorSources", "InlineCode"],
+ " for a list of sources."
+}], "GuideText",
+ CellID->2138020918],
+
+Cell[TextData[{
+ "   \[SelectionPlaceholder]  A list of of the diagonal tensor values, e.g. \
+",
+ StyleBox["{1,2,3}", "InlineCode"],
+ " or ",
+ StyleBox["{A,B,C}", "InlineCode"]
+}], "GuideText",
+ CellID->2114742264],
+
+Cell["\<\
+   \[SelectionPlaceholder]  The full 3x3 matrix tensor\
+\>", "GuideText",
+ CellID->1480543056],
+
+Cell[TextData[StyleBox["\[FilledRightTriangle] Default Value", \
+"MenuNameDelimiter"]], "GuideText",
+ CellID->1983792846],
+
+Cell[TextData[{
+ "For every carbon in ",
+ StyleBox["\"carbonPositions\"", "InlineCode"],
+ " whose tensor has not been specified, the following default values are \
+chosen:"
+}], "GuideText",
+ CellID->184640319],
+
+Cell[TextData[{
+ "   \[SelectionPlaceholder]  The zero 3x3 matrix if the carbon position was \
+entered in the form ",
+ StyleBox["{x,y,z}", "InlineCode"]
+}], "GuideText",
+ CellID->1634585529],
+
+Cell[TextData[{
+ "   \[SelectionPlaceholder]  ",
+ StyleBox["$defaultCarbonHyperfineSource", "InlineCode"],
+ " if the carbon positions was entered in the form ",
+ StyleBox["{shell,index}", "InlineCode"]
+}], "GuideText",
+ CellID->1620821400],
+
+Cell["\t", "GuideDelimiterSubsection",
+ CellID->626145976],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "The following parameters can be used to turn on or off the relevant piece \
+of the Hamiltonian; set to ",
+ StyleBox["True", "InlineCode"],
+ " or ",
+ StyleBox["False", "InlineCode"],
+ ". These parameters take precedence over any related parameter you have \
+entered. They are all defaulted to ",
+ StyleBox["True", "InlineCode"],
+ "."
+}], "GuideFunctionsSubsection",
+ CellID->556148650],
+
+Cell[TextData[{
+ StyleBox["\"zfsActivated", "MenuName"],
+ StyleBox["\" \t\t\t\t", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" The zero field splitting Hamiltonian",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->810898951],
+
+Cell[TextData[{
+ StyleBox["\"nvZeemanActivated", "MenuName"],
+ StyleBox["\" \t\t\t", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" The NV Zeeman Hamiltonian",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->285140892],
+
+Cell[TextData[{
+ StyleBox["\"nitrogenZeemanActivated", "MenuName"],
+ StyleBox["\" \t\t", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" The nitrogen nitrogen Zeeman Hamiltonian",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->1666280974],
+
+Cell[TextData[{
+ StyleBox["\"carbonZeemanActivated", "MenuName"],
+ StyleBox["\" \t\t", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" (All of) the carbon Zeeman Hamiltonian(s)",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->452616459],
+
+Cell[TextData[{
+ StyleBox["\"nitrogenHyperfineActivated", "MenuName"],
+ StyleBox["\" \t\t", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" The nitrogen hyperfine Hamiltonian",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->1113237669],
+
+Cell[TextData[{
+ StyleBox["\"nitrogenQuadrapolarActivated", "MenuName"],
+ StyleBox["\" \t", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" The nitrogen quadrapolar Hamiltonian",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->1195342455],
+
+Cell[TextData[{
+ StyleBox["\"carbonHyperfineActivated", "MenuName"],
+ StyleBox["\" \t\t", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" (All of) the carbon hyperfine Hamiltonian(s)",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->1804751401],
+
+Cell[TextData[{
+ StyleBox["\"nitrogenCarbonDipolarActivated", "MenuName"],
+ StyleBox["\" \t", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" (All of) the nitrogen-carbon dipolar Hamilotonians",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->2035940407],
+
+Cell[TextData[{
+ StyleBox["\"carbonCarbonDipolarActivated", "MenuName"],
+ StyleBox["\"\t ", "MenuNameDelimiter"],
+ "\[LongRightArrow]",
+ StyleBox[" (All of) the carbon-carbon dipolar Hamilotonians",
+  FontWeight->"Bold"]
+}], "GuideText",
+ CellID->275732815]
+}, Open  ]]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{-1, Automatic}, {Automatic, -28}},
+WindowTitle->"Parameters - Wolfram Mathematica",
+TaggingRules->{
+ "ModificationHighlight" -> False, 
+  "Metadata" -> {
+   "built" -> "{2012, 7, 13, 19, 37, 20.845875}", "context" -> "nvdoc`", 
+    "keywords" -> {}, "index" -> True, "label" -> "nvdoc Guide", "language" -> 
+    "en", "paclet" -> "nvdoc", "status" -> "None", "summary" -> 
+    "This guide describes the possible parameters that can be set when \
+creating an NVHamiltonian. These same parameters can be entered into \
+VisualizeNVParameters to get a visual picture of where the carbons you are \
+including are, etc.", "synonyms" -> {}, "title" -> "Parameters", "type" -> 
+    "Guide", "uri" -> "nvdoc/guide/Parameters"}, "LinkTrails" -> "", 
+  "SearchTextTranslated" -> ""},
+FrontEndVersion->"8.0 for Linux x86 (64-bit) (October 10, 2011)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[603, 21, 75, 1, 3, "GuideColorBar"],
+Cell[681, 24, 176, 5, 19, "LinkTrail"],
+Cell[CellGroupData[{
+Cell[882, 33, 52, 1, 68, "GuideTitle",
+ CellID->942062912],
+Cell[937, 36, 480, 12, 106, "GuideAbstract",
+ CellID->2001916300],
+Cell[1420, 50, 128, 3, 22, "GuideText",
+ CellID->1252789451],
+Cell[1551, 55, 158, 4, 62, "Code",
+ CellID->58640501],
+Cell[1712, 61, 265, 6, 38, "GuideText",
+ CellID->1440892427],
+Cell[1980, 69, 118, 2, 22, "GuideText",
+ CellID->865681667],
+Cell[2101, 73, 183, 3, 22, "GuideText",
+ CellID->221147587],
+Cell[2287, 78, 145, 4, 22, "GuideText",
+ CellID->481882528],
+Cell[2435, 84, 49, 1, 27, "GuideDelimiter",
+ CellID->2083185662],
+Cell[2487, 87, 254, 7, 22, "GuideText",
+ CellID->1735754910],
+Cell[2744, 96, 120, 2, 21, "GuideText",
+ CellID->118226394],
+Cell[2867, 100, 146, 7, 22, "GuideText",
+ CellID->1148442649],
+Cell[3016, 109, 121, 2, 21, "GuideText",
+ CellID->1337152405],
+Cell[3140, 113, 81, 1, 21, "GuideText",
+ CellID->1593584753],
+Cell[3224, 116, 49, 1, 27, "GuideDelimiter",
+ CellID->1571625797],
+Cell[3276, 119, 219, 7, 22, "GuideText",
+ CellID->1094415106],
+Cell[3498, 128, 120, 2, 21, "GuideText",
+ CellID->329273926],
+Cell[3621, 132, 282, 9, 22, "GuideText",
+ CellID->76309447],
+Cell[3906, 143, 214, 7, 22, "GuideText",
+ CellID->1607273733],
+Cell[4123, 152, 103, 3, 70, "GuideText",
+ CellID->792792156],
+Cell[4229, 157, 120, 2, 70, "GuideText",
+ CellID->890861464],
+Cell[4352, 161, 191, 5, 70, "GuideText",
+ CellID->1420061437],
+Cell[4546, 168, 233, 7, 70, "GuideText",
+ CellID->12505892],
+Cell[4782, 177, 49, 1, 70, "GuideDelimiter",
+ CellID->1285279927],
+Cell[4834, 180, 199, 7, 70, "GuideText",
+ CellID->1755071621],
+Cell[5036, 189, 121, 2, 70, "GuideText",
+ CellID->1336680393],
+Cell[5160, 193, 265, 6, 70, "GuideText",
+ CellID->1991284677],
+Cell[5428, 201, 120, 2, 70, "GuideText",
+ CellID->570771341],
+Cell[5551, 205, 83, 1, 70, "GuideText",
+ CellID->1886564435],
+Cell[5637, 208, 48, 1, 70, "GuideDelimiter",
+ CellID->501859098],
+Cell[5688, 211, 258, 7, 70, "GuideText",
+ CellID->1038623714],
+Cell[5949, 220, 120, 2, 70, "GuideText",
+ CellID->574608058],
+Cell[6072, 224, 696, 20, 70, "GuideText",
+ CellID->1754159111],
+Cell[6771, 246, 121, 2, 70, "GuideText",
+ CellID->2024921172],
+Cell[6895, 250, 83, 1, 70, "GuideText",
+ CellID->1388610651],
+Cell[6981, 253, 48, 1, 70, "GuideDelimiter",
+ CellID->367670803],
+Cell[7032, 256, 243, 7, 70, "GuideText",
+ CellID->1189483873],
+Cell[7278, 265, 120, 2, 70, "GuideText",
+ CellID->498384326],
+Cell[7401, 269, 289, 10, 70, "GuideText",
+ CellID->2076861600],
+Cell[7693, 281, 121, 2, 70, "GuideText",
+ CellID->2096810412],
+Cell[7817, 285, 77, 1, 70, "GuideText",
+ CellID->1545454537],
+Cell[7897, 288, 49, 1, 70, "GuideDelimiter",
+ CellID->1765982528],
+Cell[7949, 291, 238, 7, 70, "GuideText",
+ CellID->1826554606],
+Cell[8190, 300, 121, 2, 70, "GuideText",
+ CellID->2076081871],
+Cell[8314, 304, 289, 11, 70, "GuideText",
+ CellID->618209476],
+Cell[8606, 317, 120, 2, 70, "GuideText",
+ CellID->743471612],
+Cell[8729, 321, 77, 1, 70, "GuideText",
+ CellID->1818884481],
+Cell[8809, 324, 49, 1, 70, "GuideDelimiter",
+ CellID->2132341692],
+Cell[8861, 327, 228, 7, 70, "GuideText",
+ CellID->1525507],
+Cell[9092, 336, 121, 2, 70, "GuideText",
+ CellID->1354821704],
+Cell[9216, 340, 246, 6, 70, "GuideText",
+ CellID->537030882],
+Cell[9465, 348, 213, 7, 70, "GuideText",
+ CellID->414466220],
+Cell[9681, 357, 104, 3, 70, "GuideText",
+ CellID->1247672626],
+Cell[9788, 362, 120, 2, 70, "GuideText",
+ CellID->371020519],
+Cell[9911, 366, 210, 5, 70, "GuideText",
+ CellID->2111944124],
+Cell[10124, 373, 49, 1, 70, "GuideDelimiter",
+ CellID->1707221194],
+Cell[10176, 376, 235, 7, 70, "GuideText",
+ CellID->544872225],
+Cell[10414, 385, 121, 2, 70, "GuideText",
+ CellID->1979887181],
+Cell[10538, 389, 249, 6, 70, "GuideText",
+ CellID->2017033861],
+Cell[10790, 397, 213, 7, 70, "GuideText",
+ CellID->745979221],
+Cell[11006, 406, 104, 3, 70, "GuideText",
+ CellID->1098310532],
+Cell[11113, 411, 121, 2, 70, "GuideText",
+ CellID->2060802162],
+Cell[11237, 415, 80, 1, 70, "GuideText",
+ CellID->794223715],
+Cell[11320, 418, 48, 1, 70, "GuideDelimiter",
+ CellID->378114117],
+Cell[11371, 421, 233, 7, 70, "GuideText",
+ CellID->1714920349],
+Cell[11607, 430, 120, 2, 70, "GuideText",
+ CellID->928975926],
+Cell[11730, 434, 225, 7, 70, "GuideText",
+ CellID->689887702],
+Cell[11958, 443, 455, 14, 70, "GuideText",
+ CellID->1191353934],
+Cell[12416, 459, 336, 8, 70, "GuideText",
+ CellID->615981978],
+Cell[12755, 469, 125, 2, 70, "GuideText",
+ CellID->1883111822],
+Cell[12883, 473, 455, 10, 70, "GuideText",
+ CellID->2035604196],
+Cell[13341, 485, 120, 2, 70, "GuideText",
+ CellID->654805203],
+Cell[13464, 489, 78, 1, 70, "GuideText",
+ CellID->1248990109],
+Cell[13545, 492, 49, 1, 70, "GuideDelimiter",
+ CellID->1963329716],
+Cell[13597, 495, 239, 7, 70, "GuideText",
+ CellID->781268441],
+Cell[13839, 504, 121, 2, 70, "GuideText",
+ CellID->1636136837],
+Cell[13963, 508, 411, 11, 70, "GuideText",
+ CellID->280313077],
+Cell[14377, 521, 245, 6, 70, "GuideText",
+ CellID->2138020918],
+Cell[14625, 529, 214, 7, 70, "GuideText",
+ CellID->2114742264],
+Cell[14842, 538, 104, 3, 70, "GuideText",
+ CellID->1480543056],
+Cell[14949, 543, 121, 2, 70, "GuideText",
+ CellID->1983792846],
+Cell[15073, 547, 209, 6, 70, "GuideText",
+ CellID->184640319],
+Cell[15285, 555, 190, 5, 70, "GuideText",
+ CellID->1634585529],
+Cell[15478, 562, 239, 6, 70, "GuideText",
+ CellID->1620821400],
+Cell[15720, 570, 58, 1, 70, "GuideDelimiterSubsection",
+ CellID->626145976],
+Cell[CellGroupData[{
+Cell[15803, 575, 402, 11, 70, "GuideFunctionsSubsection",
+ CellID->556148650],
+Cell[16208, 588, 235, 7, 70, "GuideText",
+ CellID->810898951],
+Cell[16446, 597, 227, 7, 70, "GuideText",
+ CellID->285140892],
+Cell[16676, 606, 247, 7, 70, "GuideText",
+ CellID->1666280974],
+Cell[16926, 615, 245, 7, 70, "GuideText",
+ CellID->452616459],
+Cell[17174, 624, 244, 7, 70, "GuideText",
+ CellID->1113237669],
+Cell[17421, 633, 246, 7, 70, "GuideText",
+ CellID->1195342455],
+Cell[17670, 642, 252, 7, 70, "GuideText",
+ CellID->1804751401],
+Cell[17925, 651, 262, 7, 70, "GuideText",
+ CellID->2035940407],
+Cell[18190, 660, 257, 7, 70, "GuideText",
+ CellID->275732815]
+}, Open  ]]
+}, Open  ]],
+Cell[18474, 671, 23, 0, 70, "FooterCell"]
+}
+]
+*)
+
+(* End of internal cache information *)
+

@@ -1,0 +1,395 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 8.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       157,          7]
+NotebookDataLength[     12321,        385]
+NotebookOptionsPosition[      9428,        298]
+NotebookOutlinePosition[     11075,        340]
+CellTagsIndexPosition[     11032,        337]
+WindowTitle->NVHamiltonian - Wolfram Mathematica
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[" ", "SymbolColorBar",
+ CellMargins->{{Inherited, Inherited}, {-5, 0}}],
+
+Cell[TextData[{
+ ButtonBox["Mathematica",
+  BaseStyle->{"Link", "LinkTrail"},
+  ButtonData->"paclet:nvdoc/guide/nvdoc"],
+ StyleBox[" > ", "LinkTrailSeparator"]
+}], "LinkTrail"],
+
+Cell[BoxData[GridBox[{
+   {Cell["NVDOC PACLET SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"Tutorials \[RightGuillemet]\"\>",
+        StripOnInput->False], {
+       RowBox[{
+        RowBox[{"{", "}"}], "\[LeftDoubleBracket]", "1", 
+        "\[RightDoubleBracket]"}]:>Documentation`HelpLookup[
+        If[
+         StringMatchQ[
+          Part[{}, 2], "paclet*"], 
+         Part[
+          Part[{{}, {}}, 1], 2], 
+         StringJoin["paclet:", 
+          Part[
+           Part[{{}, {}}, 1], 2]]]], 
+       RowBox[{
+        RowBox[{"{", "}"}], "\[LeftDoubleBracket]", "1", 
+        "\[RightDoubleBracket]"}]:>Documentation`HelpLookup[
+        If[
+         StringMatchQ[
+          Part[{}, 2], "paclet*"], 
+         Part[
+          Part[{{}, {}}, 2], 2], 
+         StringJoin["paclet:", 
+          Part[
+           Part[{{}, {}}, 2], 2]]]]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"NVSim\"\>":>Documentation`HelpLookup[
+       "paclet:nvdoc/guide/NVSim"]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"nvdoc/ref/NVHamiltonian\"\>":>
+       None, "\<\"Copy Mathematica url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["nvdoc/ref/NVHamiltonian"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/mathematica/nvdoc/ref/\
+NVHamiltonian.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+            "http://reference.wolfram.com/mathematica/", 
+             "nvdoc/ref/NVHamiltonian", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ CellID->1],
+
+Cell[CellGroupData[{
+
+Cell["NVHamiltonian", "ObjectName",
+ CellID->1224892054],
+
+Cell[BoxData[GridBox[{
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{"NVHamiltonian", "[", "params", "]"}]], "InlineFormula"],
+     " \[LineSeparator]returns the Hamitonian matrix corresponding to the \
+parameters set in the input. See ",
+     ButtonBox["here",
+      BaseStyle->"Link",
+      ButtonData->"paclet:nvdoc/guide/Parameters"],
+     " for a comprehensive list of possible parameters."
+    }]]},
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{"NVHamiltonian", "[", 
+       RowBox[{
+        RowBox[{"\"\<param1\>\"", "\[Rule]", "value1"}], ",", 
+        RowBox[{"\"\<param2\>\"", "\[Rule]", "value2"}], ",", "..."}], "]"}]],
+       "InlineFormula"],
+     " \[LineSeparator]returns the Hamitonian matrix corresponding to the \
+parameters set in the input. See ",
+     ButtonBox["here",
+      BaseStyle->"Link",
+      ButtonData->"paclet:nvdoc/guide/Parameters"],
+     " for a comprehensive list of possible parameters."
+    }]]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
+   "RowsIndexed" -> {}}},
+ CellID->982511436]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[
+  FrameBox[
+   StyleBox[
+    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
+   StripOnInput->False],
+  Appearance->{Automatic, None},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1463067637],
+
+Cell["\<\
+The output matrix has the following tensor product structure:\
+\>", "Notes",
+ CellID->1067943069],
+
+Cell[TextData[Cell[BoxData[
+ RowBox[{
+  SubscriptBox["\[ScriptCapitalH]", "NV"], "\[CircleTimes]", 
+  SubscriptBox["\[ScriptCapitalH]", "N"], "\[CircleTimes]", 
+  SubscriptBox["\[ScriptCapitalH]", "C1"], "\[CircleTimes]", 
+  "\[CenterEllipsis]", "\[CircleTimes]", 
+  SubscriptBox["\[ScriptCapitalH]", "Cn"]}]], "InlineFormula",
+ FontSize->14]], "Notes",
+ TextAlignment->Center,
+ CellID->1132212851],
+
+Cell[TextData[{
+ "where certain factors may be missing depending on the paramaters that you \
+input. For example, the ",
+ Cell[BoxData[
+  SubscriptBox["\[ScriptCapitalH]", "N"]], "InlineFormula",
+  FontSize->14],
+ " factor will only be present if ",
+ StyleBox[ButtonBox["\"nitrogenIsotope\"",
+  BaseStyle->"Link",
+  ButtonData->"paclet:nvdoc/guide/Parameters"], "InlineCode"],
+ " is non-zero. The carbon order is determed by the ",
+ StyleBox[ButtonBox["\"carbonPositions\"",
+  BaseStyle->"Link",
+  ButtonData->"paclet:nvdoc/guide/Parameters"], "InlineCode"],
+ " parameter."
+}], "Notes",
+ CellID->245221988]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[ButtonBox["SEE ALSO",
+ BaseStyle->None,
+ Appearance->{Automatic, None},
+ Evaluator->None,
+ Method->"Preemptive",
+ ButtonFunction:>(FrontEndExecute[{
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], All, ButtonCell], 
+    FrontEndToken["OpenCloseGroup"], 
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], After, 
+     CellContents]}]& )]], "SeeAlsoSection",
+ CellID->1255426704],
+
+Cell[BoxData[Cell[BoxData[
+  ButtonBox["VisualizeNVParameters",
+   BaseStyle->"Link"]], "InlineFormula"]], "SeeAlso",
+ CellID->929782353]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[ButtonBox["TUTORIALS",
+ BaseStyle->None,
+ Appearance->{Automatic, None},
+ Evaluator->None,
+ Method->"Preemptive",
+ ButtonFunction:>(FrontEndExecute[{
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], All, ButtonCell], 
+    FrontEndToken["OpenCloseGroup"], 
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], After, 
+     CellContents]}]& )]], "TutorialsSection",
+ CellID->250839057],
+
+Cell["Introduction to  creating NV Hamiltonian matrices", "Tutorials",
+ CellID->341631938],
+
+Cell["Getting distant carbons to have a dipolar hyperfine tensor", "Tutorials",
+ CellID->95084653]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[ButtonBox["MORE ABOUT",
+ BaseStyle->None,
+ Appearance->{Automatic, None},
+ Evaluator->None,
+ Method->"Preemptive",
+ ButtonFunction:>(FrontEndExecute[{
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], All, ButtonCell], 
+    FrontEndToken["OpenCloseGroup"], 
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], After, 
+     CellContents]}]& )]], "MoreAboutSection",
+ CellID->38303248],
+
+Cell[TextData[ButtonBox["NVSim",
+ BaseStyle->"Link",
+ ButtonData->"paclet:nvdoc/guide/NVSim"]], "MoreAbout",
+ CellID->1235895933]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[ButtonBox["RELATED LINKS",
+ BaseStyle->None,
+ Appearance->{Automatic, None},
+ Evaluator->None,
+ Method->"Preemptive",
+ ButtonFunction:>(FrontEndExecute[{
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], All, ButtonCell], 
+    FrontEndToken["OpenCloseGroup"], 
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], After, 
+     CellContents]}]& )]], "RelatedLinksSection",
+ CellID->1584193535],
+
+Cell[TextData[ButtonBox["About Parameters",
+ BaseStyle->"Link",
+ ButtonData->"paclet:nvdoc/guide/Parameters"]], "RelatedLinks",
+ CellID->1038487239]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"NVHamiltonian - Wolfram Mathematica",
+TaggingRules->{
+ "ModificationHighlight" -> False, 
+  "Metadata" -> {
+   "built" -> "{2012, 7, 13, 19, 37, 23.990138}", "context" -> "nvdoc`", 
+    "keywords" -> {}, "index" -> True, "label" -> "nvdoc Paclet Symbol", 
+    "language" -> "en", "paclet" -> "nvdoc", "status" -> "None", "summary" -> 
+    "NVHamiltonian[params] returns the Hamitonian matrix corresponding to the \
+parameters set in the input. See here for a comprehensive list of possible \
+parameters.NVHamiltonian[\"param1\" -> value1, \"param2\" -> value2, ...] \
+returns the Hamitonian matrix corresponding to the parameters set in the \
+input. See here for a comprehensive list of possible parameters.", 
+    "synonyms" -> {}, "title" -> "NVHamiltonian", "type" -> "Symbol", "uri" -> 
+    "nvdoc/ref/NVHamiltonian"}, "LinkTrails" -> "", "SearchTextTranslated" -> 
+  ""},
+CellContext->"Global`",
+FrontEndVersion->"8.0 for Linux x86 (64-bit) (October 10, 2011)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "8.0 for Linux x86 (64-bit) (October 10, 2011)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[606, 21, 76, 1, 3, "SymbolColorBar"],
+Cell[685, 24, 176, 5, 19, "LinkTrail"],
+Cell[864, 31, 3117, 80, 46, "AnchorBarGrid",
+ CellID->1],
+Cell[CellGroupData[{
+Cell[4006, 115, 56, 1, 54, "ObjectName",
+ CellID->1224892054],
+Cell[4065, 118, 1136, 30, 178, "Usage",
+ CellID->982511436]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5238, 153, 581, 17, 41, "NotesSection",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1463067637],
+Cell[5822, 172, 107, 3, 70, "Notes",
+ CellID->1067943069],
+Cell[5932, 177, 398, 9, 70, "Notes",
+ CellID->1132212851],
+Cell[6333, 188, 606, 16, 70, "Notes",
+ CellID->245221988]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[6976, 209, 417, 12, 45, "SeeAlsoSection",
+ CellID->1255426704],
+Cell[7396, 223, 137, 3, 19, "SeeAlso",
+ CellID->929782353]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[7570, 231, 419, 12, 45, "TutorialsSection",
+ CellID->250839057],
+Cell[7992, 245, 90, 1, 18, "Tutorials",
+ CellID->341631938],
+Cell[8085, 248, 98, 1, 18, "Tutorials",
+ CellID->95084653]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[8220, 254, 419, 12, 45, "MoreAboutSection",
+ CellID->38303248],
+Cell[8642, 268, 129, 3, 18, "MoreAbout",
+ CellID->1235895933]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[8808, 276, 427, 12, 45, "RelatedLinksSection",
+ CellID->1584193535],
+Cell[9238, 290, 148, 3, 18, "RelatedLinks",
+ CellID->1038487239]
+}, Open  ]],
+Cell[9401, 296, 23, 0, 42, "FooterCell"]
+}
+]
+*)
+
+(* End of internal cache information *)
+
