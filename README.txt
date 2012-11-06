@@ -3,7 +3,7 @@ INSTALLATION
 -----------------------------------------------------------
 
 If you are looking at this file, you have probably 
-figured out SVN. You will also need to grab the 
+figured out GIT. You will also need to grab the 
 latest quantum-utils version off SVN and install it.
 
 To install NVSim, just open up Install.m in Mathematica 
