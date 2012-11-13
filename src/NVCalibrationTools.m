@@ -7,7 +7,7 @@ BeginPackage["NVCalibrationTools`",{"VectorAnalysis`","NVHamiltonian`"}]
 (*Predicates*)
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Four NV Magnetometry*)
 
 
@@ -41,7 +41,7 @@ FourNVZeemanSplittings[B_,BCoords_:Spherical,crystalOrientation_:{0,0,0},method_
 If[method=="secular",
 Table[With[
 {H=NVHamiltonian["B"->B,"BCoords"->BCoords,"crystalOrientation"->crystalOrientation,"nvOrientation"->n]},
-H[[1,1]]-H[[3,3]]],{n,4}]*(($Gauss/(2*\[Gamma]e))/.Join[$units,$physicalConstants])
+H[[1,1]]-H[[3,3]]],{n,4}]*((1/$Gauss/(2*\[Gamma]e))/.Join[$units,$physicalConstants])
 ,
 "Exact splitting method not implemented yet; the secular approximation is pretty good anyways."
 ]
