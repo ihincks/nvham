@@ -1,6 +1,9 @@
 (* ::Package:: *)
 
-BeginPackage["NVHamiltonian`", {"QuantumUtils`","VectorAnalysis`"}]
+If[$VersionNumber>=9,
+	BeginPackage["NVHamiltonian`", {"QuantumUtils`"}],
+	BeginPackage["NVHamiltonian`", {"QuantumUtils`","VectorAnalysis`"}]
+]
 
 
 (* ::Section::Closed:: *)
@@ -575,7 +578,7 @@ R.A.R\[Transpose]
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Pieces of the Total NV Hamiltonian*)
 
 
