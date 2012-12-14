@@ -1,6 +1,6 @@
 (* ::Package:: *)
 
-If[$VersionNumber>=9,
+If[$VersionNumber>=\[Infinity],
 	BeginPackage["NVHamiltonian`", {"QuantumUtils`"}],
 	BeginPackage["NVHamiltonian`", {"QuantumUtils`","VectorAnalysis`"}]
 ]
