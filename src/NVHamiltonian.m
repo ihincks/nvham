@@ -354,7 +354,7 @@ FillConstants[consts_:$physicalConstants]:=If[NumberQ[#],#,#=N[#/.consts]]&/@con
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*NV Parameters from Literature*)
 
 
@@ -364,7 +364,7 @@ End[];
 
 NitrogenDim::usage = "NitrogenDim[nitrogenIsotope] returns the dimension of the Hilbert space for a nitrogen atom with spin nitrogenIsotope.";
 NitrogenSpin::usage = "NitrogenDim[nitrogenIsotope] returns the spin value for a nitrogen atom with isotope nitrogenIsotope.";
-$typicalZFS::usage = "A typical ZFS in Hz";
+$typicalZFSConstant::usage = "A typical ZFS in Hz";
 $nitrogenHyperfineTensorSources::usage = "A list of the valid nitrogen hyperfine source strings, e.g. \"Felton09\".";
 $nitrogenQuadrapolarTensorSources::usage = "A list of the valid nitrogen quadrapolar tensor source strings, e.g. \"Felton09\".";
 $carbonHyperfineTensorSources::usage = "A list of the valid carbon hyperfine source strings, e.g. \"Felton09\".";
@@ -831,7 +831,7 @@ GatherBy[totalParams, #[[1]] &][[All, 1]] (* this gets rid of duplicate Rules - 
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*The NV Hamiltonian*)
 
 
