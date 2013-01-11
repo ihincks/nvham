@@ -18,7 +18,7 @@ PulseShapeQ::usage = "PulseShapeQ[in] returns True iff one of PulseShapeFileQ or
 
 ShapedPulseQ::usage = "ShapedPulse[p] returns True iff p is of the form {pulse,{Hcontrol1,Hcontrol2,..}} where the Hcontrols are the control Hamiltonians and pulse satisfies PulseShapeQ.";
 DriftPulseQ::usage = "DriftPulseQ[p] returns True iff p is a real number indicating the amount of time to evolve under the drift Hamiltonian.";
-InstantaneousPulseQ::usage = "InstantaneousPulseQ[p] returns True iff p is a matrix.";
+InstantaneousPulseQ::usage = "InstantaneousPulseQ[p] returns True iff p is of the form {U,t} where U is a matrix and t is how \"long\" you want the instantaneous pulse to take.";
 PulseQ::usage = "PulseQ[p] returns True iff p satisfies at least one of the NVSim predicates ending in PulseQ (ShapedPulseQ,InstantaneousPulseQ,etc)";
 
 
@@ -28,6 +28,14 @@ PulseSequenceQ::usage = "PulseSequenceQ[seq] returns True iff seq is a list wher
 DriftHamConstQ::usage = "DriftHamConstQ[H] returns True iff H is a square matrix.";
 DriftHamNonConstQ::usage = "DriftHamNonConst[H] returns True iff H is a function which accepts a number and returns a square matrix.";
 DriftHamQ::usage = "DriftHamQ[H] returns True iff one of DriftHamConstQ[H] or DriftHamNonConstQ[H] is True.";
+
+
+DensityMatrixQ::usage = "DensityMatrixQ[\[Rho]] returns True iff \[Rho] is a square matrix.";
+ObservableListQ::usage = "ObservableListQ[obs] returns True iff obs is a list of square matrices.";
+FunctionListQ::usage = "FunctionListQ[lst] retruns True iff lst is a List.";
+
+
+Else=True;
 
 
 (* ::Subsection:: *)
@@ -46,13 +54,13 @@ PulseShapeMatrixQ[M_]:=MatrixQ[M]
 PulseShapeQ[in_]:=PulseShapeFileQ[in]||PulseShapeMatrixQ[in]
 
 
-ShapedPulseQ[p_]:=ListQ[p]&&(Length[p]==2)&&PulseShapeQ[p[[1]]]
+ShapedPulseQ[p_]:=ListQ[p]&&(Length[p]==2)&&ListQ[p[[2]]]&&PulseShapeQ[p[[1]]]
 
 
 DriftPulseQ[p_]:=NumericQ[p]&&p\[Element]Reals
 
 
-InstantaneousPulseQ[p_]:=SquareMatrixQ[p]
+InstantaneousPulseQ[p_]:=ListQ[p]&&SquareMatrixQ[p[[1]]]&&(p[[2]]\[Element]Reals)
 
 
 PulseQ[p_]:=Or@@(Through[{ShapedPulseQ,DriftPulseQ,InstantaneousPulseQ}[p]])
@@ -64,55 +72,72 @@ PulseSequenceQ[seq_]:=ListQ[seq]&&(And@@(PulseQ/@seq))
 DriftHamConstQ[H_]:=SquareMatrixQ[H]
 
 
-DriftHamNonConstQ[H_]:=Module[{t},SquareMatrixQ[H[t]]]
+DriftHamNonConstQ[H_]:=SquareMatrixQ[H[0.0]]
 
 
 DriftHamQ[H_]:=DriftHamConstQ[H]||DriftHamNonConstQ[H]
 
 
+ObservableListQ[obs_]:=ListQ[obs]&&(And@@(SquareMatrixQ/@obs))
+
+
+DensityMatrixQ[\[Rho]_]:=SquareMatrixQ[\[Rho]]
+
+
+FunctionListQ[lst_]:=ListQ[lst]
+
+
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Options and Helper Functions*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Usage Declarations*)
 
 
-PulseOptions::usage = "PulseOptions is a dummy function which stores the options for various NVSim functions. Use the command Options[PulseOptions] to view these options and their default values.";
+SimulationOptions::usage = "SimulationOptions is a dummy function which stores the options for various NVSim functions. Use the command Options[SimulationOptions] to view these options and their default values.";
 
 
-SimTrace::usage = "SimTrace is a simulation option that chooses which in-sequence information of the pulse sequence to store.";
-SimMethod::usage = "SimMethod is a simulation option that chooses which method of simulation to use (Automatic, Naive, Compiled, CompiledC, etc.)";
 StepSize::usage = "StepSize is a simulation option that chooses the time discretization when the internal Hamiltonian is time dependent. Can be set to Automatic.";
-IntegrationMethod::usage = "IntegrationMethod is a simulation option that chooses which integration method to use in the case of a time dependent Hamiltonian.";
+PollingInterval::usage = "PollingInterval is a simulation option that specifies the time interval at which results of the simulation should be returned. This option can also be set to StepSize or Off. The default value is Off.";
+InitialState::usage = "InitialState is a simulation option. Set this option to the initial density matrix of your system. At each PollingInterval, the state of the system will be returned. The default value is None.";
+SimulationOutput::usage = "SimulationOutput is a simulation option. Set this option to be one of, or a nonempty subset of, the list {Unitaries,States,Observables,Functions}. These will be the values (and order) of the simulation output. The default value is Automatic.";
+SequenceMode::usage = "SequenceMode is a simulation option. If set to True, EvalPulse returns the final state (or None) in addition to the usual output.";
 
 
-CompiledC::usage = "CompiledC is a SimMethod option value.";
-Naive::usage = "Naive is a SimMethod option value.";
+TimeVector::usage = "TimeVector is a function Head used in a simulation's output. TimeVector[data] can also be used to extract the TimeVector from data.";
+Unitaries::usage = "Unitaries is two things: (1) an element of the SimulationOutput list, and (2) a function Unitaries[data] (or Unitaries[data,t]) which exctracts the unitaries out of data (or extracts the unitary which happens at the closest time to t calculated), where data is in the form as outputed by EvalPulse.";
+States::usage = "States is two things: (1) an element of the SimulationOutput list, and (2) a function States[data] (or States[data,t]) which exctracts the states out of data (or extracts the state which happens at the closest time to t calculated), where data is in the form as outputed by EvalPulse.";
+Functions::usage = "Functions is three things: (1) simulation option which can be set to a list of functions which take a square matrix as input, (2) an element of the SimulationOutput list, and (3) a function Functions[data] (Functions[data,n]) which extracts all function values (n'th function values) from data, where data is in the format that EvalPulse outputs.";
+Observables::usage = "Observables is three things: (1) simulation option which can be set to a list of observables (list of hermitian matrices), (2) an element of the SimulationOutput list, and (3) a function Observables[data] (Observables[data,n]) which extracts all observable values (n'th observable values) from data, where data is in the format that EvalPulse outputs.";
 
 
 GetPulseShapeMatrix::usage = "GetPulseShapeMatrix[in] returns in if in is a matrix, but if in is a file name, returns the contents of that file as a matrix.";
 GetStepSize::usage = "GetStepSize[H,stepsize:Automatic] returns a fifth of the biggest element of H[0] if stepsize is Automatic, and stepsize otherwise.";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Implementations*)
 
 
 Begin["`Private`"];
 
 
-Protect[SimTrace,SimMethod,StepSize,IntegrationMethod,CompiledC,Naive];
+(* ::Subsubsection:: *)
+(*Options and Input Handling*)
 
 
-Options[PulseOptions]={
-	SimTrace->False,
-	SimMethod->Automatic,
+Options[SimulationOptions]={
 	StepSize->Automatic,
-	IntegrationMethod->Automatic
+	PollingInterval->Off,
+	InitialState->None,
+	Observables->None,
+	Functions->None,
+	SimulationOutput->Automatic,
+	SequenceMode->False
 };
 
 
@@ -127,293 +152,174 @@ GetPulseShapeMatrix[in_?PulseShapeMatrixQ]:=in//N
 GetStepSize[H_,stepsize_:Automatic]:=
 	If[stepsize===Automatic,
 		Module[{t,max},
-			max=NMaximize[Max[H[t]],t][[1]];
+			max=Sqrt[NMaximize[Max[Abs[H[t]]^2],t][[1]]];
 			1/(10*max)
 		],
 		stepsize
 	]
 
 
-Else=True;
-
-
-End[];
-
-
-(* ::Section::Closed:: *)
-(*Barebone Simulators*)
-
-
-(* ::Subsection:: *)
-(*Usage Declarations*)
-
-
-DotExpNaive::usage = "DotExpNaive=Function[{Hint,Hctls,dt,amps},expr]";
-DotExpCompiled::usage = "DotExpCompiled=Compile[{{Hint,_Complex,2},{Hctls,_Complex,3},{dt,_Real,1},{amps,_Real,2}},expr]";
-DotExpCompiledC::usage = "DotExpCompiledC=Compile[{{Hint,_Complex,2},{Hctls,_Complex,3},{dt,_Real,1},{amps,_Real,2}},expr]";
-
-
-TimeDepDriftNaive::usage = "TimeDepDriftNaive=Function[{T,dt},expr]";
-TimeDepDriftCompiled::usage = "TimeDepDriftCompiled=Compile[{{T,_Real},{dt,_Real}},expr]";
-TimeDepDriftCompiledC::usage = "TimeDepDriftCompiledC=Compile[{{T,_Real},{dt,_Real}},expr]";
-
-
-DotExpTimeDepNaive::usage = "DotExpTimeDepNaive=Function[{subdt,Hctls,dt,amps},expr]";
-DotExpTimeDepCompiled::usage "DotExpTimeDepCompiled=Compile[{{subdt,_Real},{Hctls,_Complex,3},{dt,_Real,1},{amps,_Real,2}},expr]";
-DotExpTimeDepCompiledC::usage "DotExpTimeDepCompiledC=Compile[{{subdt,_Real},{Hctls,_Complex,3},{dt,_Real,1},{amps,_Real,2}},expr]";
-
-
-(* ::Subsection:: *)
-(*Implementations*)
-
-
-Begin["`Private`"];
-
-
-(* ::Text:: *)
-(*Declare a private symbol. We will set this symbol to be time dependent Hamiltonians so that we can use them inside of compiled functions.*)
-
-
-Hfun::usage = "A private variable storing the current time dependent Hamiltonian";
-
-
-(* ::Subsubsection::Closed:: *)
-(*DotExp functions*)
-
-
-(* ::Text:: *)
-(*Takes a time independent drift Hamiltonian, the control Hamiltonians, the time steps, and the amplitudes and multiplies all of the matrix exponentials together, just using the usual Fold method.*)
-
-
-DotExpNaive=Function[{Hint,Hctls,dt,amps},
-	With[{ampind=If[Length[amps[[1]]]>1,{2,-1},{2}]},
-		Fold[
-			(MatrixExp[-I*(#2[[1]])*(Hint+Total[Hctls*(#2[[ampind]])])].#1)&,
-			IdentityMatrix[Length[Hint]],
-			Join[{dt},amps\[Transpose]]\[Transpose]
-		]
-	]
-];
-
-
-(* ::Text:: *)
-(*Takes a time independent drift Hamiltonian, the control Hamiltonians, the time steps, and the amplitudes and multiplies all of the matrix exponentials together, using a compiled function.*)
-
-
-DotExpCompiled=Compile[{{Hint,_Complex,2},{Hctls,_Complex,3},{dt,_Real,1},{amps,_Real,2}},
-	With[{num=Length[dt],dim=Length[Hint]},
-		Module[{out=(1.0+0.0 I)*IdentityMatrix[dim],H=Table[0.0 I,{i,dim},{j,dim}],k},
-			For[k=1,k<=num,k++,
-				H=-I*dt[[k]]*(Hint+Total[Hctls*amps[[k,All]]]);
-				out=MatrixExp[H].out;
-			];
-			out
-		]
-	]
-];
-
-
-(* ::Text:: *)
-(*Same as the above function, except compiles to C. This should be faster in the limit of larger Hilbert space dimension, but has not been tested yet.*)
-
-
-DotExpCompiledC=Compile[{{Hint,_Complex,2},{Hctls,_Complex,3},{dt,_Real,1},{amps,_Real,2}},
-	With[{num=Length[dt],dim=Length[Hint]},
-		Module[{out=(1.0+0.0 I)*IdentityMatrix[dim],H=Table[0.0 I,{i,dim},{j,dim}],k},
-			For[k=1,k<=num,k++,
-				H=-I*dt[[k]]*(Hint+Total[Hctls*amps[[k,All]]]);
-				out=MatrixExp[H].out;
-			];
-			out
-		]
-	],
-	CompilationTarget->"C"
-];
-
-
-(* ::Subsubsection::Closed:: *)
-(*TimeDepDrift functions*)
-
-
-(* ::Text:: *)
-(*Compute the propagator of the time dependent Hamiltonian Hfun for a total time t and stepsize dt. Use the midpoint method.*)
-
-
-TimeDepDriftNaive=Function[{T,dt,dim},
-	Module[{num=Floor[T/dt],out},
-		out=Fold[
-			(MatrixExp[-I*dt*NVSim`Private`Hfun[(#2-0.5)*dt]].#1)&,
-			IdentityMatrix[dim],
-			Table[n,{n,num}]
-		];
-		out=MatrixExp[-I*(T-num*dt)*NVSim`Private`Hfun[0.5*(T+num*dt)]].out;
-		out
-	]
-];
-
-
-TimeDepDriftCompiled=Compile[{{T,_Real},{dt,_Real},{dim,_Integer}},
-	Module[{num,out,H,k},
-		num = Floor[T/dt];
-		out = (1.0+0.0 I)*IdentityMatrix[dim];
-		H=ConstantArray[0.0 I,{dim,dim}];
-		For[k=1,k<=num,k++,
-			H=-I*dt*NVSim`Private`Hfun[(k-0.5)*dt];
-			out=MatrixExp[H].out
-		];
-		H=-I*(T-num*dt)*NVSim`Private`Hfun[0.5*(T+num*dt)];
-		out = MatrixExp[H].out;
-		out
-	],
-	{{NVSim`Private`Hfun[_],_Complex,2}}
-];
-
-
-TimeDepDriftCompiledC=Compile[{{T,_Real},{dt,_Real},{dim,_Integer}},
-	Module[{num,out,H,k},
-		num = Floor[T/dt];
-		out = (1.0+0.0 I)*IdentityMatrix[dim];
-		H=ConstantArray[0.0 I,{dim,dim}];
-		For[k=1,k<=num,k++,
-			H=-I*dt*NVSim`Private`Hfun[(k-0.5)*dt];
-			out=MatrixExp[H].out
-		];
-		H=-I*(T-num*dt)*NVSim`Private`Hfun[0.5*(T+num*dt)];
-		out = MatrixExp[H].out;
-		out
-	],
-	{{NVSim`Private`Hfun[_],_Complex,2}},
-	CompilationTarget->"C"
-];
+FormatOutputAndReturn::usage="FormatOutputAndReturn[] returns all privately stored simulation data.";
 
 
 (* ::Subsubsection:: *)
-(*DotExpTimeDep functions*)
+(*Private Variables*)
 
 
-(* ::Text:: *)
-(*DotExpTimeDep functions is essentially a TimeDepDrift function inserted into the for loop of a DotExp function: on each control step, the evolution is broken down into steps of length subdt*)
+staVar::usage = "A private variable to store the initial state.";
+obsVar::usage = "A private variable to store the observables.";
+funVar::usage = "A private variable to store the functions.";
 
 
-(* TODO: turn this into a Fold or something *)
-DotExpTimeDepNaive=Function[{subdt,Hctls,dt,amps},
-	Module[{dim,num,subnum,out,H,Hctl,T,k,l},
-		dim=Length[Hctls[[1]]];
-		num=Length[dt];
-		out=(1.0+0.0 I)*IdentityMatrix[dim];
-		H=ConstantArray[0.0 I,{dim,dim}];
-		(* In each control step the controls do not change, and so we store it in the variable Hctl *)
-		Hctl=ConstantArray[0.0 I,{dim,dim}];
-		(* T records the time at the end of the previous control step *)
-		T=0.0;
-		(* k loops through the control sequuence *)
-		For[k=1,k<=num,k++,
-			subnum = Floor[dt[[k]]/subdt];
-			Hctl=Total[Hctls*amps[[k,All]]];
-			(* l loops through substeps to account for drift Hamiltonian time dependence *)
-			For[l=1,l<=subnum,l++,
-				H=-I*subdt*(NVSim`Private`Hfun[T+(l-0.5)*subdt]+Hctl);
-				out=MatrixExp[H].out
+uniVals::usage = "A private variable to store the unitaries that will be returned.";
+staVals::usage = "A private variable to store the states that will be returned.";
+obsVals::usage = "A private variable to store the observable values that will be returned.";
+funVals::usage = "A private variable to store the function values that will be returned.";
+timVals::usage = "A private variable to store the polling times.";
+
+
+tOffset::usage = "A private variable which records how much to offset the TimeVector by.";
+
+
+returnKey::usage = "A private variable to encode which things our simulation is returning.";
+outputList::usage = "A private variable to store which things our simulation is returning.";
+
+
+AppendReturnables::usage = "A private function for appending new data to the already collected data.";
+
+
+InitializePrivateVariables[OptionsPattern[SimulationOptions]]:=
+	(
+		(* initialize output storage containers*)
+		uniVals={};
+		staVals={};
+		obsVals={};
+		funVals={};
+		timVals={};
+
+		(* initialize the initial state, obserables, and monitoring functions *)
+		staVar=OptionValue[InitialState];
+		obsVar=OptionValue[Observables];
+		funVar=OptionValue[Functions];
+
+		(* start with a tOffset of 0 *)
+		tOffset=0;
+
+		(* initialize the outputList *)
+		outputList=FormatSimulationOutput[OptionsPattern[SimulationOptions]];
+		If[OptionValue[SimulationOutput]===Automatic,
+			If[DensityMatrixQ[staVar],
+				outputList={};
+				If[ObservableListQ[obsVar],AppendTo[outputList,Observables]];
+				If[FunctionListQ[funVar],AppendTo[outputList,Functions]];
+				If[Length[outputList]===0,outputList={States}];,
+				outputList={Unitaries};
+			];,
+			outputList=OptionValue[SimulationOutput];
+			If[Not[ListQ[outputList]],outputList={outputList}];
+			If[Not[DensityMatrixQ[staVar]]&&(MemberQ[outputList,States]||MemberQ[outputList,Observables]||MemberQ[outputList,Functions]),
+				Print["Warning: You asked for an output which requires an InitialState, but no InitialState was specified."]
 			];
-			(* Tack on the remaining time excluded from the above loop *)
-			H=-I*(dt[[k]]-subnum*subdt)*(NVSim`Private`Hfun[T+0.5*(dt[[k]]+subnum*subdt)]+Hctl);
-			out=MatrixExp[H].out;
-			T=T+dt[[k]]
 		];
-		out
+		AppendTo[outputList,TimeVector];
+
+		(* initialize the returnKey *)
+		returnKey=0;
+		If[MemberQ[outputList,Unitaries],returnKey+=2^0];
+		If[MemberQ[outputList,States],returnKey+=2^1];
+		If[MemberQ[outputList,Observables],returnKey+=2^2];
+		If[MemberQ[outputList,Functions],returnKey+=2^3];
+
+		(* for each returnKey we need a different AppendReturnables *)
+		Which[
+			returnKey==1,AppendReturnables[U_,t_]:=(AppendTo[timVals,t+tOffset];AppendTo[uniVals,U];),
+			returnKey==2,AppendReturnables[U_,t_]:=(AppendTo[timVals,t+tOffset];AppendTo[staVals,U.staVar.U\[ConjugateTranspose]];),
+			returnKey==3,AppendReturnables[U_,t_]:=(AppendTo[timVals,t+tOffset];AppendTo[uniVals,U];AppendTo[staVals,U.staVar.U\[ConjugateTranspose]];),
+			returnKey==4,AppendReturnables[U_,t_]:=(AppendTo[timVals,t+tOffset];AppendTo[obsVals,Re[Tr[#.U.staVar.U\[ConjugateTranspose]]]&/@obsVar];),
+			returnKey==5,AppendReturnables[U_,t_]:=(AppendTo[timVals,t+tOffset];AppendTo[uniVals,U];AppendTo[obsVals,Re[Tr[#.U.staVar.U\[ConjugateTranspose]]]&/@obsVar];),
+			returnKey==6,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t+tOffset];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];],
+			returnKey==7,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t+tOffset];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];],
+			returnKey==8,AppendReturnables[U_,t_]:=(AppendTo[timVals,t+tOffset];AppendTo[funVals,(#[U.staVar.U\[ConjugateTranspose]])&/@funVar];),
+			returnKey==9,AppendReturnables[U_,t_]:=(AppendTo[timVals,t+tOffset];AppendTo[uniVals,U];AppendTo[funVals,(#[U.staVar.U\[ConjugateTranspose]])&/@funVar];),
+			returnKey==10,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t+tOffset];AppendTo[staVals,\[Rho]];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
+			returnKey==11,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t+tOffset];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
+			returnKey==12,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t+tOffset];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
+			returnKey==13,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t+tOffset];AppendTo[uniVals,U];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
+			returnKey==14,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t+tOffset];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
+			returnKey==15,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t+tOffset];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
+			Else,AppendReturnables[U_,t_]:=Null
+		];
+	)
+
+
+(* ::Subsubsection:: *)
+(*Output Formatting*)
+
+
+FormatOutputAndReturn[]:=
+	(
+		outputList/.
+			{Unitaries->{Unitaries,uniVals},
+			States->{States,staVals},
+			Observables->{Observables,obsVals},
+			Functions->{Functions,funVals},
+			TimeVector->{TimeVector,timVals}}
+	)
+
+
+TimeVector[data_]:=Select[data,(#[[1]]===TimeVector)&,1][[1,2]]
+
+
+Unitaries[data_]:=Select[data,(#[[1]]===Unitaries)&,1][[1,2]]
+Unitaries[data_,t_]:=With[{minpos=Ordering[Abs[t-#]&/@TimeVector[data],1][[1]]},Unitaries[data][[minpos]]]
+
+
+States[data_]:=Select[data,(#[[1]]===States)&,1][[1,2]]
+States[data_,t_]:=With[{minpos=Ordering[Abs[t-#]&/@TimeVector[data],1][[1]]},States[data][[minpos]]]
+
+
+Observables[data_,OptionsPattern[{TimeVector->False}]]:=
+	With[{obs=Transpose[Select[data,(#[[1]]===Observables)&,1][[1,2]]]},
+		If[OptionValue[TimeVector]&&Length[obs]>0,
+			With[{tv=TimeVector[data]},{tv,#}\[Transpose]&/@obs],
+			obs
+		]
 	]
-];
+Observables[data_,n_,opt:OptionsPattern[{TimeVector->False}]]:=Observables[data,opt][[n]]
 
 
-DotExpTimeDepCompiled=Compile[{{subdt,_Real},{Hctls,_Complex,3},{dt,_Real,1},{amps,_Real,2}},
-	Module[{dim,num,subnum,out,H,Hctl,T,k,l},
-		dim=Length[Hctls[[1]]];
-		num=Length[dt];
-		out=(1.0+0.0 I)*IdentityMatrix[dim];
-		H=ConstantArray[0.0 I,{dim,dim}];
-		(* In each control step the controls do not change, and so we store it in the variable Hctl *)
-		Hctl=ConstantArray[0.0 I,{dim,dim}];
-		(* T records the time at the end of the previous control step *)
-		T=0.0;
-		(* k loops through the control sequuence *)
-		For[k=1,k<=num,k++,
-			subnum = Floor[dt[[k]]/subdt];
-			Hctl=Total[Hctls*amps[[k,All]]];
-			(* l loops through substeps to account for drift Hamiltonian time dependence *)
-			For[l=1,l<=subnum,l++,
-				H=-I*subdt*(NVSim`Private`Hfun[T+(l-0.5)*subdt]+Hctl);
-				out=MatrixExp[H].out
-			];
-			(* Tack on the remaining time excluded from the above loop *)
-			H=-I*(dt[[k]]-subnum*subdt)*(NVSim`Private`Hfun[T+0.5*(dt[[k]]+subnum*subdt)]+Hctl);
-			out=MatrixExp[H].out;
-			T=T+dt[[k]]
-		];
-		out
-	],
-	{{NVSim`Private`Hfun[_],_Complex,2}}
-];
+Functions[data_,OptionsPattern[{TimeVector->False}]]:=
+	With[{obs=Transpose[Select[data,(#[[1]]===Functions)&,1][[1,2]]]},
+		If[OptionValue[TimeVector]&&Length[obs]>0,
+			With[{tv=TimeVector[data]},{tv,#}\[Transpose]&/@obs],
+			obs
+		]
+	]
+Functions[data_,n_,opt:OptionsPattern[{TimeVector->False}]]:=Functions[data,opt][[n]]
 
 
-DotExpTimeDepCompiledC=Compile[{{subdt,_Real},{Hctls,_Complex,3},{dt,_Real,1},{amps,_Real,2}},
-	Module[{dim,num,subnum,out,H,Hctl,T,k,l},
-		dim=Length[Hctls[[1]]];
-		num=Length[dt];
-		out=(1.0+0.0 I)*IdentityMatrix[dim];
-		H=ConstantArray[0.0 I,{dim,dim}];
-		(* In each control step the controls do not change, and so we store it in the variable Hctl *)
-		Hctl=ConstantArray[0.0 I,{dim,dim}];
-		(* T records the time at the end of the previous control step *)
-		T=0.0;
-		(* k loops through the control sequuence *)
-		For[k=1,k<=num,k++,
-			subnum = Floor[dt[[k]]/subdt];
-			Hctl=Total[Hctls*amps[[k,All]]];
-			(* l loops through substeps to account for drift Hamiltonian time dependence *)
-			For[l=1,l<=subnum,l++,
-				H=-I*subdt*(NVSim`Private`Hfun[T+(l-0.5)*subdt]+Hctl);
-				out=MatrixExp[H].out
-			];
-			(* Tack on the remaining time excluded from the above loop *)
-			H=-I*(dt[[k]]-subnum*subdt)*(NVSim`Private`Hfun[T+0.5*(dt[[k]]+subnum*subdt)]+Hctl);
-			out=MatrixExp[H].out;
-			T=T+dt[[k]]
-		];
-		out
-	],
-	{{NVSim`Private`Hfun[_],_Complex,2}},
-	CompilationTarget->"C"
-];
+Minimize
 
 
 (* ::Subsubsection::Closed:: *)
 (*Epilog*)
 
 
+Protect[PollingInterval,StepSize,IntitialState,Observables,Functions,SimulationOutput,Unitaries,States,TimeVector];
+
+
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Single Pulse Evaluator*)
-
-
-(* ::Subsection:: *)
-(*TODO*)
-
-
-(* ::Text:: *)
-(*Complete SimTrace=True options*)
-
-
-(* ::Text:: *)
-(*Add new SimTrace option: hermitian observable list*)
 
 
 (* ::Subsection:: *)
 (*Usage Declarations*)
 
 
-EvalPulse::usage = "EvalPulse[]";
+EvalPulse::usage = "EvalPulse[H,p] is the work house of the simulator. H is the Hamiltonion, either a matrix or a function accepting one real argument and returning a matrix, and p is a pulse. p must satisfy one of ShapedPulseQ, InstantaneousPulseQ, or DriftPulseQ. Type Options[SimulationOptions] to see all of the possible options.";
 
 
 (* ::Subsection:: *)
@@ -427,24 +333,57 @@ Begin["`Private`"];
 (*Shaped Pulse Evaluators*)
 
 
-EvalPulse[H_?DriftHamConstQ,p_?ShapedPulseQ,OptionsPattern[PulseOptions]]:=
-	Module[{simFunction,pulse,dt,Hctls,amps,Uj},
+EvalPulse[H_?DriftHamConstQ,p_?ShapedPulseQ,opts:OptionsPattern[SimulationOptions]]:=
+	Module[{dt,ds,\[Epsilon],upper,lower,pt,t,U,W,V,dim,n,pulse,amps,Hctls},
+		InitializePrivateVariables[opts];
 		pulse=GetPulseShapeMatrix[p[[1]]];
 		dt = pulse[[All,1]];
+		n=Length[dt];
+		dim=Length[H];
 		amps = If[Length[pulse[[1]]]>2,pulse[[All,{2,-1}]],pulse[[All,{2}]]];
 		Hctls = p[[2]];
-		Which[
-			OptionValue[SimTrace]==False,
-				simFunction=OptionValue[SimMethod]/.{Automatic->DotExpCompiled,Compiled->DotExpCompiled,CompiledC->DotExpCompiledC,Naive->DotExpNaive};									
-				Apply[simFunction,{H,Hctls,dt,amps}],
-			OptionValue[SimTrace]==True,
-				Uj=Table[MatrixExp[-I*dt[[k]]*(H+Total[Hctls*amps[[k]]])],{k,Length[dt]}];
-				FoldList[ #2.#1&,IdentityMatrix[Dimensions[H]],Uj]
+		pt=OptionValue[PollingInterval];
+		
+		If[pt===Off,
+			AppendReturnables[U=IdentityMatrix[dim],0];
+			Table[
+				U=MatrixExp[-I*dt[[k]]*(H+Total[Hctls*amps[[k]]])].U;,
+				{k,n}
+			];
+			AppendReturnables[U,Total[dt]];,
+
+			\[Epsilon]=10*$MachineEpsilon;
+			AppendReturnables[U=IdentityMatrix[dim],0];
+			t=0;
+			Table[
+				If[(lower=Ceiling[t/pt+\[Epsilon]])<=(upper=Floor[(t+dt[[k]])/pt+\[Epsilon]]),
+					V=U;
+					Table[
+						If[(m==lower)||(m==upper)||(m==lower+1),
+							ds=Min[t+dt[[k]],m pt]-Max[t,(m-1)pt];
+							W=MatrixExp[-I*ds*(H+Total[Hctls*amps[[k]]])];
+						];
+						If[Abs[t+dt[[k]]-m*pt]>\[Epsilon],
+							AppendReturnables[V=W.V,m*pt];
+						];,
+						{m,lower,upper}
+					];
+				];
+				U=MatrixExp[-I*dt[[k]]*(H+Total[Hctls*amps[[k]]])].U;
+				t=t+dt[[k]];,
+				{k,n}
+			];
+
+			AppendReturnables[U,t]
+		];
+		If[OptionValue[SequenceMode],
+			With[{\[Rho]=OptionValue[InitialState]},{If[\[Rho]===None,None,U.\[Rho].U\[ConjugateTranspose]],FormatOutputAndReturn[]}],
+			FormatOutputAndReturn[]
 		]
 	]
 
 
-EvalPulse[H_?DriftHamNonConstQ,p_?ShapedPulseQ,OptionsPattern[PulseOptions]]:=
+EvalPulse[H_?DriftHamNonConstQ,p_?ShapedPulseQ,OptionsPattern[SimulationOptions]]:=
 	Module[{simFunction,pulse,dt,d\[Tau],Hctls,amps},
 		pulse=GetPulseShapeMatrix[p[[1]]];
 		dt = pulse[[All,1]];
@@ -453,56 +392,103 @@ EvalPulse[H_?DriftHamNonConstQ,p_?ShapedPulseQ,OptionsPattern[PulseOptions]]:=
 		NVSim`Private`Hfun = H;
 		d\[Tau]=GetStepSize[H,OptionValue[StepSize]];
 		Which[
-			OptionValue[SimTrace]==False,
+			OptionValue[PollingInterval]==False,
 				simFunction=OptionValue[SimMethod]/.{Automatic->DotExpTimeDepCompiled,Compiled->DotExpTimeDepCompiled,CompiledC->DotExpTimeDepCompiledC,Naive->DotExpTimeDepNaive};
 				Apply[simFunction,{d\[Tau],Hctls,dt,amps}],
-			OptionValue[SimTrace]==True,
-				{}
+			OptionValue[PollingInterval]==True,
+				{},
+			DensityMatrixQ[OptionValue[PollingInterval]],
+				Print["This SimTrace option has not yet been implemented."];Abort[]
 		]
 	]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Instantaneous Pulse Evaluators*)
 
 
-EvalPulse[H_?DriftHamQ,p_?InstantaneousPulseQ,OptionsPattern[PulseOptions]]:=
-	With[{st=OptionValue[SimTrace]}, 
-		Which[
-			st==False,
-				p,
-			st==True,
-				{p}
+EvalPulse[H_?DriftHamQ,p_?InstantaneousPulseQ,opts:OptionsPattern[SimulationOptions]]:=
+	(
+		InitializePrivateVariables[opts];
+		AppendReturnables[IdentityMatrix[Length[p[[1]]]],0];
+		AppendReturnables[p[[1]],p[[2]]];
+		If[OptionValue[SequenceMode],
+			With[{\[Rho]=OptionValue[InitialState]},{If[\[Rho]===None,None,p[[1]].\[Rho].p[[1]]\[ConjugateTranspose]],FormatOutputAndReturn[]}],
+			FormatOutputAndReturn[]
 		]
-	]
+	)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Drift Pulse Evaluators*)
 
 
-EvalPulse[H_?DriftHamConstQ,p_?DriftPulseQ,OptionsPattern[PulseOptions]]:=
-	With[{U=MatrixExp[-I*p*H]},
+EvalPulse[H_?DriftHamConstQ,T_?DriftPulseQ,opts:OptionsPattern[SimulationOptions]]:=
+	Module[{dt,U,W},
+		InitializePrivateVariables[opts];
+		dt=OptionValue[PollingInterval];
 		Which[
-			OptionValue[SimTrace]===False,
-				U,
-			OptionValue[SimTrace]===True,
-				{U}
+			dt===Off||dt>T,
+				AppendReturnables[IdentityMatrix[Length[H]],0];
+				AppendReturnables[W=MatrixExp[-I*T*H],T];,
+			Else,
+				W=IdentityMatrix[Length[H]];
+				U=MatrixExp[-I*dt*H];
+				AppendReturnables[W,0];
+				Table[
+					W=W.U;
+					AppendReturnables[W,k*dt];,
+					{k,Floor[T/dt]}
+				];
+				dt=T-Floor[T/dt]*dt;
+				AppendReturnables[W=W.MatrixExp[-I*dt*H],T];
+		];
+		If[OptionValue[SequenceMode],
+			With[{\[Rho]=OptionValue[InitialState]},{If[\[Rho]===None,None,W.\[Rho].W\[ConjugateTranspose]],FormatOutputAndReturn[]}],
+			FormatOutputAndReturn[]
 		]
 	]
 
 
-EvalPulse[H_?DriftHamNonConstQ,p_?DriftPulseQ,OptionsPattern[PulseOptions]]:=
-	Module[{simFunction,d\[Tau],T},
-		d\[Tau]=GetStepSize[H,OptionValue[StepSize]];
-		T = p;
-		NVSim`Private`Hfun = H;
-		Which[
-			OptionValue[SimTrace]===False,
-				simFunction=OptionValue[SimMethod]/.{Automatic->TimeDepDriftCompiled,Compiled->TimeDepDriftCompiled,CompiledC->TimeDepDriftCompiledC,Naive->TimeDepDriftNaive};
-				Apply[simFunction, {T,d\[Tau],Length[H[0]]}],
-			OptionValue[SimTrace]===True,
-				{}
+EvalPulse[H_?DriftHamNonConstQ,T_?DriftPulseQ,opts:OptionsPattern[SimulationOptions]]:=
+	Module[{dt,pt,U,dim,n},
+		InitializePrivateVariables[opts];
+		dt=GetStepSize[H,OptionValue[StepSize]];
+		pt=OptionValue[PollingInterval];
+		dim=Length[H[0]];
+		If[pt===Off,
+			U=IdentityMatrix[dim];
+			AppendReturnables[U,0];
+			Table[U=MatrixExp[-I*dt*H[t-dt/2]].U;,{t,dt,T,dt}];
+			U=MatrixExp[-I*(T-Floor[T/dt]*dt)*H[T-Floor[T/dt]*dt/2]].U;
+			AppendReturnables[U,T];,
+
+			If[pt<=dt,
+				dt=pt;
+				U=IdentityMatrix[dim];
+				AppendReturnables[U,0];
+				Table[AppendReturnables[U=MatrixExp[-I*dt*H[t-dt/2]].U,t],{t,dt,T,dt}];
+				U=MatrixExp[-I*(T-Floor[T/dt]*dt)*H[T-Floor[T/dt]*dt/2]].U;
+				AppendReturnables[U,T];,
+				
+				(* In this last case, we change dt to divide pt evenly without increasing its size *)
+				dt=pt/Ceiling[pt/dt];
+				U=IdentityMatrix[dim];
+				AppendReturnables[U,0];
+				Table[
+					Table[U=MatrixExp[-I*dt*H[s-dt/2]].U;,{s,dt,pt,dt}];
+					AppendReturnables[U,t];,
+					{t,pt,T,pt}
+				];
+				(* We need to tack on two things now *)
+				Table[U=MatrixExp[-I*dt*H[s-dt/2]].U;,{s,dt,T-Floor[T/pt]*pt,dt}];
+				U=MatrixExp[-I*(T-Floor[T/dt]*dt)*H[T-Floor[T/dt]*dt/2]].U;
+				AppendReturnables[U,T];
+			];
+		];
+		If[OptionValue[SequenceMode],
+			With[{\[Rho]=OptionValue[InitialState]},{If[\[Rho]===None,None,U.\[Rho].U\[ConjugateTranspose]],FormatOutputAndReturn[]}],
+			FormatOutputAndReturn[]
 		]
 	]
 
@@ -514,7 +500,7 @@ EvalPulse[H_?DriftHamNonConstQ,p_?DriftPulseQ,OptionsPattern[PulseOptions]]:=
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Pulse Sequence Evaluator*)
 
 
@@ -522,7 +508,7 @@ End[];
 (*UsageDeclarations*)
 
 
-EvalPulseSequence::usage = "EvalPulseSequence[]";
+EvalPulseSequence::usage = "EvalPulseSequence[H,{p1,p2,p3,...}] evaluates the pulse sequence {p1,p2,p3,...} by evaluting each of EvalPulse[H,pi] where everything is properly tied together, ie., the initial state for one pulse is taken to be the final state of the previous pulse, etc. etc.";
 
 
 (* ::Subsection:: *)
@@ -532,22 +518,31 @@ EvalPulseSequence::usage = "EvalPulseSequence[]";
 Begin["`Private`"];
 
 
-EvalPulseSequence[H_?DriftHamQ,seq_?PulseSequenceQ,options:OptionsPattern[PulseOptions]]:=
-	Module[{allPulses},
-		allPulses=EvalPulse[H,#,options]&/@seq;
-		Which[
-			OptionValue[SimTrace]===False,
-				Dot@@Reverse[allPulses],
-			OptionValue[SimTrace]===True,
-				Flatten[allPulses,1]
-		]
+EvalPulseSequence[H_?DriftHamQ,seq_?PulseSequenceQ,options:OptionsPattern[SimulationOptions]]:=
+	Module[{JoinTwoFields,JoinTwoEvalPulses},
+		(* Define how to join each kind of output *)
+		JoinTwoFields[{TimeVector,f1_},{TimeVector,f2_}]:={TimeVector,Join[f1,Last[f1]+Rest[f2]]};
+		JoinTwoFields[{Unitaries,f1_},{Unitaries,f2_}]:={Unitaries,Join[f1,(#.Last[f1])&/@Rest[f2]]};
+		JoinTwoFields[{type_,f1_},{type_,f2_}]:={type,Join[f1,Rest[f2]]};
+		JoinTwoEvalPulses[p1_,p2_]:=MapThread[JoinTwoFields,{p1,p2},1];
+		
+		(* Now iteravely join each pulse. We need to deal with the slight complication of passing 
+		   the previous final state to the new pulse as InitialState. This is only possible with 
+			the SequenceMode option. *)
+		Fold[
+			With[{newEval=EvalPulse[H,#2,InitialState->#1[[1]],SequenceMode->True,options]},
+				{newEval[[1]],JoinTwoEvalPulses[#1[[2]],newEval[[2]]]}
+			]&,
+			EvalPulse[H,First[seq],SequenceMode->True,options],
+			Rest[seq]
+		][[2]]
 	]
 
 
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Sequence Drawing*)
 
 
@@ -607,7 +602,7 @@ DrawPulse[p_?ShapedPulseQ,width_,height_,offset_]:=
 DrawPulse[p_?InstantaneousPulseQ,width_,height_,offset_]:=
 	{
 		Line[{{offset,0},{offset,height},{width+offset,height},{width+offset,0}}],
-		Text[If[Length[p]<3,p//N,"Instant Pulse"],{width/2+offset,-height/6}]
+		Text[If[Length[p[[1]]]<3,p[[1]]//N,"Instant Pulse"],{width/2+offset,-height/6}]
 	}
 
 
