@@ -3,11 +3,11 @@
 BeginPackage["NVSim`", {"QuantumUtils`","Predicates`","NVHamiltonian`"}]
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Predicates*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Usage Declarations*)
 
 
@@ -38,7 +38,7 @@ FunctionListQ::usage = "FunctionListQ[lst] retruns True iff lst is a List.";
 Else=True;
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Implementations*)
 
 
@@ -94,7 +94,7 @@ End[];
 (*Options and Helper Functions*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Usage Declarations*)
 
 
@@ -102,8 +102,8 @@ SimulationOptions::usage = "SimulationOptions is a dummy function which stores t
 
 
 StepSize::usage = "StepSize is a simulation option that chooses the time discretization when the internal Hamiltonian is time dependent. Can be set to Automatic.";
-PollingInterval::usage = "PollingInterval is a simulation option that specifies the time interval at which results of the simulation should be returned. This option can also be set to StepSize or Off. The default value is Off.";
-InitialState::usage = "InitialState is a simulation option. Set this option to the initial density matrix of your system. At each PollingInterval, the state of the system will be returned. The default value is None.";
+PollingInterval::usage = "PollingInterval is a simulation option that specifies the time interval at which results of the simulation should be returned. The default value is Off.";
+InitialState::usage = "InitialState is a simulation option. Set this option to the initial density matrix of your system. The default value is None.";
 SimulationOutput::usage = "SimulationOutput is a simulation option. Set this option to be one of, or a nonempty subset of, the list {Unitaries,States,Observables,Functions}. These will be the values (and order) of the simulation output. The default value is Automatic.";
 SequenceMode::usage = "SequenceMode is a simulation option. If set to True, EvalPulse returns the final state (or None) in addition to the usual output.";
 
@@ -119,7 +119,7 @@ GetPulseShapeMatrix::usage = "GetPulseShapeMatrix[in] returns in if in is a matr
 GetStepSize::usage = "GetStepSize[H,stepsize:Automatic] returns a fifth of the biggest element of H[0] if stepsize is Automatic, and stepsize otherwise.";
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Implementations*)
 
 
@@ -178,9 +178,6 @@ funVals::usage = "A private variable to store the function values that will be r
 timVals::usage = "A private variable to store the polling times.";
 
 
-tOffset::usage = "A private variable which records how much to offset the TimeVector by.";
-
-
 returnKey::usage = "A private variable to encode which things our simulation is returning.";
 outputList::usage = "A private variable to store which things our simulation is returning.";
 
@@ -201,9 +198,6 @@ InitializePrivateVariables[OptionsPattern[SimulationOptions]]:=
 		staVar=OptionValue[InitialState];
 		obsVar=OptionValue[Observables];
 		funVar=OptionValue[Functions];
-
-		(* start with a tOffset of 0 *)
-		tOffset=0;
 
 		(* initialize the outputList *)
 		outputList=FormatSimulationOutput[OptionsPattern[SimulationOptions]];
@@ -232,21 +226,21 @@ InitializePrivateVariables[OptionsPattern[SimulationOptions]]:=
 
 		(* for each returnKey we need a different AppendReturnables *)
 		Which[
-			returnKey==1,AppendReturnables[U_,t_]:=(AppendTo[timVals,t+tOffset];AppendTo[uniVals,U];),
-			returnKey==2,AppendReturnables[U_,t_]:=(AppendTo[timVals,t+tOffset];AppendTo[staVals,U.staVar.U\[ConjugateTranspose]];),
-			returnKey==3,AppendReturnables[U_,t_]:=(AppendTo[timVals,t+tOffset];AppendTo[uniVals,U];AppendTo[staVals,U.staVar.U\[ConjugateTranspose]];),
-			returnKey==4,AppendReturnables[U_,t_]:=(AppendTo[timVals,t+tOffset];AppendTo[obsVals,Re[Tr[#.U.staVar.U\[ConjugateTranspose]]]&/@obsVar];),
-			returnKey==5,AppendReturnables[U_,t_]:=(AppendTo[timVals,t+tOffset];AppendTo[uniVals,U];AppendTo[obsVals,Re[Tr[#.U.staVar.U\[ConjugateTranspose]]]&/@obsVar];),
-			returnKey==6,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t+tOffset];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];],
-			returnKey==7,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t+tOffset];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];],
-			returnKey==8,AppendReturnables[U_,t_]:=(AppendTo[timVals,t+tOffset];AppendTo[funVals,(#[U.staVar.U\[ConjugateTranspose]])&/@funVar];),
-			returnKey==9,AppendReturnables[U_,t_]:=(AppendTo[timVals,t+tOffset];AppendTo[uniVals,U];AppendTo[funVals,(#[U.staVar.U\[ConjugateTranspose]])&/@funVar];),
-			returnKey==10,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t+tOffset];AppendTo[staVals,\[Rho]];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
-			returnKey==11,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t+tOffset];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
-			returnKey==12,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t+tOffset];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
-			returnKey==13,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t+tOffset];AppendTo[uniVals,U];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
-			returnKey==14,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t+tOffset];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
-			returnKey==15,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t+tOffset];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
+			returnKey==1,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[uniVals,U];),
+			returnKey==2,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[staVals,U.staVar.U\[ConjugateTranspose]];),
+			returnKey==3,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[staVals,U.staVar.U\[ConjugateTranspose]];),
+			returnKey==4,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[obsVals,Re[Tr[#.U.staVar.U\[ConjugateTranspose]]]&/@obsVar];),
+			returnKey==5,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[obsVals,Re[Tr[#.U.staVar.U\[ConjugateTranspose]]]&/@obsVar];),
+			returnKey==6,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];],
+			returnKey==7,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];],
+			returnKey==8,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[funVals,(#[U.staVar.U\[ConjugateTranspose]])&/@funVar];),
+			returnKey==9,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[funVals,(#[U.staVar.U\[ConjugateTranspose]])&/@funVar];),
+			returnKey==10,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[staVals,\[Rho]];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
+			returnKey==11,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
+			returnKey==12,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
+			returnKey==13,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
+			returnKey==14,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
+			returnKey==15,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
 			Else,AppendReturnables[U_,t_]:=Null
 		];
 	)
@@ -329,7 +323,7 @@ EvalPulse::usage = "EvalPulse[H,p] is the work house of the simulator. H is the 
 Begin["`Private`"];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Shaped Pulse Evaluators*)
 
 
@@ -342,7 +336,7 @@ EvalPulse[H_?DriftHamConstQ,p_?ShapedPulseQ,opts:OptionsPattern[SimulationOption
 		dim=Length[H];
 		amps = If[Length[pulse[[1]]]>2,pulse[[All,{2,-1}]],pulse[[All,{2}]]];
 		Hctls = p[[2]];
-		pt=OptionValue[PollingInterval];
+		pt=OptionValue[PollingInterval]//N;
 		
 		If[pt===Off,
 			AppendReturnables[U=IdentityMatrix[dim],0];
@@ -403,7 +397,7 @@ EvalPulse[H_?DriftHamNonConstQ,p_?ShapedPulseQ,OptionsPattern[SimulationOptions]
 	]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Instantaneous Pulse Evaluators*)
 
 
@@ -419,14 +413,14 @@ EvalPulse[H_?DriftHamQ,p_?InstantaneousPulseQ,opts:OptionsPattern[SimulationOpti
 	)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Drift Pulse Evaluators*)
 
 
 EvalPulse[H_?DriftHamConstQ,T_?DriftPulseQ,opts:OptionsPattern[SimulationOptions]]:=
 	Module[{dt,U,W},
 		InitializePrivateVariables[opts];
-		dt=OptionValue[PollingInterval];
+		dt=OptionValue[PollingInterval]//N;
 		Which[
 			dt===Off||dt>T,
 				AppendReturnables[IdentityMatrix[Length[H]],0];
@@ -454,7 +448,7 @@ EvalPulse[H_?DriftHamNonConstQ,T_?DriftPulseQ,opts:OptionsPattern[SimulationOpti
 	Module[{dt,pt,U,dim,n},
 		InitializePrivateVariables[opts];
 		dt=GetStepSize[H,OptionValue[StepSize]];
-		pt=OptionValue[PollingInterval];
+		pt=OptionValue[PollingInterval]//N;
 		dim=Length[H[0]];
 		If[pt===Off,
 			U=IdentityMatrix[dim];
@@ -500,7 +494,7 @@ EvalPulse[H_?DriftHamNonConstQ,T_?DriftPulseQ,opts:OptionsPattern[SimulationOpti
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Pulse Sequence Evaluator*)
 
 
@@ -542,7 +536,7 @@ EvalPulseSequence[H_?DriftHamQ,seq_?PulseSequenceQ,options:OptionsPattern[Simula
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Sequence Drawing*)
 
 
