@@ -17,9 +17,10 @@ PulseShapeQ::usage = "PulseShapeQ[in] returns True iff one of PulseShapeFileQ or
 
 
 ShapedPulseQ::usage = "ShapedPulse[p] returns True iff p is of the form {pulse,{Hcontrol1,Hcontrol2,..}} where the Hcontrols are the control Hamiltonians and pulse satisfies PulseShapeQ.";
-DriftPulseQ::usage = "DriftPulseQ[p] returns True iff p is a real number indicating the amount of time to evolve under the drift Hamiltonian.";
-InstantaneousPulseQ::usage = "InstantaneousPulseQ[p] returns True iff p is of the form {U,t} where U is a matrix and t is how \"long\" you want the instantaneous pulse to take.";
-PulseQ::usage = "PulseQ[p] returns True iff p satisfies at least one of the NVSim predicates ending in PulseQ (ShapedPulseQ,InstantaneousPulseQ,etc)";
+DriftPulseQ::usage = "DriftPulseQ[p] returns True iff p is a real number indicating the amount of time to evolve under the drift Hamiltonian, or if p is a Symbol.";
+UnitaryPulseQ::usage = "UnitaryPulseQ[p] returns True iff p is of the form {U,t} where U is a matrix and t is a number representing how much time you want the unitary pulse to occupy.";
+ChannelPulseQ::usage = "ChannelPulseQ[p] returns True iff p is of the form {S,t} where S satisfies ChannelQ (i.e. is a super operator) and t is a number representing how much time you want the channel to occupy.";
+PulseQ::usage = "PulseQ[p] returns True iff p satisfies at least one of the NVSim predicates ending in PulseQ (ShapedPulseQ,UnitaryPulseQ,etc)";
 
 
 PulseSequenceQ::usage = "PulseSequenceQ[seq] returns True iff seq is a list where each element satisfies PulseQ.";
@@ -60,10 +61,13 @@ ShapedPulseQ[p_]:=ListQ[p]&&(Length[p]==2)&&ListQ[p[[2]]]&&PulseShapeQ[p[[1]]]
 DriftPulseQ[p_]:=(NumericQ[p]&&p\[Element]Reals)||(Head[p]===Symbol)
 
 
-InstantaneousPulseQ[p_]:=ListQ[p]&&SquareMatrixQ[p[[1]]]&&(p[[2]]\[Element]Reals)
+UnitaryPulseQ[p_]:=ListQ[p]&&SquareMatrixQ[p[[1]]]&&(p[[2]]\[Element]Reals)
 
 
-PulseQ[p_]:=Or@@(Through[{ShapedPulseQ,DriftPulseQ,InstantaneousPulseQ}[p]])
+ChannelPulseQ[p_]:=ListQ[p]&&Superoperator`ChannelQ[p[[1]]]&&(p[[2]]\[Element]Reals)
+
+
+PulseQ[p_]:=Or@@(Through[{ShapedPulseQ,DriftPulseQ,UnitaryPulseQ,ChannelPulseQ}[p]])
 
 
 PulseSequenceQ[seq_]:=ListQ[seq]&&(And@@(PulseQ/@seq))
@@ -90,11 +94,11 @@ FunctionListQ[lst_]:=ListQ[lst]
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Options and Helper Functions*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Usage Declarations*)
 
 
@@ -196,7 +200,7 @@ CheckStepSizeVsTotalTime[dt_,T_]:=
 	]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Private Variables*)
 
 
@@ -350,7 +354,7 @@ End[];
 (*Usage Declarations*)
 
 
-EvalPulse::usage = "EvalPulse[H,p] is the work house of the simulator. H is the Hamiltonion, either a matrix or a function accepting one real argument and returning a matrix, and p is a pulse. p must satisfy one of ShapedPulseQ, InstantaneousPulseQ, or DriftPulseQ. Type Options[SimulationOptions] to see all of the possible options.";
+EvalPulse::usage = "EvalPulse[H,p] is the work house of the simulator. H is the Hamiltonion, either a matrix or a function accepting one real argument and returning a matrix, and p is a pulse. p must satisfy one of ShapedPulseQ, UnitaryPulseQ, or DriftPulseQ. Type Options[SimulationOptions] to see all of the possible options.";
 
 
 (* ::Subsection:: *)
@@ -360,7 +364,7 @@ EvalPulse::usage = "EvalPulse[H,p] is the work house of the simulator. H is the 
 Begin["`Private`"];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Shaped Pulse Evaluators*)
 
 
@@ -477,7 +481,7 @@ EvalPulse[H_?DriftHamNonConstQ,p_?ShapedPulseQ,opts:OptionsPattern[SimulationOpt
 (*Instantaneous Pulse Evaluators*)
 
 
-EvalPulse[H_?DriftHamQ,p_?InstantaneousPulseQ,opts:OptionsPattern[SimulationOptions]]:=
+EvalPulse[H_?DriftHamQ,p_?UnitaryPulseQ,opts:OptionsPattern[SimulationOptions]]:=
 	(
 		InitializePrivateVariables[opts];
 		AppendReturnables[IdentityMatrix[Length[p[[1]]]],0];
@@ -489,7 +493,39 @@ EvalPulse[H_?DriftHamQ,p_?InstantaneousPulseQ,opts:OptionsPattern[SimulationOpti
 	)
 
 
-(* ::Subsubsection:: *)
+EvalPulse[H_?DriftHamQ,p_?ChannelPulseQ,opts:OptionsPattern[SimulationOptions]]:=
+	Module[{\[Rho]out,dim},
+		InitializePrivateVariables[opts];
+		
+		If[MemberQ[outputList,Unitaries],
+			Print["Error: You cannot perform a ChannelPulse and ask for Unitaries as an output. Specify an InitialState and/or remove Unitaries from SimulationOptions."];
+			Abort[];
+		];
+	
+		dim=If[DriftHamConstQ[H],Length[H],Length[H[0.0]]];
+		
+		AppendReturnables[IdentityMatrix[dim],0];
+		
+		(* We cannot call AppendReturnables here because no unitary actually exists. *)
+		(* Since the above If statement ensures Unitaries is not an output, and implicitly that InitialState has been entered, 
+		   we append necessary information manually without risk. *)
+		(* This is only kind of a hack *)
+		
+		AppendTo[timVals,p[[2]]];
+		\[Rho]out=(p[[1]])[OptionValue[InitialState]];
+		If[MemberQ[outputList,States],AppendTo[staVals,\[Rho]out];];
+		If[MemberQ[outputList,Observables],AppendTo[obsVals,Re[Tr[#.\[Rho]out]]&/@obsVar];];
+		If[MemberQ[outputList,Functions],AppendTo[funVals,(#[\[Rho]out])&/@funVar];];
+		
+
+		If[OptionValue[SequenceMode],
+			{\[Rho]out,FormatOutputAndReturn[]},
+			FormatOutputAndReturn[]
+		]
+	]
+
+
+(* ::Subsubsection::Closed:: *)
 (*Drift Pulse Evaluators*)
 
 
@@ -571,7 +607,7 @@ EvalPulse[H_?DriftHamNonConstQ,T_?DriftPulseQ,opts:OptionsPattern[SimulationOpti
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Pulse Sequence Evaluator*)
 
 
@@ -672,7 +708,7 @@ DrawPulse[p_?ShapedPulseQ,width_,height_,offset_]:=
 	]
 
 
-DrawPulse[p_?InstantaneousPulseQ,width_,height_,offset_]:=
+DrawPulse[p_?UnitaryPulseQ,width_,height_,offset_]:=
 	{
 		Line[{{offset,0},{offset,height},{width+offset,height},{width+offset,0}}],
 		Text[If[Length[p[[1]]]<3,p[[1]]//N,"Instant Pulse"],{width/2+offset,-height/6}]
@@ -693,7 +729,7 @@ DrawPulse[p_?DriftPulseQ,width_,height_,offset_]:=
 DrawSequence[seq_?PulseSequenceQ]:=
 	Module[{shapedFrac=0.3,instFrac=0.07,driftFrac=0.63,width=500,height=100,widths},
 		widths=shapedFrac*(ShapedPulseQ/@seq)/.{True->1,False->0};
-		widths=widths+instFrac*(InstantaneousPulseQ/@seq)/.{True->1,False->0};
+		widths=widths+instFrac*(UnitaryPulseQ/@seq)/.{True->1,False->0};
 		widths=widths+driftFrac*(DriftPulseQ/@seq)/.{True->1,False->0};
 		widths=width*widths/Total[widths];
 		Graphics[{
