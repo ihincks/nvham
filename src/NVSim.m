@@ -7,7 +7,7 @@ BeginPackage["NVSim`", {"QuantumUtils`","Predicates`","NVHamiltonian`"}]
 (*Predicates*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Usage Declarations*)
 
 
@@ -38,7 +38,7 @@ FunctionListQ::usage = "FunctionListQ[lst] retruns True iff lst is a List.";
 Else=True;
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Implementations*)
 
 
@@ -57,7 +57,7 @@ PulseShapeQ[in_]:=PulseShapeFileQ[in]||PulseShapeMatrixQ[in]
 ShapedPulseQ[p_]:=ListQ[p]&&(Length[p]==2)&&ListQ[p[[2]]]&&PulseShapeQ[p[[1]]]
 
 
-DriftPulseQ[p_]:=NumericQ[p]&&p\[Element]Reals
+DriftPulseQ[p_]:=(NumericQ[p]&&p\[Element]Reals)||(Head[p]===Symbol)
 
 
 InstantaneousPulseQ[p_]:=ListQ[p]&&SquareMatrixQ[p[[1]]]&&(p[[2]]\[Element]Reals)
@@ -90,7 +90,7 @@ FunctionListQ[lst_]:=ListQ[lst]
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Options and Helper Functions*)
 
 
@@ -106,6 +106,7 @@ PollingInterval::usage = "PollingInterval is a simulation option that specifies 
 InitialState::usage = "InitialState is a simulation option. Set this option to the initial density matrix of your system. The default value is None.";
 SimulationOutput::usage = "SimulationOutput is a simulation option. Set this option to be one of, or a nonempty subset of, the list {Unitaries,States,Observables,Functions}. These will be the values (and order) of the simulation output. The default value is Automatic.";
 SequenceMode::usage = "SequenceMode is a simulation option. If set to True, EvalPulse returns the final state (or None) in addition to the usual output.";
+NumericEvaluation::usage = "NumericEvaluation is a simulation option. If set to True, N is called on all times inside MatrixExp, and if set to False, N is not called. The default value is True.";
 
 
 TimeVector::usage = "TimeVector is a function Head used in a simulation's output. TimeVector[data] can also be used to extract the TimeVector from data.";
@@ -115,8 +116,16 @@ Functions::usage = "Functions is three things: (1) simulation option which can b
 Observables::usage = "Observables is three things: (1) simulation option which can be set to a list of observables (list of hermitian matrices), (2) an element of the SimulationOutput list, and (3) a function Observables[data] (Observables[data,n]) which extracts all observable values (n'th observable values) from data, where data is in the format that EvalPulse outputs.";
 
 
+FormatOutputAndReturn::usage="FormatOutputAndReturn[] returns all privately stored simulation data.";
+
+
 GetPulseShapeMatrix::usage = "GetPulseShapeMatrix[in] returns in if in is a matrix, but if in is a file name, returns the contents of that file as a matrix.";
 GetStepSize::usage = "GetStepSize[H,stepsize:Automatic] returns a fifth of the biggest element of H[0] if stepsize is Automatic, and stepsize otherwise.";
+GetPollingInterval::usage = "GetPollingInterval[pollingInterval,T] returns T if pollingInterval is Off, and pollingInterval otherwise.";
+
+
+DivideEvenly::usage = "DivideEvenly[dt,T] returns the largest number no bigger than dt such that T/dt is an integer.";
+MakeMultipleOf::usage = "MakeMultipleOf[dt,T] returns the largest integer multiple of dt smaller than T. (And if T<dt, just returns dt.)";
 
 
 (* ::Subsection:: *)
@@ -126,7 +135,7 @@ GetStepSize::usage = "GetStepSize[H,stepsize:Automatic] returns a fifth of the b
 Begin["`Private`"];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Options and Input Handling*)
 
 
@@ -137,7 +146,8 @@ Options[SimulationOptions]={
 	Observables->None,
 	Functions->None,
 	SimulationOutput->Automatic,
-	SequenceMode->False
+	SequenceMode->False,
+	NumericEvaluation->True
 };
 
 
@@ -153,16 +163,40 @@ GetStepSize[H_,stepsize_:Automatic]:=
 	If[stepsize===Automatic,
 		Module[{t,max},
 			max=Sqrt[NMaximize[Max[Abs[H[t]]^2],t][[1]]];
-			1/(10*max)
+			(* we round down to one significant digit *)
+			With[{m=10^Floor[Log10[#]]},Round[#/m]m]&[1/(10*max)]
 		],
 		stepsize
 	]
 
 
-FormatOutputAndReturn::usage="FormatOutputAndReturn[] returns all privately stored simulation data.";
+GetPollingInterval[pollInt_,T_]:=If[pollInt===Off,T,Min[pollInt,T]]
+GetPollingInterval[pollInt_,T_,dt_]:=
+	If[pollInt===Off,
+		T,
+		Min[T,MakeMultipleOf[dt,pollInt]]
+	]
 
 
-(* ::Subsubsection:: *)
+DivideEvenly[dt_,T_]:=T/Ceiling[T/dt]
+
+
+MakeMultipleOf[dt_,T_]:=Max[dt,dt*Floor[T/dt]]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Warnings*)
+
+
+CheckStepSizeVsTotalTime[dt_,T_]:=
+	If[dt>T,
+		Print["Warning: Your step size dt is bigger than your total evolution time T.\n Setting dt=T..."];
+		T,
+		dt
+	]
+
+
+(* ::Subsubsection::Closed:: *)
 (*Private Variables*)
 
 
@@ -180,6 +214,9 @@ timVals::usage = "A private variable to store the polling times.";
 
 returnKey::usage = "A private variable to encode which things our simulation is returning.";
 outputList::usage = "A private variable to store which things our simulation is returning.";
+
+
+NN::usage = "NN is set to N if NumericEvaluation is True, and Identity otherwise.";
 
 
 AppendReturnables::usage = "A private function for appending new data to the already collected data.";
@@ -217,6 +254,9 @@ InitializePrivateVariables[OptionsPattern[SimulationOptions]]:=
 		];
 		AppendTo[outputList,TimeVector];
 
+		(* decide which function NN is set to *)
+		NN=If[OptionValue[NumericEvaluation],N,Identity];
+
 		(* initialize the returnKey *)
 		returnKey=0;
 		If[MemberQ[outputList,Unitaries],returnKey+=2^0];
@@ -246,7 +286,7 @@ InitializePrivateVariables[OptionsPattern[SimulationOptions]]:=
 	)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Output Formatting*)
 
 
@@ -292,14 +332,11 @@ Functions[data_,OptionsPattern[{TimeVector->False}]]:=
 Functions[data_,n_,opt:OptionsPattern[{TimeVector->False}]]:=Functions[data,opt][[n]]
 
 
-Minimize
-
-
 (* ::Subsubsection::Closed:: *)
 (*Epilog*)
 
 
-Protect[PollingInterval,StepSize,IntitialState,Observables,Functions,SimulationOutput,Unitaries,States,TimeVector];
+Protect[PollingInterval,StepSize,IntitialState,NumericEvaluation,Observables,Functions,SimulationOutput,Unitaries,States,TimeVector];
 
 
 End[];
@@ -328,76 +365,115 @@ Begin["`Private`"];
 
 
 EvalPulse[H_?DriftHamConstQ,p_?ShapedPulseQ,opts:OptionsPattern[SimulationOptions]]:=
-	Module[{dt,ds,\[Epsilon],upper,lower,pt,t,U,W,V,dim,n,pulse,amps,Hctls},
+	Module[{dt,ds,pt,t,T,dtAcc,pollTimes,pollQuery,ampQuery,m,U,dim,amps,Hctls},
 		InitializePrivateVariables[opts];
-		pulse=GetPulseShapeMatrix[p[[1]]];
-		dt = pulse[[All,1]];
-		n=Length[dt];
-		dim=Length[H];
-		amps = If[Length[pulse[[1]]]>2,pulse[[All,{2,-1}]],pulse[[All,{2}]]];
-		Hctls = p[[2]];
-		pt=OptionValue[PollingInterval]//N;
-		
-		If[pt===Off,
-			AppendReturnables[U=IdentityMatrix[dim],0];
-			Table[
-				U=MatrixExp[-I*dt[[k]]*(H+Total[Hctls*amps[[k]]])].U;,
-				{k,n}
-			];
-			AppendReturnables[U,Total[dt]];,
 
-			\[Epsilon]=10*$MachineEpsilon;
-			AppendReturnables[U=IdentityMatrix[dim],0];
-			t=0;
-			Table[
-				If[(lower=Ceiling[t/pt+\[Epsilon]])<=(upper=Floor[(t+dt[[k]])/pt+\[Epsilon]]),
-					V=U;
-					Table[
-						If[(m==lower)||(m==upper)||(m==lower+1),
-							ds=Min[t+dt[[k]],m pt]-Max[t,(m-1)pt];
-							W=MatrixExp[-I*ds*(H+Total[Hctls*amps[[k]]])];
-						];
-						If[Abs[t+dt[[k]]-m*pt]>\[Epsilon],
-							AppendReturnables[V=W.V,m*pt];
-						];,
-						{m,lower,upper}
-					];
-				];
-				U=MatrixExp[-I*dt[[k]]*(H+Total[Hctls*amps[[k]]])].U;
-				t=t+dt[[k]];,
-				{k,n}
-			];
-
-			AppendReturnables[U,t]
+		With[{pulse=GetPulseShapeMatrix[p[[1]]]},
+			amps = NN[If[Length[pulse[[1]]]>2,pulse[[All,{2,-1}]],pulse[[All,{2}]]]];
+			dt = pulse[[All,1]];
 		];
+		Hctls = p[[2]];
+		
+		(* Make a list of the times at which the pulse amplitude changes *)
+		dtAcc=Accumulate[dt];
+		T=Last@dtAcc;
+		
+		pt=GetPollingInterval[OptionValue[PollingInterval],T];
+		dim=Length[H];
+		(* Make a list of the times we need to poll at *)
+		pollTimes=Table[s,{s,pt,T,pt}];
+		(* For each of the following times, we need to do a MatrixExp *)
+		t=Union[pollTimes,dtAcc,SameTest->(#1==#2&)];
+		(* For all the times in t, decide which ones are polling times *)
+		pollQuery=(#<=Length[pollTimes]&)/@Ordering@DeleteDuplicates[Join[pollTimes,dtAcc],#1==#2&];
+		pollQuery[[-1]]=True;
+		(* For all the times in t, decide which ones mark a change in pulse amplitudes *)
+		ampQuery=(#<=Length[dtAcc]&)/@Ordering@DeleteDuplicates[Join[dtAcc,pollTimes],#1==#2&];
+
+		(* as usual, start with the identity *)
+		AppendReturnables[U=IdentityMatrix[dim],0];
+
+		(* m records the current amplitude index *)
+		m=1;
+		(* loop through all times in t *)
+		Table[
+			ds=t[[k]]-If[k==1,0,t[[k-1]]];
+			U=MatrixExp[-I*NN[ds]*(H+Total[Hctls*amps[[m]]])].U;
+			(* only append the current unitary if we are at a polling time *)
+			If[pollQuery[[k]],AppendReturnables[U,t[[k]]];];
+			(* only increase m if we are at an amplitude change*)
+			If[ampQuery[[k]]&&m<Length[dt],m++;];,
+			{k,Length[t]}
+		];
+
 		If[OptionValue[SequenceMode],
-			With[{\[Rho]=OptionValue[InitialState]},{If[\[Rho]===None,None,U.\[Rho].U\[ConjugateTranspose]],FormatOutputAndReturn[]}],
+			{If[OptionValue[InitialState]===None,None,U.OptionValue[InitialState].U\[ConjugateTranspose]],FormatOutputAndReturn[]},
 			FormatOutputAndReturn[]
 		]
 	]
 
 
-EvalPulse[H_?DriftHamNonConstQ,p_?ShapedPulseQ,OptionsPattern[SimulationOptions]]:=
-	Module[{simFunction,pulse,dt,d\[Tau],Hctls,amps},
-		pulse=GetPulseShapeMatrix[p[[1]]];
-		dt = pulse[[All,1]];
-		amps = If[Length[pulse[[1]]]>2,pulse[[All,{2,-1}]],pulse[[All,{2}]]];
+EvalPulse[H_?DriftHamNonConstQ,p_?ShapedPulseQ,opts:OptionsPattern[SimulationOptions]]:=
+	Module[{dt,ds,pt,t,T,dtAcc,tprev,tcurr,pollTimes,pollQuery,ampQuery,U,dim,m,n,amps,Hctls,nSteps},
+		InitializePrivateVariables[opts];
+
+		With[{pulse=GetPulseShapeMatrix[p[[1]]]},
+			amps = NN[If[Length[pulse[[1]]]>2,pulse[[All,{2,-1}]],pulse[[All,{2}]]]];
+			dt = pulse[[All,1]];
+		];
 		Hctls = p[[2]];
-		NVSim`Private`Hfun = H;
-		d\[Tau]=GetStepSize[H,OptionValue[StepSize]];
-		Which[
-			OptionValue[PollingInterval]==False,
-				simFunction=OptionValue[SimMethod]/.{Automatic->DotExpTimeDepCompiled,Compiled->DotExpTimeDepCompiled,CompiledC->DotExpTimeDepCompiledC,Naive->DotExpTimeDepNaive};
-				Apply[simFunction,{d\[Tau],Hctls,dt,amps}],
-			OptionValue[PollingInterval]==True,
-				{},
-			DensityMatrixQ[OptionValue[PollingInterval]],
-				Print["This SimTrace option has not yet been implemented."];Abort[]
+		nSteps=Length[dt];
+
+		(* Make a list of the times at which the pulse amplitude changes *)
+		dtAcc=Accumulate[dt];
+		T=Last@dtAcc;
+
+		dim=Length[H[0.0]];
+		ds=GetStepSize[H,OptionValue[StepSize]];
+		pt=GetPollingInterval[OptionValue[PollingInterval],T,ds];
+
+		(* Make a list of the times we need to poll at *)
+		pollTimes=Table[s,{s,pt,T,pt}];
+		(* At the following times we either need to switch amplitudes or do a poll *)
+		t=Union[pollTimes,dtAcc,SameTest->(#1==#2&)];
+		(* For all the times in t, decide which ones are polling times *)
+		pollQuery=(#<=Length[pollTimes]&)/@Ordering@DeleteDuplicates[Join[pollTimes,dtAcc],#1==#2&];
+		pollQuery[[-1]]=True;
+		(* For all the times in t, decide which ones mark a change in pulse amplitudes *)
+		ampQuery=(#<=Length[dtAcc]&)/@Ordering@DeleteDuplicates[Join[dtAcc,pollTimes],#1==#2&];
+
+		(* as usual, start with the identity *)
+		AppendReturnables[U=IdentityMatrix[dim],0];
+
+		(* m records the current amplitude index *)
+		m=1;
+		(* loop through all times in t *)
+		Table[
+			tcurr=t[[k]];
+			tprev=If[k==1,0,t[[k-1]]];
+			n=Floor[(tcurr-tprev)/ds];
+			Table[
+				U=MatrixExp[-I*NN[ds]*(H[NN[tprev+(n-0.5)*ds]]+Total[Hctls*amps[[m]]])].U;,
+				{l,n}
+			];
+			(* Change dt to be the leftover bit, and if its greater than 0, evolve for it *)
+			dt=tcurr-tprev-n*ds;
+			If[dt>0,U=MatrixExp[-I*NN[dt]*(H[NN[tcurr-dt/2]]+Total[Hctls*amps[[m]]])].U;];
+			(* only append the current unitary if we are at a polling time *)
+			If[pollQuery[[k]],AppendReturnables[U,t[[k]]];];
+			(* only increase m if we are at an amplitude change*)
+			If[ampQuery[[k]]&&m<nSteps,m++;];,
+			{k,Length[t]}
+		];
+
+		If[OptionValue[SequenceMode],
+			{If[OptionValue[InitialState]===None,None,U.OptionValue[InitialState].U\[ConjugateTranspose]],FormatOutputAndReturn[]},
+			FormatOutputAndReturn[]
 		]
 	]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Instantaneous Pulse Evaluators*)
 
 
@@ -413,32 +489,29 @@ EvalPulse[H_?DriftHamQ,p_?InstantaneousPulseQ,opts:OptionsPattern[SimulationOpti
 	)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Drift Pulse Evaluators*)
 
 
 EvalPulse[H_?DriftHamConstQ,T_?DriftPulseQ,opts:OptionsPattern[SimulationOptions]]:=
 	Module[{dt,U,W},
 		InitializePrivateVariables[opts];
-		dt=OptionValue[PollingInterval]//N;
-		Which[
-			dt===Off||dt>T,
-				AppendReturnables[IdentityMatrix[Length[H]],0];
-				AppendReturnables[W=MatrixExp[-I*T*H],T];,
-			Else,
-				W=IdentityMatrix[Length[H]];
-				U=MatrixExp[-I*dt*H];
-				AppendReturnables[W,0];
-				Table[
-					W=W.U;
-					AppendReturnables[W,k*dt];,
-					{k,Floor[T/dt]}
-				];
-				dt=T-Floor[T/dt]*dt;
-				AppendReturnables[W=W.MatrixExp[-I*dt*H],T];
+
+		dt=GetPollingInterval[OptionValue[PollingInterval],T];
+		(* reduce  the size of dt so that it divides T into an integer number of pieces *)
+		dt=DivideEvenly[dt,T];
+
+		(* we only need to exponentiate for a time dt, and every other step is a multiple of this *)
+		U=MatrixExp[-I*NN[dt]*H];
+		AppendReturnables[W=IdentityMatrix[Length[H]],0];
+		Table[
+			W=W.U;
+			AppendReturnables[W,k*dt];,
+			{k,Round[T/dt]}
 		];
+
 		If[OptionValue[SequenceMode],
-			With[{\[Rho]=OptionValue[InitialState]},{If[\[Rho]===None,None,W.\[Rho].W\[ConjugateTranspose]],FormatOutputAndReturn[]}],
+			{If[OptionValue[InitialState]===None,None,W.OptionValue[InitialState].W\[ConjugateTranspose]],FormatOutputAndReturn[]},
 			FormatOutputAndReturn[]
 		]
 	]
@@ -447,41 +520,45 @@ EvalPulse[H_?DriftHamConstQ,T_?DriftPulseQ,opts:OptionsPattern[SimulationOptions
 EvalPulse[H_?DriftHamNonConstQ,T_?DriftPulseQ,opts:OptionsPattern[SimulationOptions]]:=
 	Module[{dt,pt,U,dim,n},
 		InitializePrivateVariables[opts];
-		dt=GetStepSize[H,OptionValue[StepSize]];
-		pt=OptionValue[PollingInterval]//N;
-		dim=Length[H[0]];
-		If[pt===Off,
-			U=IdentityMatrix[dim];
-			AppendReturnables[U,0];
-			Table[U=MatrixExp[-I*dt*H[t-dt/2]].U;,{t,dt,T,dt}];
-			U=MatrixExp[-I*(T-Floor[T/dt]*dt)*H[T-Floor[T/dt]*dt/2]].U;
-			AppendReturnables[U,T];,
 
-			If[pt<=dt,
-				dt=pt;
-				U=IdentityMatrix[dim];
-				AppendReturnables[U,0];
-				Table[AppendReturnables[U=MatrixExp[-I*dt*H[t-dt/2]].U,t],{t,dt,T,dt}];
-				U=MatrixExp[-I*(T-Floor[T/dt]*dt)*H[T-Floor[T/dt]*dt/2]].U;
-				AppendReturnables[U,T];,
-				
-				(* In this last case, we change dt to divide pt evenly without increasing its size *)
-				dt=pt/Ceiling[pt/dt];
-				U=IdentityMatrix[dim];
-				AppendReturnables[U,0];
-				Table[
-					Table[U=MatrixExp[-I*dt*H[s-dt/2]].U;,{s,dt,pt,dt}];
-					AppendReturnables[U,t];,
-					{t,pt,T,pt}
-				];
-				(* We need to tack on two things now *)
-				Table[U=MatrixExp[-I*dt*H[s-dt/2]].U;,{s,dt,T-Floor[T/pt]*pt,dt}];
-				U=MatrixExp[-I*(T-Floor[T/dt]*dt)*H[T-Floor[T/dt]*dt/2]].U;
-				AppendReturnables[U,T];
+		dt=GetStepSize[H,OptionValue[StepSize]];
+		dt=CheckStepSizeVsTotalTime[dt,T];
+		dim=Length[H[0]];
+
+		If[OptionValue[PollingInterval]===Off,
+			AppendReturnables[U=IdentityMatrix[dim],0];
+			Table[
+				U=MatrixExp[-I*NN[dt]*H[NN[t-dt/2]]].U;,
+				{t,dt,T,dt}
 			];
+			(* tack on the remaining <dt *)
+			dt=T-Floor[T/dt]*dt;
+			U=MatrixExp[-I*NN[dt]*H[NN[T-dt/2]]].U;
+			AppendReturnables[U,T];
+			,
+
+			(* pt is forced to be an integer multiple of dt*)
+			pt=GetPollingInterval[OptionValue[PollingInterval],T,dt];
+
+			(* now we need to loop through multiples of pt *)
+			AppendReturnables[U=IdentityMatrix[dim],0];
+			Table[
+				(* in the following loop we know dt evenly divides pt *)
+				Table[U=MatrixExp[-I*NN[dt]*H[NN[s-dt/2]]].U;,{s,dt,pt,dt}];
+				AppendReturnables[U,t];,
+				{t,pt,T,pt}
+			];
+			(* We cannot expect either dt or pt to divide T evenly, so we need to tack on two more things *)
+			(* first tack on all dts which fit in the last <pt*)
+			Table[U=MatrixExp[-I*NN[dt]*H[NN[s-dt/2]]].U;,{s,Floor[T/pt]*pt+dt,T,dt}];
+			(* then tack on the remaining <dt *)
+			dt=T-Floor[T/dt]*dt;
+			U=MatrixExp[-I*NN[dt]*H[NN[T-dt/2]]].U;
+			AppendReturnables[U,T];
 		];
+
 		If[OptionValue[SequenceMode],
-			With[{\[Rho]=OptionValue[InitialState]},{If[\[Rho]===None,None,U.\[Rho].U\[ConjugateTranspose]],FormatOutputAndReturn[]}],
+			{If[OptionValue[InitialState]===None,None,U.OptionValue[InitialState].U\[ConjugateTranspose]],FormatOutputAndReturn[]},
 			FormatOutputAndReturn[]
 		]
 	]
@@ -494,7 +571,7 @@ EvalPulse[H_?DriftHamNonConstQ,T_?DriftPulseQ,opts:OptionsPattern[SimulationOpti
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Pulse Sequence Evaluator*)
 
 
@@ -518,6 +595,8 @@ EvalPulseSequence[H_?DriftHamQ,seq_?PulseSequenceQ,options:OptionsPattern[Simula
 		JoinTwoFields[{TimeVector,f1_},{TimeVector,f2_}]:={TimeVector,Join[f1,Last[f1]+Rest[f2]]};
 		JoinTwoFields[{Unitaries,f1_},{Unitaries,f2_}]:={Unitaries,Join[f1,(#.Last[f1])&/@Rest[f2]]};
 		JoinTwoFields[{type_,f1_},{type_,f2_}]:={type,Join[f1,Rest[f2]]};
+
+		(* Define how to join two outputs from separate EvalPulse calls*)
 		JoinTwoEvalPulses[p1_,p2_]:=MapThread[JoinTwoFields,{p1,p2},1];
 		
 		(* Now iteravely join each pulse. We need to deal with the slight complication of passing 
