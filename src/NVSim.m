@@ -3,7 +3,7 @@
 BeginPackage["NVSim`", {"QuantumUtils`","Predicates`","NVHamiltonian`"}]
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Predicates*)
 
 
@@ -94,7 +94,7 @@ FunctionListQ[lst_]:=ListQ[lst]
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Options and Helper Functions*)
 
 
@@ -200,7 +200,7 @@ CheckStepSizeVsTotalTime[dt_,T_]:=
 	]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Private Variables*)
 
 
@@ -364,7 +364,7 @@ EvalPulse::usage = "EvalPulse[H,p] is the work house of the simulator. H is the 
 Begin["`Private`"];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Shaped Pulse Evaluators*)
 
 
@@ -457,14 +457,14 @@ EvalPulse[H_?DriftHamNonConstQ,p_?ShapedPulseQ,opts:OptionsPattern[SimulationOpt
 			tprev=If[k==1,0,t[[k-1]]];
 			n=Floor[(tcurr-tprev)/ds];
 			Table[
-				U=MatrixExp[-I*NN[ds]*(H[NN[tprev+(n-0.5)*ds]]+Total[Hctls*amps[[m]]])].U;,
+				U=MatrixExp[-I*NN[ds]*(H[NN[tprev+(l-0.5)*ds]]+Total[Hctls*amps[[m]]])].U;,
 				{l,n}
 			];
 			(* Change dt to be the leftover bit, and if its greater than 0, evolve for it *)
 			dt=tcurr-tprev-n*ds;
 			If[dt>0,U=MatrixExp[-I*NN[dt]*(H[NN[tcurr-dt/2]]+Total[Hctls*amps[[m]]])].U;];
 			(* only append the current unitary if we are at a polling time *)
-			If[pollQuery[[k]],AppendReturnables[U,t[[k]]];];
+			If[pollQuery[[k]],AppendReturnables[U,tcurr];];
 			(* only increase m if we are at an amplitude change*)
 			If[ampQuery[[k]]&&m<nSteps,m++;];,
 			{k,Length[t]}
