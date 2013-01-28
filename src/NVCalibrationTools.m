@@ -7,7 +7,7 @@ BeginPackage["NVCalibrationTools`",{"VectorAnalysis`","NVHamiltonian`"}]
 (*Predicates*)
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Four NV Magnetometry*)
 
 
@@ -336,7 +336,7 @@ LoadField[data_,method_]:=
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Magnet Calibration From Position Array of Splitting Data	*)
 
 
@@ -640,7 +640,7 @@ PredictSplitting[{r1_,r2_,r3_},nvOrientation_,solution_]:=PredictSplitting[{r1,r
 
 
 PredictNVPASVector[{r1_,r2_,r3_},nvOrientation_,{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},m_]:=
-	RotateBtoNVPAS[CoordinatesFromCartesian[Field[MagToLab[{z1,z2,z3}-{r1,r2,r3}],m],Spherical],{\[Alpha]1,\[Alpha]2,\[Alpha]3},8,Spherical]
+	RotateBtoNVPAS[CoordinatesFromCartesian[Field[MagToLab[{z1,z2,z3}-{r1,r2,r3}],m],Spherical],{\[Alpha]1,\[Alpha]2,\[Alpha]3},nvOrientation,Spherical]
 PredictNVPASVector[{r1_,r2_,r3_},nvOrientation_,solution_]:=PredictNVPASVector[{r1,r2,r3},nvOrientation,Sequence@@solution]
 
 
