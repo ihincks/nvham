@@ -3,7 +3,7 @@
 BeginPackage["NVSim`", {"QuantumUtils`","Predicates`","NVHamiltonian`"}]
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Predicates*)
 
 
@@ -94,7 +94,7 @@ FunctionListQ[lst_]:=ListQ[lst]
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Options and Helper Functions*)
 
 
@@ -139,7 +139,7 @@ MakeMultipleOf::usage = "MakeMultipleOf[dt,T] returns the largest integer multip
 Begin["`Private`"];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Options and Input Handling*)
 
 
@@ -188,7 +188,7 @@ DivideEvenly[dt_,T_]:=T/Ceiling[T/dt]
 MakeMultipleOf[dt_,T_]:=Max[dt,dt*Floor[T/dt]]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Warnings*)
 
 
@@ -200,13 +200,14 @@ CheckStepSizeVsTotalTime[dt_,T_]:=
 	]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Private Variables*)
 
 
 staVar::usage = "A private variable to store the initial state.";
 obsVar::usage = "A private variable to store the observables.";
 funVar::usage = "A private variable to store the functions.";
+funAct::usage = "A private variable which performs the functions in funVar on either the states or unitaries.";
 
 
 uniVals::usage = "A private variable to store the unitaries that will be returned.";
@@ -244,12 +245,11 @@ InitializePrivateVariables[OptionsPattern[SimulationOptions]]:=
 		outputList=FormatSimulationOutput[OptionsPattern[SimulationOptions]];
 		If[OptionValue[SimulationOutput]===Automatic,
 			If[DensityMatrixQ[staVar],
-				outputList={};
-				If[ObservableListQ[obsVar],AppendTo[outputList,Observables]];
-				If[FunctionListQ[funVar],AppendTo[outputList,Functions]];
-				If[Length[outputList]===0,outputList={States}];,
-				outputList={Unitaries};
-			];,
+					outputList=If[ObservableListQ[obsVar],{Observables},{}];,
+					outputList=If[FunctionListQ[funVar],{},{Unitaries}];
+			];
+			If[FunctionListQ[funVar],AppendTo[outputList,Functions]];
+			If[Length[outputList]===0,outputList={States}];,
 			outputList=OptionValue[SimulationOutput];
 			If[Not[ListQ[outputList]],outputList={outputList}];
 			If[Not[DensityMatrixQ[staVar]]&&(MemberQ[outputList,States]||MemberQ[outputList,Observables]||MemberQ[outputList,Functions]),
@@ -257,6 +257,12 @@ InitializePrivateVariables[OptionsPattern[SimulationOptions]]:=
 			];
 		];
 		AppendTo[outputList,TimeVector];
+
+		(* The functions can act either on the states or the unitaries. The behaviour is to act on states if InitialState exists, and on unitaries if not. *)
+		If[DensityMatrixQ[staVar],
+			funAct[U_]:=(#[U.staVar.U\[ConjugateTranspose]])&/@funVar;,
+			funAct[U_]:=(#[U])&/@funVar;			
+		];
 
 		(* decide which function NN is set to *)
 		NN=If[OptionValue[NumericEvaluation],N,Identity];
@@ -277,14 +283,14 @@ InitializePrivateVariables[OptionsPattern[SimulationOptions]]:=
 			returnKey==5,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[obsVals,Re[Tr[#.U.staVar.U\[ConjugateTranspose]]]&/@obsVar];),
 			returnKey==6,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];],
 			returnKey==7,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];],
-			returnKey==8,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[funVals,(#[U.staVar.U\[ConjugateTranspose]])&/@funVar];),
-			returnKey==9,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[funVals,(#[U.staVar.U\[ConjugateTranspose]])&/@funVar];),
-			returnKey==10,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[staVals,\[Rho]];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
-			returnKey==11,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
-			returnKey==12,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
-			returnKey==13,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
-			returnKey==14,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
-			returnKey==15,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,(#[\[Rho]])&/@funVar];],
+			returnKey==8,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[funVals,funAct[U]];),
+			returnKey==9,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[funVals,funAct[U]];),
+			returnKey==10,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[staVals,\[Rho]];AppendTo[funVals,funAct[U]]],
+			returnKey==11,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[funVals,funAct[U]]],
+			returnKey==12,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,funAct[U]]],
+			returnKey==13,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,funAct[U]]],
+			returnKey==14,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,funAct[U]]],
+			returnKey==15,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,funAct[U]]],
 			Else,AppendReturnables[U_,t_]:=Null
 		];
 	)
@@ -477,7 +483,7 @@ EvalPulse[H_?DriftHamNonConstQ,p_?ShapedPulseQ,opts:OptionsPattern[SimulationOpt
 	]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Instantaneous Pulse Evaluators*)
 
 
@@ -525,7 +531,7 @@ EvalPulse[H_?DriftHamQ,p_?ChannelPulseQ,opts:OptionsPattern[SimulationOptions]]:
 	]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Drift Pulse Evaluators*)
 
 
