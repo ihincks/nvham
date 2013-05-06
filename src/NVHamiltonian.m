@@ -17,6 +17,13 @@ Spin::badindex = "An invalid spin index was entered.";
 IdentityInsert::baddimensions = "The size of the input matrix does not match the product of the specified dimensions.";
 
 
+(* ::Subsection:: *)
+(*Frames*)
+
+
+Frame::notorthonormal = "The first three arguments of Frame must form an orthonormal basis for R^3.";
+
+
 (* ::Section:: *)
 (*Predicates*)
 
@@ -31,6 +38,10 @@ NitrogenQ::usage = "NitrogenQ[c] returns True iff the Head of c is Carbon";
 NucleusQ::usage = "CarbonQ[c] returns True iff one of CarbonQ or NitrogenQ holds.";
 
 
+Vector3Q::usage = "Vector3Q[v] returns True iff v is a vector of length 3.";
+Matrix3Q::usage = "Matrix3Q[m] returns True iff m is a matrix of height 3.";
+
+
 (* ::Subsection:: *)
 (*Implementations*)
 
@@ -43,10 +54,14 @@ NitrogenQ[c_]:=Head[c]===Nitrogen
 NucleusQ[c_]:=CarbonQ[c]||NitrogenQ[c]
 
 
+Vector3Q[v_]:=VectorQ[v]&&Length[v]==3
+Matrix3Q[m_]:=MatrixQ[m]&&Length[m]==3
+
+
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Matrices, Bases, and Linear Algebra*)
 
 
@@ -159,7 +174,164 @@ End[];
 (*Usage Declarations*)
 
 
+SphericalToCartesian::usage = "SphericalToCartesian[{r,\[Theta],\[Phi]}] transforms the spherical vector {r,\[Theta],\[Phi]} into the cartesian vector {r Cos[\[Theta]]Sin[\[Phi]], r Sin[\[Theta]]Sin[\[Phi]], r Cos[\[Phi]]}. \[Phi] is the polar angle (down from the z axis) and \[Theta] is the azimual angle (from the x axis towards the y axis). We choose not to use the builtin function CoordinateTransform because it deals with 0 angles in a dumb way.";
+CylindricalToCartesian::usage = "CylindricalToCartesian[{\[Rho],\[Theta],z}] transforms the spherical vector {\[Rho],\[Theta],z} into the cartesian vector {\[Rho] Cos[\[Theta]], \[Rho] Sin[\[Theta]], z}. \[Theta] is the azimual angle (from the x axis towards the y axis). We choose not to use the builtin function CoordinateTransform because it deals with 0 angles in a dumb way.";
+
+
 Frame::usage = "";
+
+
+Coordinates::usage = "";
+Cartesian::usage = "";
+Spherical::usage = "";
+Cylindrical::usage = "";
+
+
+FrameMatrix::usage = "FrameMatrix[frame] returns the orthogonal 3x3 matrix, M, corresponding to the given frame. This is the matrix that transforms from the canonical basis to the basis of the frame, all in Cartesian coordinates (Frames entered in non-Cartesian cooridinates will be automatically converted). So, for example, M.{1,0,0}=x, where frame=Frame[x,y,z,Cartesian].";
+FrameChangeMatrix::usage = "";
+
+
+FrameChange::usage = "FrameChange[fromFrame,toFrame]";
+FrameCompose::usage = "FrameCompose[framen,...,frame2,frame1] returns the resulting frame when all of the input frames are composed. That is, we know frame1 is written in the coordinates of the canonical basis, and if frame2 is written in the coordinates of frame1, and frame3 is written in the coordinates of frame2, etc, then the resulting frame is the composition of all frames written in the canonical coordinates.";
+
+
+IdentityFrame::usage = "";
+EulerAngles::usage = "EulerAngles[\[Theta]z1,\[Theta]y,\[Theta]z2] returns a Frame corresponding to rotating the IdenityFrame by the extrinsic ZYZ Euler angles \[Theta]z1,\[Theta]y,\[Theta]z2.";
+
+
+(* ::Subsection:: *)
+(*Implementations*)
+
+
+Begin["`Private`"];
+
+
+(* ::Text:: *)
+(*We define these conversion functions by hand so we don't have to deal with any opaque problems with the builtin function CoordinateTransform.*)
+
+
+SphericalToCartesian[{r_,\[Theta]_,\[Phi]_}]:={r*Cos[\[Theta]]*Sin[\[Phi]],r*Sin[\[Theta]]*Sin[\[Phi]],r*Cos[\[Phi]]}
+CylindricalToCartesian[{\[Rho]_,\[Theta]_,z_}]:={\[Rho]*Cos[\[Theta]],\[Rho]*Sin[\[Theta]],z}
+
+
+(* ::Text:: *)
+(*Frame is a head used in many plotting functions. Since it doesn't have any up or down values, it is safe to give it a double meaning. First, we unprotect it.*)
+
+
+Unprotect@Frame;
+
+
+(* ::Text:: *)
+(*We assume a Cartesian coordinate system when none is specified.*)
+
+
+Frame[x_,y_,z_]:=Frame[x,y,z,Cartesian]
+
+
+(* ::Text:: *)
+(*The columns of a 3x3 matrix are taken to be coordinates. The serves as a sort of inverse to the function FrameMatrix.*)
+
+
+Frame[m_?Matrix3Q]:=Frame[m\[Transpose][[1]],m\[Transpose][[2]],m\[Transpose][[3]],Cartesian]
+
+
+(* ::Text:: *)
+(*Use a up values to transform a given frame to cartesian coordinates.*)
+
+
+Frame/:Cartesian[f:Frame[a_,b_,c_,Cartesian]]:=f
+Frame/:Cartesian[f:Frame[a_,b_,c_,Spherical]]:=Frame[SphericalToCartesian[a], SphericalToCartesian[b], SphericalToCartesian[c], Cartesian]
+Frame/:Cartesian[f:Frame[a_,b_,c_,Cylindrical]]:=Frame[CylindricalToCartesian[a], CylindricalToCartesian[b], CylindricalToCartesian[c], Cartesian]
+
+
+(* ::Text:: *)
+(*Returns the orthogonal matrix corresponding to the input frame.*)
+
+
+FrameMatrix[f_Frame]:=((List@@Cartesian[f])[[1;;3]])\[Transpose]
+
+
+(* ::Text:: *)
+(*You can think of converting between frames as first converting to the canonical basis, and then from this converting to the desired frame.*)
+
+
+FrameChangeMatrix[fromFrame_,toFrame_]:=FrameMatrix[toFrame].FrameMatrix[fromFrame]\[Transpose]
+
+
+(* ::Text:: *)
+(*We have the frame change matrix, so now it's just a matter of actually impementing it.*)
+
+
+FrameChange[M_?Vector3Q,fromFrame_,toFrame_]:=FrameChangeMatrix[fromFrame,toFrame].M
+FrameChange[M_?Matrix3Q,fromFrame_,toFrame_]:=With[{F=FrameChangeMatrix[fromFrame,toFrame]},F.M.F\[Transpose]]
+
+
+(* ::Text:: *)
+(*Composition is of course just matrix multiplication in Cartesian coordinates.*)
+
+
+FrameCompose[f_Frame]:=f
+FrameCompose[fa_Frame,fb_Frame,rest___]:=FrameCompose[Frame[Simplify[FrameMatrix[fa].FrameMatrix[fb]]],rest]
+
+
+IdentityFrame=Frame[{1,0,0},{0,1,0},{0,0,1},Cartesian];
+
+
+EulerAngles[\[Theta]z1_,\[Theta]y_,\[Theta]z2_]=Frame[RotationMatrix[\[Theta]z2, {0,0,1}].RotationMatrix[\[Theta]y, {0,1,0}].RotationMatrix[\[Theta]z1, {0,0,1}]];
+
+
+End[];
+
+
+(* ::Section:: *)
+(*NV and Lattice Geometry*)
+
+
+(* ::Subsection:: *)
+(*Usage Declarations*)
+
+
+NVOrientationToFrame::usage = "NVOrientationToFrame[n] returns a Frame (with respect to the crystal frame, of course) corresponding to the n'th NV orientation. n should be one of the values 1,2,3,4,5,6,7,8. Here, 1 is along the positive z direction, 2 is on the x-z plane, rotated an angle ArcCos[-1/3] from the z axis, and orientations 3 and 4 are right-handed Z rotations of orientation 2 by angles 2\[Pi]/3 and 4\[Pi]/3 respectively. The orientations 5,6,7,8 are respectively anti-parallel to 1,2,3,4.";
+
+
+(* ::Subsection:: *)
+(*Implementations*)
+
+
+Begin["`Private`"];
+
+
+NVOrientationToFrame[1]=IdentityFrame;
+NVOrientationToFrame[2]=EulerAngles[0,ArcCos[-1/3],0];
+NVOrientationToFrame[3]=EulerAngles[0,ArcCos[-1/3],2\[Pi]/3];
+NVOrientationToFrame[4]=EulerAngles[0,ArcCos[-1/3],4\[Pi]/3];
+NVOrientationToFrame[5]=EulerAngles[0,\[Pi],0];
+NVOrientationToFrame[6]=EulerAngles[0,ArcCos[-1/3]-\[Pi],0];
+NVOrientationToFrame[7]=EulerAngles[0,ArcCos[-1/3]-\[Pi],2\[Pi]/3];
+NVOrientationToFrame[8]=EulerAngles[0,ArcCos[-1/3]-\[Pi],4\[Pi]/3];
+
+
+End[]
+
+
+(* ::Section:: *)
+(*Options*)
+
+
+(* ::Subsection:: *)
+(*Usage Declarations*)
+
+
+NVHamiltonian::usage = "";
+NVOrientation::usage = "";
+ZeroFieldSplitting::usage = "";
+StaticField::usage = "";
+StaticFieldCoordinates::usage = "";
+NVSpin::usage = "";
+OutputFrame::usage = "";
+CrystalOrientation::usage = "";
+
+
 LabFrame::usage = "";
 ZFSFrame::usage = "";
 CrystalFrame::usage =  "";
@@ -173,37 +345,15 @@ ZeemanFrame::usage = "";
 Begin["`Private`"];
 
 
-End[];
-
-
-(* ::Section:: *)
-(*Options*)
-
-
-(* ::Subsection:: *)
-(*Usage Declarations*)
-
-
-NVHamiltonian::options = "";
-ZeroFieldSplitting::usage = "";
-StaticField::usage = "";
-CrystalOrientation::usage = "";
-NVSpin::usage = "";
-
-
-(* ::Subsection:: *)
-(*Implementations*)
-
-
-Begin["`Private`"];
-
-
 Options[NVHamiltonian]=
 	{
 		ZeroFieldSplitting->\[CapitalDelta],
+		NVOrientation->1,
 		StaticField->{0,0,0},
-		CrystalOrientation->{0,0,0},
-		NVSpin->1
+		StaticFieldCoordinates->Cartesian,
+		NVSpin->1,
+		OutputFrame->ZFSFrame,		
+		CrystalOrientation->IdentityFrame
 	};
 
 
@@ -384,7 +534,26 @@ Begin["`Private`"];
 
 NVHamiltonian[nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 	Module[
-		{dimNV,dimN,hasN,dimC,numC,dimList,nucleiList,nvSpin,termList,Term,ExpandTerm,HyperfineTerm},
+		{
+			dimNV,dimN,hasN,dimC,numC,dimList,
+			nucleiList,
+			nvSpin,
+			termList,Term,ExpandTerm,HyperfineTerm,
+			labFrame,crystalFrame,zfsFrame,zeemanFrame
+		},
+
+		(* Deal with the coordinate systems first. *)
+		(* The output frame gets the canonical basis *)
+		Which[
+			OptionValue[OutputFrame]===LabFrame,
+				labFrame = IdentityFrame;
+				crystalFrame = OptionValue[CrystalOrientation];
+				zfsFrame = e;
+				zeemanFrame = e;
+			OptionValue[OutputFrame]===CrystalFrame,
+			OptionValue[OutputFrame]===ZFSFrame,
+			OptionValue[OutputFrame]===ZeemanFrame,bats
+		];
 
 		(* Determine the spin of the NV center. *)
 		nvSpin = OptionValue[NVSpin];
