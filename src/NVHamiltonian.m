@@ -175,7 +175,12 @@ End[];
 
 
 SphericalToCartesian::usage = "SphericalToCartesian[{r,\[Theta],\[Phi]}] transforms the spherical vector {r,\[Theta],\[Phi]} into the cartesian vector {r Cos[\[Theta]]Sin[\[Phi]], r Sin[\[Theta]]Sin[\[Phi]], r Cos[\[Phi]]}. \[Phi] is the polar angle (down from the z axis) and \[Theta] is the azimual angle (from the x axis towards the y axis). We choose not to use the builtin function CoordinateTransform because it deals with 0 angles in a dumb way.";
-CylindricalToCartesian::usage = "CylindricalToCartesian[{\[Rho],\[Theta],z}] transforms the spherical vector {\[Rho],\[Theta],z} into the cartesian vector {\[Rho] Cos[\[Theta]], \[Rho] Sin[\[Theta]], z}. \[Theta] is the azimual angle (from the x axis towards the y axis). We choose not to use the builtin function CoordinateTransform because it deals with 0 angles in a dumb way.";
+CylindricalToCartesian::usage = "CylindricalToCartesian[{\[Rho],\[Theta],z}] transforms the cylindrical vector {\[Rho],\[Theta],z} into the cartesian vector {\[Rho] Cos[\[Theta]], \[Rho] Sin[\[Theta]], z}. \[Theta] is the azimual angle (from the x axis towards the y axis). We choose not to use the builtin function CoordinateTransform because it deals with 0 angles in a dumb way.";
+CartesianToSpherical::usage = "CartesianToSpherical[{x,y,z}] transforms the cartesian vector {x,y,z} into the spherical vector {r,\[Theta],\[Phi]}. \[Phi] is the polar angle (down from the z axis) and \[Theta] is the azimual angle (from the x axis towards the y axis). If both x and y are 0, then the ambiguous azimuthal angle \[Theta] is taken to be 0.";
+CylindricalToSpherical::usage = "CylindricalToSpherical[{\[Rho],\[Theta],z}] transforms the cylindrical vector {\[Rho],\[Theta],z} into the spherical vector {r,\[Theta],\[Phi]}. \[Phi] is the polar angle (down from the z axis) and \[Theta] is the azimual angle (from the x axis towards the y axis). If both \[Rho] and z are 0, then the ambiguous polar angle \[Phi] is taken to be 0.";
+CartesianToCylindrical::usage = "CartesianToCylindrical[{x,y,z}] transforms the cartesian vector {x,y,z} into the cylindrical vector {\[Rho],\[Theta],z}. \[Theta] is the azimual angle (from the x axis towards the y axis). If both x and y are 0, then the ambiguous azimuthal angle \[Theta] is taken to be 0.";
+SphericalToCylindrical::usage = "SphericalToCylindrical[{r,\[Theta],\[Phi]}] transforms the spherical vector {r,\[Theta],\[Phi]} into the cylindrical vector {\[Rho],\[Theta],z}.  is the polar angle (down from the z axis) and \[Theta] is the azimual angle (from the x axis towards the y axis).";
+ChangeCoordinates::usage = "ChangeCoordinates[v, fromCoords, toCoords] changes the coordinates of the length-3 vector. For example, ChangeCoordinates[{1,1,0},Cartesian,Spherical].";
 
 
 Frame::usage = "";
@@ -191,12 +196,17 @@ FrameMatrix::usage = "FrameMatrix[frame] returns the orthogonal 3x3 matrix, M, c
 FrameChangeMatrix::usage = "";
 
 
-FrameChange::usage = "FrameChange[fromFrame,toFrame]";
+FrameInverse::usage = "FrameInverse[frame]";
+FrameChange::usage = "FrameChange[M,fromFrame,toFrame] or FRame[v,fromFrame,ToFrame]";
 FrameCompose::usage = "FrameCompose[framen,...,frame2,frame1] returns the resulting frame when all of the input frames are composed. That is, we know frame1 is written in the coordinates of the canonical basis, and if frame2 is written in the coordinates of frame1, and frame3 is written in the coordinates of frame2, etc, then the resulting frame is the composition of all frames written in the canonical coordinates.";
 
 
 IdentityFrame::usage = "";
+BondFrame::usage = "";
 EulerAngles::usage = "EulerAngles[\[Theta]z1,\[Theta]y,\[Theta]z2] returns a Frame corresponding to rotating the IdenityFrame by the extrinsic ZYZ Euler angles \[Theta]z1,\[Theta]y,\[Theta]z2.";
+
+
+PlotFrame::usage = "PlotFrame[frame1,frame2,...] plots each Frame given as an argement on the same figure.";
 
 
 (* ::Subsection:: *)
@@ -212,6 +222,19 @@ Begin["`Private`"];
 
 SphericalToCartesian[{r_,\[Theta]_,\[Phi]_}]:={r*Cos[\[Theta]]*Sin[\[Phi]],r*Sin[\[Theta]]*Sin[\[Phi]],r*Cos[\[Phi]]}
 CylindricalToCartesian[{\[Rho]_,\[Theta]_,z_}]:={\[Rho]*Cos[\[Theta]],\[Rho]*Sin[\[Theta]],z}
+CartesianToSpherical[{x_,y_,z_}]:=With[{r=Sqrt[x^2+y^2+z^2]},{r,If[PossibleZeroQ[x]&&PossibleZeroQ[y],0,ArcTan[x,y]],If[PossibleZeroQ[r],0,ArcCos[z/r]]}]
+CylindricalToSpherical[{\[Rho]_,\[Theta]_,z_}]:={Sqrt[\[Rho]^2+z^2],\[Theta],If[PossibleZeroQ[\[Rho]]&&PossibleZeroQ[z],0,ArcTan[z,\[Rho]]]}
+CartesianToCylindrical[{x_,y_,z_}]:={Sqrt[x^2+y^2],If[PossibleZeroQ[x]&&PossibleZeroQ[y],0,ArcTan[x,y]],z}
+SphericalToCylindrical[{r_,\[Theta]_,\[Phi]_}]:={r*Sin[\[Phi]],\[Theta],r*Cos[\[Phi]]}
+
+
+ChangeCoordinates[v_?Vector3Q,coords_,coords_]:=v
+ChangeCoordinates[v_?Vector3Q,Spherical,Cartesian]:=SphericalToCartesian[v]
+ChangeCoordinates[v_?Vector3Q,Cylindrical,Cartesian]:=CylindricalToCartesian[v]
+ChangeCoordinates[v_?Vector3Q,Cartesian,Spherical]:=CartesianToSpherical[v]
+ChangeCoordinates[v_?Vector3Q,Cylindrical,Spherical]:=CylindricalToSpherical[v]
+ChangeCoordinates[v_?Vector3Q,Cartesian,Cylindrical]:=CartesianToCylindrical[v]
+ChangeCoordinates[v_?Vector3Q,Spherical,Cylindrical]:=SphericalToCylindrical[v]
 
 
 (* ::Text:: *)
@@ -267,6 +290,13 @@ FrameChange[M_?Matrix3Q,fromFrame_,toFrame_]:=With[{F=FrameChangeMatrix[fromFram
 
 
 (* ::Text:: *)
+(*Since the matrices are orthogonal, the inverse is given by the transpose.*)
+
+
+FrameInverse[f_Frame]:=Frame[FrameMatrix[f]\[Transpose]]
+
+
+(* ::Text:: *)
 (*Composition is of course just matrix multiplication in Cartesian coordinates.*)
 
 
@@ -278,6 +308,40 @@ IdentityFrame=Frame[{1,0,0},{0,1,0},{0,0,1},Cartesian];
 
 
 EulerAngles[\[Theta]z1_,\[Theta]y_,\[Theta]z2_]=Frame[RotationMatrix[\[Theta]z2, {0,0,1}].RotationMatrix[\[Theta]y, {0,1,0}].RotationMatrix[\[Theta]z1, {0,0,1}]];
+
+
+(* ::Text:: *)
+(*The bond frame is most easily describable in spherical coordinates, so convert first. Note that all "bond frame means" is some frame in which the z vector is parallel to the input vector of BondFrame; the x-y vectors are chosen sort of arbitrarily, but it doesn't matter because the tensor should be cylindrically symmetric.*)
+
+
+BondFrame[{x_,y_,z_},Cartesian]:=BondFrame[CartesianToSpherical[{x,y,z}],Spherical];
+BondFrame[{\[Rho]_,\[Theta]_,z_},Cylindrical]:=BondFrame[CylindricalToSpherical[{\[Rho],\[Theta],z}],Spherical];
+BondFrame[{r_,\[Theta]_,\[Phi]_},Spherical]:=EulerAngles[0,\[Phi],\[Theta]]
+
+
+(* ::Text:: *)
+(*Just need to loop through each frame and draw three arrows.*)
+
+
+PlotFrame[frames__]:=
+	Graphics3D[
+		MapIndexed[
+			Module[
+				{f=Cartesian[#1],x,y,z},
+				x=f[[1]];
+				y=f[[2]];
+				z=f[[3]];
+				{
+					ColorData[1][First[#2]],
+					Arrow[{{0,0,0},x}],Arrow[{{0,0,0},y}],Arrow[{{0,0,0},z}],
+					Text["x",x*1.1],Text["y",y*1.1],Text["z",z*1.1]
+				}
+			]&,
+			List[frames]
+		],
+		BoxRatios->{1,1,1},
+		PlotRange->1.1*{{-1,1},{-1,1},{-1,1}}
+	]
 
 
 End[];
@@ -326,6 +390,7 @@ NVHamiltonian::usage = "";
 NVOrientation::usage = "";
 ZeroFieldSplitting::usage = "";
 StaticField::usage = "";
+StaticFieldFrame::usage = "";
 StaticFieldCoordinates::usage = "";
 NVSpin::usage = "";
 OutputFrame::usage = "";
@@ -347,13 +412,14 @@ Begin["`Private`"];
 
 Options[NVHamiltonian]=
 	{
-		ZeroFieldSplitting->\[CapitalDelta],
-		NVOrientation->1,
-		StaticField->{0,0,0},
-		StaticFieldCoordinates->Cartesian,
-		NVSpin->1,
-		OutputFrame->ZFSFrame,		
-		CrystalOrientation->IdentityFrame
+		ZeroFieldSplitting -> \[CapitalDelta],
+		NVOrientation -> 1,
+		StaticField -> {0,0,0},
+		StaticFieldFrame -> LabFrame,
+		StaticFieldCoordinates -> Cartesian,
+		NVSpin -> 1,
+		OutputFrame -> ZFSFrame,		
+		CrystalOrientation -> IdentityFrame
 	};
 
 
@@ -535,6 +601,7 @@ Begin["`Private`"];
 NVHamiltonian[nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 	Module[
 		{
+			cartesianB,sphericalB,
 			dimNV,dimN,hasN,dimC,numC,dimList,
 			nucleiList,
 			nvSpin,
@@ -542,17 +609,33 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 			labFrame,crystalFrame,zfsFrame,zeemanFrame
 		},
 
-		(* Deal with the coordinate systems first. *)
-		(* The output frame gets the canonical basis *)
+		(* Convert the B field to various coordinate systems *)
+		cartesianB = ChangeCoordinates[OptionValue[StaticField],OptionValue[StaticFieldCoordinates],Cartesian];
+		sphericalB = ChangeCoordinates[OptionValue[StaticField],OptionValue[StaticFieldCoordinates],Spherical];
+
+		(* Deal with all of the frames first (except nuclei frames) *)
+		(* The idea is simple: we have a natural ordering of frames: LabFrame>CrystalFrame>ZFSFrame>Zeeman *)
 		Which[
 			OptionValue[OutputFrame]===LabFrame,
 				labFrame = IdentityFrame;
 				crystalFrame = OptionValue[CrystalOrientation];
-				zfsFrame = e;
-				zeemanFrame = e;
+				zfsFrame = FrameCompose[NVOrientationToFrame[OptionValue[NVOrientation]],crystalFrame];
+				zeemanFrame = FrameCompose[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]],zfsFrame];
 			OptionValue[OutputFrame]===CrystalFrame,
+				crystalFrame = IdentityFrame;
+				labFrame = FrameInverse[OptionValue[CrystalOrientation]];
+				zfsFrame = NVOrientationToFrame[OptionValue[NVOrientation]];
+				zeemanFrame = FrameCompose[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]],zfsFrame];
 			OptionValue[OutputFrame]===ZFSFrame,
-			OptionValue[OutputFrame]===ZeemanFrame,bats
+				zfsFrame = IdentityFrame;
+				crystalFrame = FrameInverse[NVOrientationToFrame[OptionValue[NVOrientation]]];
+				labFrame = FrameCompose[OptionValue[CrystalOrientation],crystalFrame];
+				zeemanFrame = EulerAngles[0,sphericalB[[3]],sphericalB[[2]]];
+			OptionValue[OutputFrame]===ZeemanFrame,
+				zeemanFrame = IdentityFrame;
+				zfsFrame = FrameInverse[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];
+				crystalFrame = FrameCompose[FrameInverse[NVOrientationToFrame[OptionValue[NVOrientation]]],zfsFrame];
+				labFrame = FrameCompose[OptionValue[CrystalOrientation],crystalFrame];
 		];
 
 		(* Determine the spin of the NV center. *)
