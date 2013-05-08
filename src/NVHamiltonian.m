@@ -24,7 +24,20 @@ IdentityInsert::baddimensions = "The size of the input matrix does not match the
 Frame::notorthonormal = "The first three arguments of Frame must form an orthonormal basis for R^3.";
 
 
-(* ::Section:: *)
+(* ::Subsection:: *)
+(*Options*)
+
+
+ZeroFieldSplitting::badinput = "The ZeroFieldSplitting must be a single number/symbol, or a list of length three (Each one will be multiplied by Sx.Sx, Sy.Sy, and Sz.Sz respectively.).";
+
+
+OutputFrame::badframe = "The output frame must be one of LabFrame, CrystalFrame, or ZFSFrame.";
+
+
+StaticField::badframe = "The static field's frame must be one of LabFrame, CrystalFrame, or ZFSFrame.";
+
+
+(* ::Section::Closed:: *)
 (*Predicates*)
 
 
@@ -32,7 +45,6 @@ Frame::notorthonormal = "The first three arguments of Frame must form an orthono
 (*Usage Declarations*)
 
 
-Carbon::usage = ""; Nitrogen::usage = "";
 CarbonQ::usage = "CarbonQ[c] returns True iff the Head of c is Carbon";
 NitrogenQ::usage = "NitrogenQ[c] returns True iff the Head of c is Carbon";
 NucleusQ::usage = "CarbonQ[c] returns True iff one of CarbonQ or NitrogenQ holds.";
@@ -40,6 +52,17 @@ NucleusQ::usage = "CarbonQ[c] returns True iff one of CarbonQ or NitrogenQ holds
 
 Vector3Q::usage = "Vector3Q[v] returns True iff v is a vector of length 3.";
 Matrix3Q::usage = "Matrix3Q[m] returns True iff m is a matrix of height 3.";
+
+
+ValidReferenceFrameQ::usage = "ValidReferenceFrameQ[input] returns True iff input is one of LabFrame, CrystalFrame, ZFSFrame, or ZeemanFrame."
+
+
+(* ::Text:: *)
+(*We need to initialize the following things now so that they fall in the right context.*)
+
+
+LabFrame::usage = "";ZFSFrame::usage = "";CrystalFrame::usage =  "";ZeemanFrame::usage = "";
+Carbon::usage = ""; Nitrogen::usage = "";
 
 
 (* ::Subsection:: *)
@@ -58,10 +81,13 @@ Vector3Q[v_]:=VectorQ[v]&&Length[v]==3
 Matrix3Q[m_]:=MatrixQ[m]&&Length[m]==3
 
 
+ValidReferenceFrameQ[input_]:=MemberQ[{LabFrame,ZFSFrame,CrystalFrame,ZeemanFrame},input]
+
+
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Matrices, Bases, and Linear Algebra*)
 
 
@@ -167,6 +193,15 @@ End[];
 
 
 (* ::Section:: *)
+(*Physical Quantities*)
+
+
+\[Mu]e::usage = "The gyromagnetic ratio of an electron.";
+\[Mu]c::usage = "The gyromagnetic ratio of 13-Carbon.";
+\[Mu]n::usage = "The gyromagnetic ratio of Nitrogen."
+
+
+(* ::Section::Closed:: *)
 (*Frames*)
 
 
@@ -201,8 +236,8 @@ FrameChange::usage = "FrameChange[M,fromFrame,toFrame] or FRame[v,fromFrame,ToFr
 FrameCompose::usage = "FrameCompose[framen,...,frame2,frame1] returns the resulting frame when all of the input frames are composed. That is, we know frame1 is written in the coordinates of the canonical basis, and if frame2 is written in the coordinates of frame1, and frame3 is written in the coordinates of frame2, etc, then the resulting frame is the composition of all frames written in the canonical coordinates.";
 
 
-IdentityFrame::usage = "";
-BondFrame::usage = "";
+IdentityFrame::usage = "IdentityFrame";
+BondFrame::usage = "BondFrame[{a,b,c},coords_]";
 EulerAngles::usage = "EulerAngles[\[Theta]z1,\[Theta]y,\[Theta]z2] returns a Frame corresponding to rotating the IdenityFrame by the extrinsic ZYZ Euler angles \[Theta]z1,\[Theta]y,\[Theta]z2.";
 
 
@@ -347,7 +382,7 @@ PlotFrame[frames__]:=
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*NV and Lattice Geometry*)
 
 
@@ -378,7 +413,7 @@ NVOrientationToFrame[8]=EulerAngles[0,ArcCos[-1/3]-\[Pi],4\[Pi]/3];
 End[]
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Options*)
 
 
@@ -403,8 +438,15 @@ CrystalFrame::usage =  "";
 ZeemanFrame::usage = "";
 
 
+CheckOptions::usage = "CheckOptions[opts] checks opts for any malformed/unacceptable inputs and Aborts if any are found. opt is an OptionsPattern for NVHamiltonian. This function is called inside of NVHamiltonian.";
+
+
 (* ::Subsection:: *)
 (*Implementations*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*The Options*)
 
 
 Begin["`Private`"];
@@ -428,6 +470,29 @@ Options[NVHamiltonian]=
 
 
 Protect[Evaluate[Sequence@@(Options[NVHamiltonian][[All,1]])]];
+
+
+End[];
+
+
+(* ::Subsubsection:: *)
+(*The Options Checker*)
+
+
+Begin["`Private`"];
+
+
+CheckOptions[OptionsPattern[NVHamiltonian]]:=
+	Module[
+		{OV=OptionValue},
+		If[Not[ListQ[OV[ZeroFieldSplitting]]]&&Not[Vector3Q[OV[ZeroFieldSplitting]]],Message[ZeroFieldSplitting::badinput];Abort[]];
+
+		If[Not[ValidReferenceFrameQ[OV[OutputFrame]]],Message[OutputFrame::badframe];Abort[]];
+
+		If[Not[ValidReferenceFrameQ[OV[StaticFieldFrame]]],Message[StaticField::badframe];Abort[]];
+		If[OV[StaticFieldFrame]===ZeemanFrame,Message[StaticField::badframe];Abort[]];
+	]
+
 
 
 End[];
@@ -493,6 +558,7 @@ Nitrogen::usage = "";
 Tensor::usage = "";
 QuadrapoleTensor::usage = "";
 Isotope::usage = "";
+GyromagneticRatio::usage = "";
 
 
 (* ::Subsection:: *)
@@ -506,16 +572,17 @@ Isotope::usage = "";
 Begin["`Private`"];
 
 
-Carbon/:Tensor[Carbon[{Apar_,Aperp_}]]:=DiagonalMatrix[{Aperp,Aperp,Apar}]
-Carbon/:Tensor[Carbon[{Apar_,Aperp_},{\[Theta]azimuth_,\[Theta]polar_}]]:=RotateTensor[Tensor@Carbon[{Apar,Aperp}],{\[Theta]azimuth,\[Theta]polar}]
-Carbon/:Tensor[Carbon[A_?MatrixQ]]:=A
-Carbon/:Tensor[Carbon[{Azx_,Azy_,Azz_}]]:={{0,0,0},{0,0,0},{Azx,Azy,Azz}}
+Carbon/:Tensor[Carbon[{Apar_,Aperp_},frame_Frame]]:=FrameChange[DiagonalMatrix[{Aperp,Aperp,Apar}],frame,IdentityFrame]
+Carbon/:Tensor[Carbon[A_?Matrix3Q]]:=A
 
 
 Carbon/:Isotope[Carbon[___]]:=13
 
 
 Carbon/:Spin[Carbon[___]]:=1/2
+
+
+Carbon/:GyromagneticRatio[Carbon[___]]:=\[Mu]c
 
 
 End[];
@@ -529,19 +596,20 @@ Begin["`Private`"];
 
 
 Nitrogen/:Tensor[Nitrogen[_,{Apar_,Aperp_},___]]:=DiagonalMatrix[{Aperp,Aperp,Apar}]
-Nitrogen/:Tensor[Nitrogen[_,Azz_,___]]:=DiagonalMatrix[{0,0,Azz}]
-Nitrogen/:Tensor[Nitrogen[_,A_?MatrixQ,___]]:=A
-Nitrogen/:Tensor[Nitrogen[isotope_]]:=Tensor@Nitrogen[isotope,{ANpar,ANperp}]
 
 
+Nitrogen/:QuadrapoleTensor[Nitrogen[_,_,Q_?Matrix3Q]]:=Q
+Nitrogen/:QuadrapoleTensor[Nitrogen[_,_,Q_?Vector3Q]]:=DiagonalMatrix[Q]
 Nitrogen/:QuadrapoleTensor[Nitrogen[_,_,Q_]]:=DiagonalMatrix[{0,0,Q}]
-Nitrogen/:QuadrapoleTensor[Nitrogen[_,_,Q_?MatrixQ]]:=Q
 
 
 Nitrogen/:Isotope[Nitrogen[isotope_,___]]:=isotope
 
 
 Nitrogen/:Spin[Nitrogen[x___]]:=Spin[If[Isotope[Nitrogen[x]]===13,1/2,1]]
+
+
+Nitrogen/:GyromagneticRatio[Nitrogen[___]]:=\[Mu]n
 
 
 End[];
@@ -558,6 +626,12 @@ End[];
 ZFSHamiltonian::usage = "";
 
 
+ZeemanHamiltonian::usage = "";
+
+
+QuadrapolarHamiltonian::usage = "";
+
+
 NVHamiltonian::usage = "";
 
 
@@ -565,27 +639,54 @@ NVHamiltonian::usage = "";
 (*Implementations*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*ZFS Hamlitonian*)
 
 
 Begin["`Private`"];
 
 
-ZFSHamiltonian[OptionsPattern[NVHamiltonian]]:=OptionValue[ZeroFieldSplitting] Sz
+ZFSHamiltonian[{Dx_,Dy_,Dz_},nvSpin_]:= Dx Spin[nvSpin,1].Spin[nvSpin,1] + Dy Spin[nvSpin,2].Spin[nvSpin,2] + Dz Spin[nvSpin,3].Spin[nvSpin,3];
+ZFSHamiltonian[D_,nvSpin_]:= D Spin[nvSpin,3].Spin[nvSpin,3];
 
 
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Zeeman Hamiltonian*)
 
 
 Begin["`Private`"];
 
 
-ZeemanHamiltonian[spin_,{\[Omega]x_,\[Omega]y_,\[Omega]z_}] := \[Omega]x Spin[spin,1] + \[Omega]x Spin[spin,2] + \[Omega]x Spin[spin,3]
+ZeemanHamiltonian[\[Mu]_,{Bx_,By_,Bz_},spin_] := \[Mu](Bx Spin[spin,1] + By Spin[spin,2] + Bz Spin[spin,3])
+
+
+End[];
+
+
+(* ::Subsubsection:: *)
+(*Dipole Dipole Hamiltonian*)
+
+
+Begin["`Private`"];
+
+
+DipoleDipoleHamiltonian[spin1_,spin2_,\[Mu]1_,\[Mu]2_,v1_,v2_]:=
+
+
+End[];
+
+
+(* ::Subsubsection::Closed:: *)
+(*Quadrapolar Hamiltonian*)
+
+
+Begin["`Private`"];
+
+
+QuadrapolarHamiltonian[spin_,A_?Matrix3Q]:=Total[Table[A[[i,j]]*Spin[spin,i].Spin[spin,j],{i,3},{j,3}],2];
 
 
 End[];
@@ -605,37 +706,57 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 			dimNV,dimN,hasN,dimC,numC,dimList,
 			nucleiList,
 			nvSpin,
-			termList,Term,ExpandTerm,HyperfineTerm,
-			labFrame,crystalFrame,zfsFrame,zeemanFrame
+			termList,Term,ExpandTerm,HyperfineTerm,NuclearZeemanTerm,
+			labFrame,crystalFrame,zfsFrame,zeemanFrame,frames
 		},
+
+		(* Check the options for any malformed/incorrect/etc inputs *)
+		CheckOptions[opt];
 
 		(* Convert the B field to various coordinate systems *)
 		cartesianB = ChangeCoordinates[OptionValue[StaticField],OptionValue[StaticFieldCoordinates],Cartesian];
 		sphericalB = ChangeCoordinates[OptionValue[StaticField],OptionValue[StaticFieldCoordinates],Spherical];
 
+		(* We will need to be able to convert the placeholder frame names to actual Frames *)
+		frames:={LabFrame->labFrame, CrystalFrame->crystalFrame, ZFSFrame->zfsFrame, ZeemanFrame->zeemanFrame};
+
 		(* Deal with all of the frames first (except nuclei frames) *)
-		(* The idea is simple: we have a natural ordering of frames: LabFrame>CrystalFrame>ZFSFrame>Zeeman *)
+		(* The idea is simple: set the OutputFrame to be the canonical basis, and compose all other frames with respect to this. *)
+		(* There is the natural ordering LabFrame > CrystalFrame > ZFSFrame. The ZeemanFrame is sort of independent of this 
+		higherarchy, and is determined by the option StaticFieldFrame *)
 		Which[
 			OptionValue[OutputFrame]===LabFrame,
 				labFrame = IdentityFrame;
 				crystalFrame = OptionValue[CrystalOrientation];
 				zfsFrame = FrameCompose[NVOrientationToFrame[OptionValue[NVOrientation]],crystalFrame];
-				zeemanFrame = FrameCompose[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]],zfsFrame];
+				zeemanFrame = FrameCompose[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[StaticFieldFrame]/.frames];
 			OptionValue[OutputFrame]===CrystalFrame,
 				crystalFrame = IdentityFrame;
 				labFrame = FrameInverse[OptionValue[CrystalOrientation]];
 				zfsFrame = NVOrientationToFrame[OptionValue[NVOrientation]];
-				zeemanFrame = FrameCompose[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]],zfsFrame];
+				zeemanFrame = FrameCompose[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[StaticFieldFrame]/.frames];
 			OptionValue[OutputFrame]===ZFSFrame,
 				zfsFrame = IdentityFrame;
 				crystalFrame = FrameInverse[NVOrientationToFrame[OptionValue[NVOrientation]]];
 				labFrame = FrameCompose[OptionValue[CrystalOrientation],crystalFrame];
-				zeemanFrame = EulerAngles[0,sphericalB[[3]],sphericalB[[2]]];
+				zeemanFrame = FrameCompose[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[StaticFieldFrame]/.frames];
 			OptionValue[OutputFrame]===ZeemanFrame,
 				zeemanFrame = IdentityFrame;
-				zfsFrame = FrameInverse[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];
-				crystalFrame = FrameCompose[FrameInverse[NVOrientationToFrame[OptionValue[NVOrientation]]],zfsFrame];
-				labFrame = FrameCompose[OptionValue[CrystalOrientation],crystalFrame];
+				(* The ZeemanFrame case is special because the StaticField has the option of being written in any frame. *)
+				Which[
+					OptionValue[StaticFieldFrame]===LabFrame,
+						labFrame = FrameInverse[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];
+						crystalFrame = FrameCompose[OptionValue[CrystalOrientation],labFrame];
+						zfsFrame = FrameCompose[NVOrientationToFrame[OptionValue[NVOrientation]],crystalFrame];
+					OptionValue[StaticFieldFrame]===CrystalFrame,
+						crystalFrame = FrameInverse[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];
+						labFrame = FrameCompose[FrameInverse[OptionValue[CrystalOrientation]],crystalFrame];
+						zfsFrame = FrameCompose[NVOrientationToFrame[OptionValue[NVOrientation]],crystalFrame];
+					OptionValue[StaticFieldFrame]===ZFSFrame,
+						zfsFrame = FrameInverse[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];
+						crystalFrame = FrameCompose[FrameInverse[NVOrientationToFrame[OptionValue[NVOrientation]]],zfsFrame];
+						labFrame = FrameCompose[FrameInverse[OptionValue[CrystalOrientation]],crystalFrame];
+				];
 		];
 
 		(* Determine the spin of the NV center. *)
@@ -648,6 +769,9 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 		hasN = Length[nucleiList]>0 && NitrogenQ@First@nucleiList;
 		numC = Length[nucleiList] - If[hasN,1,0];
 
+		(* Populate any placeholder frames with real ones *)
+		nucleiList = nucleiList/.frames;
+
 		(* Determine the dimensions of each subsystem. *)
 		dimNV = SpinDim[nvSpin];
 		dimList = Prepend[SpinDim/@nucleiList,dimNV];
@@ -657,9 +781,26 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 		(* We will store all terms in termList, at first, with the head Term *)
 		termList = {};
 
+		(* Start by adding the ZFS term*)
+		AppendTo[termList,Term[ZFSHamiltonian[OptionValue[ZeroFieldSplitting],nvSpin],1]];
+
+		(* Now add the NV Zeeman term *)
+		AppendTo[termList,Term[ZeemanHamiltonian[\[Mu]e,cartesianB,nvSpin],1]];
+
+		(* Add all of the nuclei Zeeman terms *)
+		NuclearZeemanTerm[nucleus_,index_]:=Term[ZeemanHamiltonian[GyromagneticRatio[nucleus,cartesianB,Spin[nucleus]]],index];
+		termList = Join[termList,MapIndexed[NuclearZeemanTerm[#1,First@#2]&, nucleiList]];
+
 		(* Calculate and store all of the hyperfine interaction terms *)
-		HyperfineTerm[nucleus_,index_]:=Term[HyperfineHamiltonian[nvSpin,Spin[nucleus],Tensor[nucleus]], 1, index];
+		HyperfineTerm[nucleus_,index_]:=Term[HyperfineHamiltonian[nvSpin,Spin[nucleus],FrameChange[Tensor[nucleus],IdentityFrame,zfsFrame]], 1, index];
 		termList = Join[termList,MapIndexed[HyperfineTerm[#1,First@#2]&, nucleiList]];
+
+		(* Add the quadrapolar term for the Nitrogen *)
+		If[hasN,
+			AppendTo[termList,Term[QuadrapolarHamiltonian[Spin@First@nucleiList,QuadrapoleTensor@First@nucleiList],2]];
+		];
+
+		(* Add all of the dipole-dipole interactions *)
 
 		(* Define rules for turning a Term into a matrix on the full Hilbert space. *)
 		(* We only have 1-local and 2-local terms, so make a rule for each one manually. *)
