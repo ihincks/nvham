@@ -3,11 +3,17 @@
 BeginPackage["NVHamiltonian`"];
 
 
+(* ::Text:: *)
+(*Todo:*)
+(*-Verify BondFrame is correct*)
+(*-Change the static field frame if necessary*)
+
+
 (* ::Section:: *)
 (*Error Messages*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Matrices, Bases, and Linear Algebra*)
 
 
@@ -17,31 +23,49 @@ Spin::badindex = "An invalid spin index was entered.";
 IdentityInsert::baddimensions = "The size of the input matrix does not match the product of the specified dimensions.";
 
 
-(* ::Subsection:: *)
-(*Frames*)
+(* ::Subsection::Closed:: *)
+(*Frames and Vectors*)
 
 
 Frame::notorthonormal = "The first three arguments of Frame must form an orthonormal basis for R^3.";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
+
+
+Numerical::badinput = "The option Numerical must be set to one of True, False, or Automatic.";
+
+
+AngularUnits::badinput = "The option AngularUnits must be set to one of True, False, or Automatic.";
 
 
 ZeroFieldSplitting::badinput = "The ZeroFieldSplitting must be a single number/symbol, or a list of length three (Each one will be multiplied by Sx.Sx, Sy.Sy, and Sz.Sz respectively.).";
 
 
-OutputFrame::badframe = "The output frame must be one of LabFrame, CrystalFrame, or ZFSFrame.";
+OutputFrame::badframe = "The output frame must be one of LabFrame, CrystalFrame, ZFSFrame, or ZeemanFrame.";
 
 
 StaticField::badframe = "The static field's frame must be one of LabFrame, CrystalFrame, or ZFSFrame.";
+StaticField::notvector = "The static field must be input as a Vector, e.g., Vector[{0,0,10}, Cartesian].";
+
+
+(* ::Subsection::Closed:: *)
+(*Hamiltonians*)
+
+
+DipoleDipoleHamiltonian::equallocations = "The dipole-dipole Hamilotian was requested for two spins at the same physical locatian; this would result in division by 0. Instead, the 0 Hamiltonian has been return as the dipole-dipole Hamiltonian.";
+
+
+(* ::Subsection:: *)
+(*Plotting Tools*)
 
 
 (* ::Section::Closed:: *)
 (*Predicates*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Usage Declarations*)
 
 
@@ -65,7 +89,7 @@ LabFrame::usage = "";ZFSFrame::usage = "";CrystalFrame::usage =  "";ZeemanFrame:
 Carbon::usage = ""; Nitrogen::usage = "";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Implementations*)
 
 
@@ -87,11 +111,11 @@ ValidReferenceFrameQ[input_]:=MemberQ[{LabFrame,ZFSFrame,CrystalFrame,ZeemanFram
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Matrices, Bases, and Linear Algebra*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Usage Declarations*)
 
 
@@ -116,7 +140,7 @@ IdentityInsert::usage = "IdentityInsert[C,dimA,dimB,n1,n2,n3] assumes C is a squ
 (*Implementations*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Spin operators*)
 
 
@@ -150,7 +174,7 @@ SpinDim[s_?NumericQ]:=2*s+1
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Kronecker product*)
 
 
@@ -164,7 +188,7 @@ CircleTimes[A__]:=KroneckerProduct[A]
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Tensor Manipulation*)
 
 
@@ -196,17 +220,69 @@ End[];
 (*Physical Quantities*)
 
 
-\[Mu]e::usage = "The gyromagnetic ratio of an electron.";
-\[Mu]c::usage = "The gyromagnetic ratio of 13-Carbon.";
-\[Mu]n::usage = "The gyromagnetic ratio of Nitrogen."
+(* ::Subsection:: *)
+(*Usage Declarations*)
 
 
-(* ::Section::Closed:: *)
-(*Frames*)
+\[Gamma]e::usage = "The gyromagnetic ratio of an electron. Units of Hz/G.";
+\[Gamma]c::usage = "The gyromagnetic ratio of 13-Carbon. Units of Hz/G.";
+\[Gamma]n15::usage = "The gyromagnetic ratio of 15-Nitrogen. Units of Hz/G."
+\[Gamma]n14::usage = "The gyromagnetic ratio of 14-Nitrogen. Units of Hz/G."
+
+
+\[Mu]0::usage = "The magnetic constant. Synonyms: the vacuum permeability, the permeability of free space. Units of 10^8*H/m. The multiplication by 10^8 is because we prefer to write gyromagnetic ratios in Hz/G instead of Hz/T.";
+\[HBar]::usage = "Planck's reduced constant. Untis of J*s.";
+\[Lambda]::usage = "The bond length in a diamond crystal. Units in metres.";
+
+
+\[CapitalDelta]::usage = "The Zero Field Splitting (ZFS) of an NV center. Units of Hz.";
+
+
+$constants::usage = "A list of replacement rules for the numerical values of physical constants.";
+InsertConstants::usage = "InsertConstants[expr] replaces all physical constants appearing in the expression expr with their numerical value. Check the usage text of a given physical constant for the units used.";
 
 
 (* ::Subsection:: *)
+(*Implementations*)
+
+
+Begin["`Private`"];
+
+
+$constants = 
+{
+	\[CapitalDelta]     -> 2.87*10^9,
+	\[Gamma]e    -> 2.802495266*10^6,
+	\[Gamma]c    -> 1.0705*10^3,
+	\[Gamma]n14  -> 0.3077*10^3,
+	\[Gamma]n15  -> -.4316*10^3,
+	\[Mu]0    -> 4\[Pi]*10^-7*10^8,
+	\[Lambda]     -> 0.154*10^-9,
+	\[HBar]     -> 1.054571726*10^\[Minus]34
+};
+
+
+InsertConstants[expr_]:=expr/.$constants
+
+
+End[];
+
+
+(* ::Section::Closed:: *)
+(*Frames and Vectors*)
+
+
+(* ::Subsection::Closed:: *)
 (*Usage Declarations*)
+
+
+Coordinates::usage = "";
+Cartesian::usage = "";
+Spherical::usage = "";
+Cylindrical::usage = "";
+
+
+Vector::usage = "";
 
 
 SphericalToCartesian::usage = "SphericalToCartesian[{r,\[Theta],\[Phi]}] transforms the spherical vector {r,\[Theta],\[Phi]} into the cartesian vector {r Cos[\[Theta]]Sin[\[Phi]], r Sin[\[Theta]]Sin[\[Phi]], r Cos[\[Phi]]}. \[Phi] is the polar angle (down from the z axis) and \[Theta] is the azimual angle (from the x axis towards the y axis). We choose not to use the builtin function CoordinateTransform because it deals with 0 angles in a dumb way.";
@@ -219,12 +295,6 @@ ChangeCoordinates::usage = "ChangeCoordinates[v, fromCoords, toCoords] changes t
 
 
 Frame::usage = "";
-
-
-Coordinates::usage = "";
-Cartesian::usage = "";
-Spherical::usage = "";
-Cylindrical::usage = "";
 
 
 FrameMatrix::usage = "FrameMatrix[frame] returns the orthogonal 3x3 matrix, M, corresponding to the given frame. This is the matrix that transforms from the canonical basis to the basis of the frame, all in Cartesian coordinates (Frames entered in non-Cartesian cooridinates will be automatically converted). So, for example, M.{1,0,0}=x, where frame=Frame[x,y,z,Cartesian].";
@@ -244,8 +314,12 @@ EulerAngles::usage = "EulerAngles[\[Theta]z1,\[Theta]y,\[Theta]z2] returns a Fra
 PlotFrame::usage = "PlotFrame[frame1,frame2,...] plots each Frame given as an argement on the same figure.";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Implementations*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*Coordinate Conversions*)
 
 
 Begin["`Private`"];
@@ -270,6 +344,60 @@ ChangeCoordinates[v_?Vector3Q,Cartesian,Spherical]:=CartesianToSpherical[v]
 ChangeCoordinates[v_?Vector3Q,Cylindrical,Spherical]:=CylindricalToSpherical[v]
 ChangeCoordinates[v_?Vector3Q,Cartesian,Cylindrical]:=CartesianToCylindrical[v]
 ChangeCoordinates[v_?Vector3Q,Spherical,Cylindrical]:=SphericalToCylindrical[v]
+
+
+ChangeCoordinates[v_Vector,newCoords_]:=Vector[ChangeCoordinates[Value@v,Coordinates@v,newCoords],newCoords]
+
+
+End[];
+
+
+(* ::Subsubsection::Closed:: *)
+(*Vectors*)
+
+
+Begin["`Private`"];
+
+
+(* ::Text:: *)
+(*Functions to extract the vector and coordinates out of a Vector.*)
+
+
+Vector/:Coordinates[Vector[_,coords_]]:=coords
+Vector/:Value[Vector[v_,_]]:=v
+
+
+(* ::Text:: *)
+(*Define shorthand notation for converting coordinates.*)
+
+
+Cartesian[v_Vector]:=ChangeCoordinates[v,Cartesian]
+Spherical[v_Vector]:=ChangeCoordinates[v,Spherical]
+Cylindrical[v_Vector]:=ChangeCoordinates[v,Cylindrical]
+
+
+(* ::Text:: *)
+(*To add Vectors, simply convert to Cartesian before doing usual addition. Similar for the dot product.*)
+
+
+Vector/:Plus[v1_Vector,v2_Vector,rest___]:=Plus[Vector[Value@Cartesian@v1+Value@Cartesian@v2,Cartesian],rest]
+Vector/:Dot[v1_Vector,v2_Vector]:=(Value@Cartesian@v1).(Value@Cartesian@v2);
+
+
+Vector/:Times[\[Lambda]1___,v_Vector,\[Lambda]2___]:=Vector[Times[\[Lambda]1,\[Lambda]2,Value@Cartesian@v],Cartesian]
+
+
+Vector/:Minus[v_Vector]:=Vector[-Value@Cartesian@v,Cartesian]
+
+
+End[];
+
+
+(* ::Subsubsection::Closed:: *)
+(*Frames*)
+
+
+Begin["`Private`"];
 
 
 (* ::Text:: *)
@@ -302,11 +430,24 @@ Frame/:Cartesian[f:Frame[a_,b_,c_,Spherical]]:=Frame[SphericalToCartesian[a], Sp
 Frame/:Cartesian[f:Frame[a_,b_,c_,Cylindrical]]:=Frame[CylindricalToCartesian[a], CylindricalToCartesian[b], CylindricalToCartesian[c], Cartesian]
 
 
+Frame/:Coordinates[Frame[_,_,_,coords_]]:=coords
+
+
 (* ::Text:: *)
 (*Returns the orthogonal matrix corresponding to the input frame.*)
 
 
 FrameMatrix[f_Frame]:=((List@@Cartesian[f])[[1;;3]])\[Transpose]
+
+
+End[];
+
+
+(* ::Subsubsection::Closed:: *)
+(*Changing, Inverting and Composing Frames*)
+
+
+Begin["`Private`"];
 
 
 (* ::Text:: *)
@@ -320,8 +461,9 @@ FrameChangeMatrix[fromFrame_,toFrame_]:=FrameMatrix[toFrame].FrameMatrix[fromFra
 (*We have the frame change matrix, so now it's just a matter of actually impementing it.*)
 
 
-FrameChange[M_?Vector3Q,fromFrame_,toFrame_]:=FrameChangeMatrix[fromFrame,toFrame].M
+FrameChange[v_?Vector3Q,fromFrame_,toFrame_]:=FrameChangeMatrix[fromFrame,toFrame].v
 FrameChange[M_?Matrix3Q,fromFrame_,toFrame_]:=With[{F=FrameChangeMatrix[fromFrame,toFrame]},F.M.F\[Transpose]]
+FrameChange[v_Vector,fromFrame_,toFrame_]:=ChangeCoordinates[FrameChangeMatrix[fromFrame,toFrame].ChangeCoordinates[v,Cartesian],Cartesian,Coordinates@v]
 
 
 (* ::Text:: *)
@@ -339,7 +481,25 @@ FrameCompose[f_Frame]:=f
 FrameCompose[fa_Frame,fb_Frame,rest___]:=FrameCompose[Frame[Simplify[FrameMatrix[fa].FrameMatrix[fb]]],rest]
 
 
+End[];
+
+
+(* ::Subsubsection::Closed:: *)
+(*Special Frames*)
+
+
+Begin["`Private`"];
+
+
+(* ::Text:: *)
+(*The canonical basis.*)
+
+
 IdentityFrame=Frame[{1,0,0},{0,1,0},{0,0,1},Cartesian];
+
+
+(* ::Text:: *)
+(*We use the extrinsic ZYZ convention.*)
 
 
 EulerAngles[\[Theta]z1_,\[Theta]y_,\[Theta]z2_]=Frame[RotationMatrix[\[Theta]z2, {0,0,1}].RotationMatrix[\[Theta]y, {0,1,0}].RotationMatrix[\[Theta]z1, {0,0,1}]];
@@ -349,9 +509,17 @@ EulerAngles[\[Theta]z1_,\[Theta]y_,\[Theta]z2_]=Frame[RotationMatrix[\[Theta]z2,
 (*The bond frame is most easily describable in spherical coordinates, so convert first. Note that all "bond frame means" is some frame in which the z vector is parallel to the input vector of BondFrame; the x-y vectors are chosen sort of arbitrarily, but it doesn't matter because the tensor should be cylindrically symmetric.*)
 
 
-BondFrame[{x_,y_,z_},Cartesian]:=BondFrame[CartesianToSpherical[{x,y,z}],Spherical];
-BondFrame[{\[Rho]_,\[Theta]_,z_},Cylindrical]:=BondFrame[CylindricalToSpherical[{\[Rho],\[Theta],z}],Spherical];
-BondFrame[{r_,\[Theta]_,\[Phi]_},Spherical]:=EulerAngles[0,\[Phi],\[Theta]]
+BondFrame[v_Vector]:=With[{s=Value@ChangeCoordinates[v,Spherical]},EulerAngles[0,s[[3]],s[[2]]]]
+
+
+End[];
+
+
+(* ::Subsubsection::Closed:: *)
+(*Plotting Frames*)
+
+
+Begin["`Private`"];
 
 
 (* ::Text:: *)
@@ -393,8 +561,18 @@ End[];
 NVOrientationToFrame::usage = "NVOrientationToFrame[n] returns a Frame (with respect to the crystal frame, of course) corresponding to the n'th NV orientation. n should be one of the values 1,2,3,4,5,6,7,8. Here, 1 is along the positive z direction, 2 is on the x-z plane, rotated an angle ArcCos[-1/3] from the z axis, and orientations 3 and 4 are right-handed Z rotations of orientation 2 by angles 2\[Pi]/3 and 4\[Pi]/3 respectively. The orientations 5,6,7,8 are respectively anti-parallel to 1,2,3,4.";
 
 
+E0::usage = "The 0th diamond lattice vector. This direction is parallel to the ZFS. This vector has unit length 1, and so represents a length equal to one bond length.";
+E1::usage = "The 1st diamond lattice vector. This direction is rotated down from the ZFS axis by angle ArcCos[-1/3]. This vector has unit length 1, and so represents a length equal to one bond length.";
+E2::usage = "The 2nd diamond lattice vector. This direction is rotated down from the ZFS axis by angle ArcCos[-1/3], and clockwise about z by 2\[Pi]/3. This vector has unit length 1, and so represents a length equal to one bond length.";
+E3::usage = "The 3rd diamond lattice vector. This direction is rotated down from the ZFS axis by angle ArcCos[-1/3], and clockwise about z by 4\[Pi]/3. This vector has unit length 1, and so represents a length equal to one bond length.";
+
+
 (* ::Subsection:: *)
 (*Implementations*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*NV Orientations*)
 
 
 Begin["`Private`"];
@@ -413,6 +591,26 @@ NVOrientationToFrame[8]=EulerAngles[0,ArcCos[-1/3]-\[Pi],4\[Pi]/3];
 End[]
 
 
+(* ::Subsubsection::Closed:: *)
+(*Lattice Positions*)
+
+
+Begin["`Private`"];
+
+
+(* ::Text:: *)
+(*The lattice directions.*)
+
+
+E0=Vector[{0,0,1},Cartesian];
+E1=Cartesian@Vector[{1,0,ArcCos[-1/3]},Spherical];
+E2=Cartesian@Vector[{1,2\[Pi]/3,ArcCos[-1/3]},Spherical];
+E3=Cartesian@Vector[{1,4\[Pi]/3,ArcCos[-1/3]},Spherical];
+
+
+End[];
+
+
 (* ::Section::Closed:: *)
 (*Options*)
 
@@ -426,10 +624,11 @@ NVOrientation::usage = "";
 ZeroFieldSplitting::usage = "";
 StaticField::usage = "";
 StaticFieldFrame::usage = "";
-StaticFieldCoordinates::usage = "";
 NVSpin::usage = "";
 OutputFrame::usage = "";
 CrystalOrientation::usage = "";
+Numerical::usage = "";
+AngularUnits::usage = "";
 
 
 LabFrame::usage = "";
@@ -445,7 +644,7 @@ CheckOptions::usage = "CheckOptions[opts] checks opts for any malformed/unaccept
 (*Implementations*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*The Options*)
 
 
@@ -456,12 +655,13 @@ Options[NVHamiltonian]=
 	{
 		ZeroFieldSplitting -> \[CapitalDelta],
 		NVOrientation -> 1,
-		StaticField -> {0,0,0},
+		StaticField -> Vector[{0,0,0},Cartesian],
 		StaticFieldFrame -> LabFrame,
-		StaticFieldCoordinates -> Cartesian,
 		NVSpin -> 1,
 		OutputFrame -> ZFSFrame,		
-		CrystalOrientation -> IdentityFrame
+		CrystalOrientation -> IdentityFrame,
+		Numerical -> Automatic,
+		AngularUnits -> Automatic
 	};
 
 
@@ -484,60 +684,22 @@ Begin["`Private`"];
 
 CheckOptions[OptionsPattern[NVHamiltonian]]:=
 	Module[
-		{OV=OptionValue},
-		If[Not[ListQ[OV[ZeroFieldSplitting]]]&&Not[Vector3Q[OV[ZeroFieldSplitting]]],Message[ZeroFieldSplitting::badinput];Abort[]];
+		{abort},
 
-		If[Not[ValidReferenceFrameQ[OV[OutputFrame]]],Message[OutputFrame::badframe];Abort[]];
+		If[Not[MemberQ[{True,False,Automatic},OptionValue[Numerical]]],Message[Numerical::badinput];abort=True];
+		If[Not[MemberQ[{True,False,Automatic},OptionValue[AngularUnits]]],Message[AngularUnits::badinput];abort=True];
 
-		If[Not[ValidReferenceFrameQ[OV[StaticFieldFrame]]],Message[StaticField::badframe];Abort[]];
-		If[OV[StaticFieldFrame]===ZeemanFrame,Message[StaticField::badframe];Abort[]];
+		If[ListQ[OptionValue[ZeroFieldSplitting]]&&Not[Vector3Q[OptionValue[ZeroFieldSplitting]]],Message[ZeroFieldSplitting::badinput];abort=True];
+
+		If[Not[ValidReferenceFrameQ[OptionValue[OutputFrame]]],Message[OutputFrame::badframe];abort=True];
+
+		If[Not[ValidReferenceFrameQ[OptionValue[StaticFieldFrame]]],Message[StaticField::badframe];abort=True];
+		If[OptionValue[StaticFieldFrame]===ZeemanFrame,Message[StaticField::badframe];abort=True];
+		If[Head[OptionValue[StaticField]]=!=Vector,Message[StaticField::notvector];abort=True];
+
+		If[abort,Abort[];]
 	]
 
-
-
-End[];
-
-
-(* ::Section:: *)
-(*Hyperfine Operations*)
-
-
-(* ::Subsection:: *)
-(*Usage Declarations*)
-
-
-RotateTensor::usage = "Rotation[A, {\[Theta]azimuth, \[Theta]polar}] performs the rotation RotZ[-\[Theta]azimuth].RotY[-\[Theta]polar].A.RotY[\[Theta]polar].RotZ[\[Theta]azimuth]. If these angles are interpreted as the spherical coordinates of the nucleus in the ZFS frame, then this operation will take you _from_ the bond frame _to_ the ZFS frame.";
-
-
-HyperfineHamiltonian::usage = "HyperfineHamiltonian[spin1,spin2,A]";
-
-
-(* ::Subsection:: *)
-(*Implementations*)
-
-
-Begin["`Private`"];
-
-
-RotateTensor[A_,{\[Theta]azimuth_,\[Theta]polar_}]:=
-	With[{O=RotationMatrix[-\[Theta]azimuth, {0,0,1}].RotationMatrix[-\[Theta]polar, {0,1,0}]},
-		O.A.O\[Transpose]
-	];
-
-
-(* ::Text:: *)
-(*Start by defining the hyperfine interaction on a bipartite system.*)
-
-
-HyperfineHamiltonian[spin1_,spin2_,A_]:=
-	Total[Table[A[[i,j]]*Spin[spin1,i]\[CircleTimes]Spin[spin2,j],{i,3},{j,3}],2]
-
-
-(* ::Text:: *)
-(*Now expand the definition to include identity operations on systems before, in-between, and after.*)
-
-
-HyperfineHamiltonian[spin1_,spin2_,A_,n1_,n2_,n3_]:=IdentityInsert[HyperfineHamiltonian[spin1,spin2,A],SpinDim[spin1],SpinDim[spin2],n1,n2,n3]
 
 
 End[];
@@ -547,7 +709,7 @@ End[];
 (*Nuclei*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Usage Declarations*)
 
 
@@ -556,6 +718,7 @@ Nitrogen::usage = "";
 
 
 Tensor::usage = "";
+Location::usage = "";
 QuadrapoleTensor::usage = "";
 Isotope::usage = "";
 GyromagneticRatio::usage = "";
@@ -565,15 +728,18 @@ GyromagneticRatio::usage = "";
 (*Implementations*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Carbon*)
 
 
 Begin["`Private`"];
 
 
-Carbon/:Tensor[Carbon[{Apar_,Aperp_},frame_Frame]]:=FrameChange[DiagonalMatrix[{Aperp,Aperp,Apar}],frame,IdentityFrame]
+Carbon/:Tensor[Carbon[{Apar_,Aperp_},v_Vector]]:=FrameChange[DiagonalMatrix[{Aperp,Aperp,Apar}],IdentityFrame,BondFrame[v]]
 Carbon/:Tensor[Carbon[A_?Matrix3Q]]:=A
+
+
+Carbon/:Location[Carbon[_,v_Vector]]:=v
 
 
 Carbon/:Isotope[Carbon[___]]:=13
@@ -582,7 +748,10 @@ Carbon/:Isotope[Carbon[___]]:=13
 Carbon/:Spin[Carbon[___]]:=1/2
 
 
-Carbon/:GyromagneticRatio[Carbon[___]]:=\[Mu]c
+Carbon/:SpinDim[Carbon[___]]:=2
+
+
+Carbon/:GyromagneticRatio[Carbon[___]]:=\[Gamma]c
 
 
 End[];
@@ -598,6 +767,9 @@ Begin["`Private`"];
 Nitrogen/:Tensor[Nitrogen[_,{Apar_,Aperp_},___]]:=DiagonalMatrix[{Aperp,Aperp,Apar}]
 
 
+Nitrogen/:Location[Nitrogen[___]]:=E0
+
+
 Nitrogen/:QuadrapoleTensor[Nitrogen[_,_,Q_?Matrix3Q]]:=Q
 Nitrogen/:QuadrapoleTensor[Nitrogen[_,_,Q_?Vector3Q]]:=DiagonalMatrix[Q]
 Nitrogen/:QuadrapoleTensor[Nitrogen[_,_,Q_]]:=DiagonalMatrix[{0,0,Q}]
@@ -606,10 +778,13 @@ Nitrogen/:QuadrapoleTensor[Nitrogen[_,_,Q_]]:=DiagonalMatrix[{0,0,Q}]
 Nitrogen/:Isotope[Nitrogen[isotope_,___]]:=isotope
 
 
-Nitrogen/:Spin[Nitrogen[x___]]:=Spin[If[Isotope[Nitrogen[x]]===13,1/2,1]]
+Nitrogen/:Spin[Nitrogen[x___]]:=If[Isotope[Nitrogen[x]]===13,1/2,1]
 
 
-Nitrogen/:GyromagneticRatio[Nitrogen[___]]:=\[Mu]n
+Nitrogen/:SpinDim[n:Nitrogen[___]]:=SpinDim[Spin[n]]
+
+
+Nitrogen/:GyromagneticRatio[Nitrogen[x___]]:=If[Isotope[Nitrogen[x]]===13,\[Gamma]n13,\[Gamma]n14]
 
 
 End[];
@@ -619,7 +794,7 @@ End[];
 (*Hamiltonians*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Usage Declarations*)
 
 
@@ -627,6 +802,12 @@ ZFSHamiltonian::usage = "";
 
 
 ZeemanHamiltonian::usage = "";
+
+
+HyperfineHamiltonian::usage = "HyperfineHamiltonian[spin1,spin2,A]";
+
+
+DipoleDipoleHamiltonian::usage = "";
 
 
 QuadrapolarHamiltonian::usage = "";
@@ -666,6 +847,20 @@ ZeemanHamiltonian[\[Mu]_,{Bx_,By_,Bz_},spin_] := \[Mu](Bx Spin[spin,1] + By Spin
 End[];
 
 
+(* ::Subsubsection::Closed:: *)
+(*Hyperfine Hamiltonian*)
+
+
+Begin["`Private`"];
+
+
+HyperfineHamiltonian[spin1_,spin2_,A_]:=
+	Sum[A[[i,j]]*Spin[spin1,i]\[CircleTimes]Spin[spin2,j],{i,3},{j,3}]
+
+
+End[];
+
+
 (* ::Subsubsection:: *)
 (*Dipole Dipole Hamiltonian*)
 
@@ -673,7 +868,14 @@ End[];
 Begin["`Private`"];
 
 
-DipoleDipoleHamiltonian[spin1_,spin2_,\[Mu]1_,\[Mu]2_,v1_,v2_]:=
+DipoleDipoleHamiltonian[spin1_,spin2_,\[Gamma]1_,\[Gamma]2_,v1_Vector,v2_Vector]:=
+	With[{R=Sqrt[(v1-v2).(v1-v2)],e=Value@(v1-v2)},
+		If[PossibleZeroQ[R],
+			Message[DipoleDipoleHamiltonian::equallocations];
+			ConstantArray[0,{SpinDim[spin1]*SpinDim[spin2],SpinDim[spin1]*SpinDim[spin2]}],
+			((-\[Mu]0 \[Gamma]1 \[Gamma]2 \[HBar])/(4\[Pi] R^3))*(3(Total@(Spin[spin1]*e))\[CircleTimes](Total@(Spin[spin2]*e))/R^2-Spin[spin1,1]\[CircleTimes]Spin[spin2,1]-Spin[spin1,2]\[CircleTimes]Spin[spin2,2]-Spin[spin1,3]\[CircleTimes]Spin[spin2,3])
+		]
+	]
 
 
 End[];
@@ -699,23 +901,24 @@ End[];
 Begin["`Private`"];
 
 
-NVHamiltonian[nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
+NVHamiltonian[nuclei___,opt:OptionsPattern[]]:=
 	Module[
 		{
 			cartesianB,sphericalB,
 			dimNV,dimN,hasN,dimC,numC,dimList,
 			nucleiList,
 			nvSpin,
-			termList,Term,ExpandTerm,HyperfineTerm,NuclearZeemanTerm,
-			labFrame,crystalFrame,zfsFrame,zeemanFrame,frames
+			termList,Term,ExpandTerm,HyperfineTerm,NuclearZeemanTerm,DipoleDipoleTerm,
+			labFrame,crystalFrame,zfsFrame,zeemanFrame,frames,
+			angularUnits,preFactor,numerical
 		},
 
 		(* Check the options for any malformed/incorrect/etc inputs *)
 		CheckOptions[opt];
 
 		(* Convert the B field to various coordinate systems *)
-		cartesianB = ChangeCoordinates[OptionValue[StaticField],OptionValue[StaticFieldCoordinates],Cartesian];
-		sphericalB = ChangeCoordinates[OptionValue[StaticField],OptionValue[StaticFieldCoordinates],Spherical];
+		cartesianB = Value@ChangeCoordinates[OptionValue[StaticField],Cartesian];
+		sphericalB = Value@ChangeCoordinates[OptionValue[StaticField],Spherical];
 
 		(* We will need to be able to convert the placeholder frame names to actual Frames *)
 		frames:={LabFrame->labFrame, CrystalFrame->crystalFrame, ZFSFrame->zfsFrame, ZeemanFrame->zeemanFrame};
@@ -729,17 +932,17 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 				labFrame = IdentityFrame;
 				crystalFrame = OptionValue[CrystalOrientation];
 				zfsFrame = FrameCompose[NVOrientationToFrame[OptionValue[NVOrientation]],crystalFrame];
-				zeemanFrame = FrameCompose[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[StaticFieldFrame]/.frames];
+				zeemanFrame = FrameCompose[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[StaticFieldFrame]/.frames];,
 			OptionValue[OutputFrame]===CrystalFrame,
 				crystalFrame = IdentityFrame;
 				labFrame = FrameInverse[OptionValue[CrystalOrientation]];
 				zfsFrame = NVOrientationToFrame[OptionValue[NVOrientation]];
-				zeemanFrame = FrameCompose[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[StaticFieldFrame]/.frames];
+				zeemanFrame = FrameCompose[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[StaticFieldFrame]/.frames];,
 			OptionValue[OutputFrame]===ZFSFrame,
 				zfsFrame = IdentityFrame;
 				crystalFrame = FrameInverse[NVOrientationToFrame[OptionValue[NVOrientation]]];
 				labFrame = FrameCompose[OptionValue[CrystalOrientation],crystalFrame];
-				zeemanFrame = FrameCompose[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[StaticFieldFrame]/.frames];
+				zeemanFrame = FrameCompose[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[StaticFieldFrame]/.frames];,
 			OptionValue[OutputFrame]===ZeemanFrame,
 				zeemanFrame = IdentityFrame;
 				(* The ZeemanFrame case is special because the StaticField has the option of being written in any frame. *)
@@ -747,11 +950,11 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 					OptionValue[StaticFieldFrame]===LabFrame,
 						labFrame = FrameInverse[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];
 						crystalFrame = FrameCompose[OptionValue[CrystalOrientation],labFrame];
-						zfsFrame = FrameCompose[NVOrientationToFrame[OptionValue[NVOrientation]],crystalFrame];
+						zfsFrame = FrameCompose[NVOrientationToFrame[OptionValue[NVOrientation]],crystalFrame];,
 					OptionValue[StaticFieldFrame]===CrystalFrame,
 						crystalFrame = FrameInverse[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];
 						labFrame = FrameCompose[FrameInverse[OptionValue[CrystalOrientation]],crystalFrame];
-						zfsFrame = FrameCompose[NVOrientationToFrame[OptionValue[NVOrientation]],crystalFrame];
+						zfsFrame = FrameCompose[NVOrientationToFrame[OptionValue[NVOrientation]],crystalFrame];,
 					OptionValue[StaticFieldFrame]===ZFSFrame,
 						zfsFrame = FrameInverse[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];
 						crystalFrame = FrameCompose[FrameInverse[NVOrientationToFrame[OptionValue[NVOrientation]]],zfsFrame];
@@ -769,9 +972,6 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 		hasN = Length[nucleiList]>0 && NitrogenQ@First@nucleiList;
 		numC = Length[nucleiList] - If[hasN,1,0];
 
-		(* Populate any placeholder frames with real ones *)
-		nucleiList = nucleiList/.frames;
-
 		(* Determine the dimensions of each subsystem. *)
 		dimNV = SpinDim[nvSpin];
 		dimList = Prepend[SpinDim/@nucleiList,dimNV];
@@ -785,14 +985,14 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 		AppendTo[termList,Term[ZFSHamiltonian[OptionValue[ZeroFieldSplitting],nvSpin],1]];
 
 		(* Now add the NV Zeeman term *)
-		AppendTo[termList,Term[ZeemanHamiltonian[\[Mu]e,cartesianB,nvSpin],1]];
+		AppendTo[termList,Term[ZeemanHamiltonian[\[Gamma]e,cartesianB,nvSpin],1]];
 
 		(* Add all of the nuclei Zeeman terms *)
-		NuclearZeemanTerm[nucleus_,index_]:=Term[ZeemanHamiltonian[GyromagneticRatio[nucleus,cartesianB,Spin[nucleus]]],index];
+		NuclearZeemanTerm[nucleus_,index_]:=Term[ZeemanHamiltonian[GyromagneticRatio[nucleus],cartesianB,Spin[nucleus]],index+1];
 		termList = Join[termList,MapIndexed[NuclearZeemanTerm[#1,First@#2]&, nucleiList]];
 
 		(* Calculate and store all of the hyperfine interaction terms *)
-		HyperfineTerm[nucleus_,index_]:=Term[HyperfineHamiltonian[nvSpin,Spin[nucleus],FrameChange[Tensor[nucleus],IdentityFrame,zfsFrame]], 1, index];
+		HyperfineTerm[nucleus_,index_]:=Term[HyperfineHamiltonian[nvSpin,Spin[nucleus],FrameChange[Tensor[nucleus],IdentityFrame,zfsFrame]], 1, index+1];
 		termList = Join[termList,MapIndexed[HyperfineTerm[#1,First@#2]&, nucleiList]];
 
 		(* Add the quadrapolar term for the Nitrogen *)
@@ -801,6 +1001,9 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 		];
 
 		(* Add all of the dipole-dipole interactions *)
+		DipoleDipoleTerm[nucleus1_,nucleus2_,index1_,index2_]:=
+			Term[DipoleDipoleHamiltonian[Spin[nucleus1],Spin[nucleus2],GyromagneticRatio[nucleus1],GyromagneticRatio[nucleus2],\[Lambda]*Location[nucleus1],\[Lambda]*Location[nucleus2]],index1+1,index2+1];
+		termList = Join[termList,Flatten@Table[DipoleDipoleTerm[nucleiList[[i]],nucleiList[[j]],i,j],{i,Length[nucleiList]},{j,i+1,Length[nucleiList]}]];
 
 		(* Define rules for turning a Term into a matrix on the full Hilbert space. *)
 		(* We only have 1-local and 2-local terms, so make a rule for each one manually. *)
@@ -812,9 +1015,93 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 							Times@@dimList[[1;;ind1-1]], Times@@dimList[[ind1+1;;ind2-1]], Times@@dimList[[ind2+1;;-1]]
 			];
 
+
+		(* Decide whether or not a numerical output is desired *)
+		If[
+			OptionValue[Numerical]===Automatic,
+				(* If any term contains something with the Head Real or Complex, set numerical to True. *)
+				numerical = Not[FreeQ[termList,_Real]&&FreeQ[termList,_Complex]];,
+				(* Otherwise, the user will have said what to do. *)
+				numerical = OptionValue[Numerical];
+		];
+		(* Decide whether or not to multiply everything by 2\[Pi]; the Automatic logic is the same as numerical *)
+		If[OptionValue[AngularUnits]===Automatic, angularUnits = numerical;, angularUnits = OptionValue[AngularUnits];];
+		preFactor = If[angularUnits, preFactor=2*\[Pi], 1];
+
+		(* Not that it _really_ matters, but do the search and replace for constants before expanding to the
+		   full Hilbert space because it should be a bit faster, at least, asymtotically.  *)
+		If[numerical,
+			termList = InsertConstants[termList];
+		];
+
 		(* Finally, expand all the terms and sum them up. *)
 		(* We are carfeful to do this in a way that doesn't use more memory than needed. *)
-		Fold[#1+ExpandTerm[#2]&, 0, termList]
+		Fold[#1+preFactor*ExpandTerm[#2]&, 0, termList]
+	]
+
+
+End[];
+
+
+(* ::Section:: *)
+(*Plotting Tools*)
+
+
+(* ::Subsection:: *)
+(*Usage Declarations*)
+
+
+Resolution::usage = "Resolution is an option for SpectrumData which decides when two frequencies are close enough to be considered the same frequency. The default value is $MachineEpsilon. Units of Resolution are MHz.";
+SpectrumData::usage = "SpectrumData[nvHamiltonian] accepts a numerical NV Hamiltonian (where the first product space is that of the electron) and returns a list of the form {{freq1, rate1},{freq2,rate2},...}, containing the frequencies and respective rates of transitions under microwave radiation. The rates are normalized to sum to 1. The option Resolution is accepted, which decides when two freqencies are equal.";
+
+
+SpectrumPlot::usage = "SpectrumPlot[nvhamiltonian,\[Sigma]] displays a simple plot of the spectrum of the input numerical Hamiltonian.";
+
+
+(* ::Subsection:: *)
+(*Implementations*)
+
+
+Begin["`Private`"];
+
+
+Options[SpectrumData]={Resolution->0.001, AngularUnits->True};
+SpectrumData[ham_,OptionsPattern[]]:=
+	Module[{U,D,C,probs,freqs,output},
+		If[PossibleZeroQ[Mod[Length[ham],3]],
+			C = Spin[1,1]\[CircleTimes]IdentityMatrix[Length[ham]/3];,
+			C = Spin[1/2,1]\[CircleTimes]IdentityMatrix[Length[ham]/2];
+		];
+
+		{D, U} = Eigensystem[ham/10^6];
+		U = Normalize/@U;
+
+		probs = Abs[Flatten[UpperTriangularize[U.C.U\[ConjugateTranspose]]]]^2;
+		probs = probs/Total[probs];
+		freqs = Abs@Flatten@UpperTriangularize@Outer[Subtract,D,D,1];_
+
+		If[OptionValue[AngularUnits],freqs=freqs/(2\[Pi])];
+
+		output = Select[{freqs,probs}\[Transpose],(Last@#>OptionValue[Resolution])&];
+		output = Sort[output,First@#1>First@#2&];
+		output = Split[output,Abs[First@#1-First@#2]<=OptionValue[Resolution]&];
+		output = Map[{Mean[#[[All,1]]],Total[#[[All,2]]]}&,output,1];
+		output
+	]
+
+
+Options[SpectrumPlot]=Join[Options[Plot],Options[SpectrumData],{}];
+SpectrumPlot[ham_,\[Sigma]_,opt:OptionsPattern[]]:=
+	Module[{spectData,spectrum,minFreq,maxFreq,freqDiff,minPlot,maxPlot,plotOptions},
+		spectData = SpectrumData[ham,Resolution->OptionValue[Resolution],AngularUnits->OptionValue[AngularUnits]];
+		spectrum[f_]=Total[Last[#]*Exp[-(f-First[#])^2/(2*\[Sigma]^2)]&/@spectData];
+		minFreq = First@Last@spectData;
+		maxFreq = First@First@spectData;
+		freqDiff = maxFreq - minFreq;
+		minPlot = minFreq - Max[0.1*freqDiff,5*\[Sigma]];
+		maxPlot = maxFreq + Max[0.1*freqDiff,5*\[Sigma]];
+		plotOptions = Sequence@@Select[{opt},MemberQ[(Options[Plot])[[All,1]],First[#]]&];
+		Plot[spectrum[f],{f,minPlot,maxPlot},AxesOrigin->{minPlot,0},Evaluate@plotOptions]
 	]
 
 
@@ -823,6 +1110,10 @@ End[];
 
 (* ::Section::Closed:: *)
 (*Epilogue*)
+
+
+(* ::Text:: *)
+(*This section exists so that EndPackage[] isn't just placed in the last section. Not doing this can result in very confusing behaviour when you add another section but forget to move EndPackage[].*)
 
 
 EndPackage[];
