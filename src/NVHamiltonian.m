@@ -132,7 +132,7 @@ $e3=RotMatZ[4Pi/3].$e1;
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*NV Geometry*)
 
 
@@ -518,7 +518,7 @@ CarbonHyperfineTensorInfo[shell_,nitrogenIsotope_]:=CarbonHyperfineTensorInfo[sh
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*NV Frame change functions*)
 
 
@@ -528,6 +528,9 @@ End[];
 
 RotateBtoNVPAS::usage = "RotateBtoNVPAS[BLab,crystalOrientation,nvOrientation,BCoords] takes a vector, Blab, in the lab frame in BCoords coordinates and outputs the vector in the NV PAS with the same coordinate system.";
 RotateBfromNVPAS::usage = "RotateBfromNVPAS[Bnvcoords,crystalOrientation,nvOrientation,BCoords] takes a vector, Bnvpas, in the NVPAS in BCoords coordinates and outputs the vector in the lab frame with the same coordinate system.";
+
+
+RotateTensorToNVPAS::usage = "RotateTensorToNVPAS[A, vec]";
 
 
 (* ::Subsection:: *)
