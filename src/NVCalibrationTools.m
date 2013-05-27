@@ -1,6 +1,8 @@
 (* ::Package:: *)
 
+Off[General::obspkg];
 BeginPackage["NVCalibrationTools`",{"VectorAnalysis`","NVHamiltonian`"}]
+On[General::obspkg];
 
 
 (* ::Section:: *)
@@ -115,6 +117,10 @@ Plot2DField::usage = "Plot2DField[fun2d] (OR Plot2DField[{fun2d1,fun2d2,...}] (d
 
 CubeComputeFieldAtPoint::usage = "CubeComputeFieldAtPoint[{x,y,z}, m:1000, l:5, w:5, h:5] computes the magnetic field due to a rectangular magnet located at the origin at the coordinate {x,y,z}. m is an overall scaling factor which you can think of as the density of ferromagnetism, or something physicsy like that.";
 ComputeCubeFieldAndSave::usage = "ComputeCubeFieldAndSave[filename,{xmin,xmax,dx},{ymin,ymax,dy},{zmin,zmax,dz},m:1000,l:5,w:5,h:5,parallel:False] computes the field using CubeComputeFieldAtPoint on each point of the rectangular array defined by {xmin,xmax,dx},{ymin,ymax,dy},{zmin,zmax,dz}. The results are stored to file using Save3DField. Calculation will be done in parallel if you set the parallel flag to True.";
+CubeMagnet::usage = "CubeMagnet[{x,y,z},fun3dup,fun3dright,orientation] returns the field at position {x,y,z} due to a rectangular magnet centered at the origin whose magnetic field is given by fun3dup or fun3dright (output of Interpolate3DField). This function has two purposes: (1) extend the domain of the field from the positive cone to all octants of space (this lets the data we save take up 1/8th of the space), and (2), flip the field if we want orientation 3 or 4, so we don't need to store redundant data.The magnetic field only needs to be computable in the positive cone; the symetry is taken into account. fun3dup is used for orientations 1 and 3, and fun3dright is used for orientations 2 and 4. Orientation should be one of the integers 1,2,3 or 4.";
+HalbachTopField::usage = "HalbachTopField[{x,y,z},{topPos,bottomPos,azimuth},fun3dup,fun3dright,gap,m,l,w,h,topOrientations]";
+HalbachBottomField::usage = "HalbachBottomField[{x,y,z},{topPos,bottomPos,azimuth},fun3dup,fun3dright,gap,m,l,w,h,bottomOrientations]";
+HalbachField::usage = "HalbachField[{x,y,z},{topPos,bottomPos,azimuth},fun3dup,fun3dright,gap,m,l,w,h,bottomOrientations,topOrientations]";
 
 
 Interpolate2DField::usage = "Interpolate2DField[data] accepts the output of Load2DField, and interpolates the matrix to third order, returning an InterpolationFunciton.";
@@ -242,8 +248,8 @@ ComputeDiskFieldAndSave[filename_,{rmin_,rmax_,dr_},{zmin_,zmax_,dz_},m_:1000,d_
 End[];
 
 
-(* ::Subsubsection::Closed:: *)
-(*Field of a Hallbach Array*)
+(* ::Subsubsection:: *)
+(*Field of a Halbach Array*)
 
 
 Begin["`Private`"];
@@ -280,10 +286,48 @@ ComputeCubeFieldAndSave[filename_,{xmin_,xmax_,dx_},{ymin_,ymax_,dy_},{zmin_,zma
 	]
 
 
+CubeMagnet[{x_,y_,z_},fun3dup_,fun3dright_,orientation_]:=
+	Which[
+		orientation===1,
+			{Sign[x]*Sign[z],Sign[y]*Sign[z],1}*fun3dup[Abs[x],Abs[y],Abs[z]],
+		orientation===2,
+			{1,Sign[y]*Sign[x],Sign[z]*Sign[x]}*fun3dright[Abs[x],Abs[y],Abs[z]],
+		orientation===3,
+			-{Sign[x]*Sign[z],Sign[y]*Sign[z],1}*fun3dup[Abs[x],Abs[y],Abs[z]],
+		orientation===4,
+			-{1,Sign[y]*Sign[x],Sign[z]*Sign[x]}*fun3dright[Abs[x],Abs[y],Abs[z]]
+	]
+
+
+HalbachTopField[{x_,y_,z_},{topPos_,bottomPos_,azimuth_},fun3dup_,fun3dright_,gap_:1.4125,m_:1000,l_:6.35,w_:6.35,h_:6.35/4,orientations_:{2,1,4,3,2,1}]:=
+	Module[{numMagnets,B},
+		numMagnets=Length[orientations];
+		(* put the top magnets 4*h+gap above the origin *)
+		B=Sum[CubeMagnet[{x,y,z}-{l/2+(k-1)*l+topPos,0,4*h+gap+h/2},fun3dup,fun3dright,orientations[[k]]],{k,numMagnets}];
+		m*(B)/1000
+	]
+
+
+HalbachBottomField[{x_,y_,z_},{topPos_,bottomPos_,azimuth_},fun3dup_,fun3dright_,gap_:1.4125,m_:1000,l_:6.35,w_:6.35,h_:6.35/4,orientations_:{3,2,1,4,3,2}]:=
+	Module[{numMagnets,B},
+		numMagnets=Length[orientations];
+		(* stack four magnets vertically for each orientation *)
+		B=Sum[CubeMagnet[{x,y,z}-{l/2+(k-1)*l+bottomPos,0,h/2+(j-1)*h},fun3dup,fun3dright,orientations[[k]]],{k,numMagnets},{j,4}];
+		m*(B)/1000
+	]
+
+
+HalbachField[{x_,y_,z_},{topPos_,bottomPos_,azimuth_},fun3dup_,fun3dright_,gap_:1.4125,m_:1000,l_:6.35,w_:6.35,h_:6.35/4,bottomOrientations_:{3,2,1,4,3,2},topOrientations_:{2,1,4,3,2,1}]:=
+	(
+		HalbachTopField[{x,y,z},{topPos,bottomPos,azimuth},fun3dup,fun3dright,gap,m,l,w,h,topOrientations]+
+		HalbachBottomField[{x,y,z},{topPos,bottomPos,azimuth},fun3dup,fun3dright,gap,m,l,w,h,bottomOrientations]
+	)
+
+
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Interpolating Fields*)
 
 
@@ -472,7 +516,7 @@ LoadField[data_,method_]:=
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Magnet Calibration From Position Array of Splitting Data	*)
 
 
@@ -522,7 +566,7 @@ PositionGivenField::usage = "PositionGivenField[{z1,z2,z3},m,B,BCoords:Cartesian
 finds the position you should set the motors to in order to get the field B in coordinate system BCoords. You can demand that the z-motor be greater than 6.
 The output is in the form {costfunctionvalue,{{x,y,z},m}}, where costfunctionvalue has units of MHz, {x,y,z} is where you should put the motors, and m is the magnetization ratio (the same number you input).
 PositionGivenField[solution,B,BCoords:Cartesian,minz:6] returns PositionGivenField[solution[[1]],solution[[3]],B,BCoords:Cartesian,minz:6].";
-AlignField::usage = "AlignField[{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},m,nvOrientation,absB,minz:6] invokes PositionGivenField to find the motor position at which the magnetic field is aligned with the given nvOrienation, and with field strength Babs in Gauss.
+AlignField::usage = "AlignField[{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},m,nvOrientation,absB,minz:6] invokes PositionGivenField to find the motor position at which the magnetic field is aligned with the given nvOrienation, and with field strength Babs in Gauss. WARNING: The sign of the field matters. For example, if you ask for an alignment with orientation 4, it will try to find a field which is parallel (and not anti-parallel) to that axis. You can input negative values of Babs if you want to search for anti-aligned solutions.
 AlignField[solution,nvOrientation,absB,minz:6] returns AlignField[Sequence@@solution,nvOrientation,absB,minz:6]";
 
 

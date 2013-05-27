@@ -1,6 +1,6 @@
 (* ::Package:: *)
 
-BeginPackage["NVSim`", {"QuantumUtils`","Predicates`","NVHamiltonian`"}]
+BeginPackage["NVSim`", {"Predicates`","NVHamiltonian`"}]
 
 
 (* ::Section:: *)
