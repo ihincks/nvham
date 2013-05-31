@@ -430,11 +430,11 @@ ImportSplittingData[filename_String,nvOrientation_Integer,scale_List:{1,1,1,1,1}
 ExtractPositionArray[data_]:={#[[1]],#[[2]],#[[3]]}&/@data
 
 
-CompareDataWithFourOrientations[data_]:=
+CompareDataWithFourOrientations[data_,plotRange_:{0,25}]:=
 	GraphicsRow[
 		Join[
-			{PlotSplittingData[data]},
-			PlotSplittingData[#]&/@Table[FakeData[$MachineEpsilon,ExtractPositionArray[data],n,{1,23,-5},{0,-ArcCos[-1/3]/2,0},1],{n,4}]
+			{PlotSplittingData[data,0,plotRange]},
+			PlotSplittingData[#,0,plotRange]&/@Table[FakeData[$MachineEpsilon,ExtractPositionArray[data],n,{1,23,-5},{0,-ArcCos[-1/3]/2,0},1],{n,4}]
 		],
 		ImageSize->1500
 	]
@@ -485,7 +485,7 @@ FakeData[\[Sigma]_,points_,nvOrientations_List,{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha
 FakeData[\[Sigma]_,points_,nvOrientation_,solution_]:=FakeData[\[Sigma],points,nvOrientation,Sequence@@solution]
 
 
-PlotSplittingData[data_,minsplit_:0]:=
+PlotSplittingData[data_,minsplit_:0,plotRange_:{0,25}]:=
 	Block[{max,colours},
 		max = Max[data[[All,4]]];
 		colours[nn_]:=(Mod[nn-1,4]+1)/.{1->Blue,2->Green,3->Red,4->Cyan};
@@ -496,7 +496,7 @@ PlotSplittingData[data_,minsplit_:0]:=
 			}&/@data,
 			Axes->True,
 			AxesLabel->{"x (mm)","y (mm)","z (mm)"},
-			PlotRange->{0,25},
+			PlotRange->plotRange,
 			PlotLabel->"Max Splitting: "<>ToString[max]<>"MHz",
 			Epilog-> Inset[Framed[Column[Table[Style["Orientation "<>ToString[n], 12,colours[n]],{n,4}]], Background->LightYellow], {Right, Bottom}, {Right, Bottom}]]
 	]
