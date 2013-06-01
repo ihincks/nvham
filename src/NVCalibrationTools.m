@@ -248,7 +248,7 @@ ComputeDiskFieldAndSave[filename_,{rmin_,rmax_,dr_},{zmin_,zmax_,dz_},m_:1000,d_
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Field of a Halbach Array*)
 
 
@@ -565,8 +565,8 @@ $typicalSolution::usage = "$typicalSolution is the sort of output you expect to 
 PositionGivenField::usage = "PositionGivenField[{z1,z2,z3},m,B,BCoords:Cartesian,minz:6]
 finds the position you should set the motors to in order to get the field B in coordinate system BCoords. You can demand that the z-motor be greater than 6.
 The output is in the form {costfunctionvalue,{{x,y,z},m}}, where costfunctionvalue has units of MHz, {x,y,z} is where you should put the motors, and m is the magnetization ratio (the same number you input).
-PositionGivenField[solution,B,BCoords:Cartesian,minz:6] returns PositionGivenField[solution[[1]],solution[[3]],B,BCoords:Cartesian,minz:6].";
-AlignField::usage = "AlignField[{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},m,nvOrientation,absB,minz:6] invokes PositionGivenField to find the motor position at which the magnetic field is aligned with the given nvOrienation, and with field strength Babs in Gauss. WARNING: The sign of the field matters. For example, if you ask for an alignment with orientation 4, it will try to find a field which is parallel (and not anti-parallel) to that axis. You can input negative values of Babs if you want to search for anti-aligned solutions.
+PositionGivenField[solution,B,BCoords:Cartesian,minz:6] returns PositionGivenField[solution[[1]],solution[[3]],B,BCoords:Cartesian,{{minx_:0,maxx_:25},{miny_:0,maxy_:25},{minz_:6,maxz_:25}}].";
+AlignField::usage = "AlignField[{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},m,nvOrientation,absB,{{minx_:0,maxx_:25},{miny_:0,maxy_:25},{minz_:6,maxz_:25}}] invokes PositionGivenField to find the motor position at which the magnetic field is aligned with the given nvOrienation, and with field strength Babs in Gauss. WARNING: The sign of the field matters. For example, if you ask for an alignment with orientation 4, it will try to find a field which is parallel (and not anti-parallel) to that axis. You can input negative values of Babs if you want to search for anti-aligned solutions.
 AlignField[solution,nvOrientation,absB,minz:6] returns AlignField[Sequence@@solution,nvOrientation,absB,minz:6]";
 
 
@@ -614,7 +614,7 @@ CompareDataWithFourOrientations[data_,plotRange_:{0,25}]:=
 	GraphicsRow[
 		Join[
 			{PlotSplittingData[data,0,plotRange]},
-			PlotSplittingData[#,0,plotRange]&/@Table[FakeData[$MachineEpsilon,ExtractPositionArray[data],n,{1,23,-5},{0,-ArcCos[-1/3]/2,0},1],{n,4}]
+			PlotSplittingData[#,0,plotRange]&/@Table[FakeData[$MachineEpsilon,ExtractPositionArray[data],n,Sequence@@$typicalSolution],{n,4}]
 		],
 		ImageSize->1500
 	]
@@ -785,14 +785,14 @@ CalibrateFieldForBulk[data_,m_,constraints_:{{-\[Infinity],\[Infinity]},{-\[Infi
 	]
 
 
-PositionGivenField[{z1_,z2_,z3_},m_,B_,BCoords_:Cartesian,minz_:6]:=
+PositionGivenField[{z1_,z2_,z3_},m_,B_,BCoords_:Cartesian,{{minx_:0,maxx_:25},{miny_:0,maxy_:25},{minz_:6,maxz_:25}}]:=
 	Block[{cost,Bcart,result,values,r1,r2,r3},
 		Bcart=CoordinatesToCartesian[B,BCoords];
 		cost[rr1_Real,rr2_Real,rr3_Real]:=Norm[Bcart-Field[MagToLab[{z1,z2,z3}-{rr1,rr2,rr3}],m]]^2;
 		{result,values}=NMinimize[
 			{
 				cost[r1,r2,r3],
-				0<=r1<=25,0<=r2<=25,minz<=r3<=25
+				minx<=r1<=maxx,miny<=r2<=maxy,minz<=r3<=maxz
 			},
 			{r1,r2,r3},
 			MaxIterations->3000,
@@ -800,18 +800,18 @@ PositionGivenField[{z1_,z2_,z3_},m_,B_,BCoords_:Cartesian,minz_:6]:=
 		];
 		{Sqrt[result],{{r1,r2,r3}/.values,m}}
 	]
-PositionGivenField[solution_,B_,BCoords_:Cartesian,minz_:6]:=PositionGivenField[solution[[1]],solution[[3]],B,BCoords,minz]
+PositionGivenField[solution_,B_,BCoords_:Cartesian,{{minx_:0,maxx_:25},{miny_:0,maxy_:25},{minz_:6,maxz_:25}}]:=PositionGivenField[solution[[1]],solution[[3]],B,BCoords,{{minx,maxx},{miny,maxy},{minz,maxz}}]
 
 
-AlignField[{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},m_,nvOrientation_,absB_,minz_:6]:=
+AlignField[{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},m_,nvOrientation_,absB_,{{minx_:0,maxx_:25},{miny_:0,maxy_:25},{minz_:6,maxz_:25}}]:=
 	PositionGivenField[
 		{z1,z2,z3},
 		m,
 		RotateBfromNVPAS[{0,0,-absB},{\[Alpha]1,\[Alpha]2,\[Alpha]3},nvOrientation,Cartesian],
 		Cartesian,
-		minz
+		{{minx,maxx},{miny,maxy},{minz,maxz}}
 	];
-AlignField[solution_,nvOrientation_,absB_,minz_:6]:=AlignField[Sequence@@solution,nvOrientation,absB,minz]
+AlignField[solution_,nvOrientation_,absB_,{{minx_:0,maxx_:25},{miny_:0,maxy_:25},{minz_:6,maxz_:25}}]:=AlignField[Sequence@@solution,nvOrientation,absB,{{minx,maxx},{miny,maxy},{minz,maxz}}]
 
 
 PredictSplitting[{r1_,r2_,r3_},nvOrientation_,{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},m_]:=
