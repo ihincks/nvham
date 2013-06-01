@@ -1,6 +1,8 @@
 (* ::Package:: *)
 
+Off[General::obspkg];
 BeginPackage["NVCalibrationTools`",{"VectorAnalysis`","NVHamiltonian`"}]
+On[General::obspkg];
 
 
 (* ::Section:: *)
@@ -94,26 +96,97 @@ StandardDeviation/@Transpose[monteCarloBFields]
 End[];
 
 
-(* ::Section::Closed:: *)
-(*Magnetic Field From A Disk*)
+(* ::Section:: *)
+(*Magnetic Fields*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsection:: *)
 (*Usage Declarations*)
+
+
+Save2DField::usage = "Save2DField[filename,{rmin,rmax},{zmin,zmax},magmat] saves the magnetic field data stored in magmat to disk, where rmin, rmax, zmin, and zmax indicate the physical extent of the data in millimetres.";
+Load2DField::usage = "Load2DField[filename,M:1000] is the inverse of Save2DField, with the output format {{rmin,rmax},{zmin,zmax},M*magmat}.";
+Save3DField::usage = "Save3DField[filename,{xmin,xmax},{ymin,ymax},{zmin,zmax},magmat] saves the magnetic field data stored in magmat to disk, where xmin,xmax,ymin,ymax,zmin, and zmax indicate the physical extent of the data in millimetres.";
+Load3DField::usage = "Load3DField[filename,M:1000] is the inverse of Save3DField, with the output format {{xmin,xmax},{ymin,ymax},{zmin,zmax},magmat}.";
 
 
 DiskComputeFieldAtPoint::usage = "ComputeFieldPoint[{r,\[Phi],z},m:1000,d:7.5,h:2.5] computes the magnetic field at cylindrical coordinates {r,\[Phi],z} due to a solid cylindrical magnet at the origin of diameter d and height h, with a magnetization factor m. The return value is also in cylindrical coordinates. {0,0,0} is returned for locations within the magnet.";
 ComputeDiskFieldAndSave::usage = "ComputeDiskFieldAndSave[filename,{rmin,rmax,dr},{zmin,zmax,dz},m:1000,d:7.5,h:2.5,parallel:False] computes the field using DiskComputeFieldAtPoint on each point of the rectangular array defined by {rmin,rmax,dr},{zmin,zmax,dz}. The results are stored to file using Save2DField. Calculation will be done in parallel if you set the parallel flag to True.";
-Save2DField::usage = "Save2DField[filename,{rmin,rmax},{zmin,zmax},magmat] saves the magnetic field data stored in magmat to disk, where rmin, rmax, zmin, and zmax indicate the physical extend of the data in millimetres.";
-Load2DField::usage = "Load2DField[filename,M:1000] is the inverse of Save2DField, with the output format {{rmin,rmax},{zmin,zmax},M*magmat}.";
+Plot2DField::usage = "Plot2DField[fun2d] (OR Plot2DField[{fun2d1,fun2d2,...}] (doesn't work)) takes a InterpolatingFunction which is a 2D vector field and plots it. You probably want fun2d to be the output of Interpolate2DField.";
+
+
+CubeComputeFieldAtPoint::usage = "CubeComputeFieldAtPoint[{x,y,z}, m:1000, l:5, w:5, h:5] computes the magnetic field due to a rectangular magnet located at the origin at the coordinate {x,y,z}. m is an overall scaling factor which you can think of as the density of ferromagnetism, or something physicsy like that.";
+ComputeCubeFieldAndSave::usage = "ComputeCubeFieldAndSave[filename,{xmin,xmax,dx},{ymin,ymax,dy},{zmin,zmax,dz},m:1000,l:5,w:5,h:5,parallel:False] computes the field using CubeComputeFieldAtPoint on each point of the rectangular array defined by {xmin,xmax,dx},{ymin,ymax,dy},{zmin,zmax,dz}. The results are stored to file using Save3DField. Calculation will be done in parallel if you set the parallel flag to True.";
+CubeMagnet::usage = "CubeMagnet[{x,y,z},fun3dup,fun3dright,orientation] returns the field at position {x,y,z} due to a rectangular magnet centered at the origin whose magnetic field is given by fun3dup or fun3dright (output of Interpolate3DField). This function has two purposes: (1) extend the domain of the field from the positive cone to all octants of space (this lets the data we save take up 1/8th of the space), and (2), flip the field if we want orientation 3 or 4, so we don't need to store redundant data.The magnetic field only needs to be computable in the positive cone; the symetry is taken into account. fun3dup is used for orientations 1 and 3, and fun3dright is used for orientations 2 and 4. Orientation should be one of the integers 1,2,3 or 4.";
+HalbachTopField::usage = "HalbachTopField[{x,y,z},{topPos,bottomPos,azimuth},fun3dup,fun3dright,gap,m,l,w,h,topOrientations]";
+HalbachBottomField::usage = "HalbachBottomField[{x,y,z},{topPos,bottomPos,azimuth},fun3dup,fun3dright,gap,m,l,w,h,bottomOrientations]";
+HalbachField::usage = "HalbachField[{x,y,z},{topPos,bottomPos,azimuth},fun3dup,fun3dright,gap,m,l,w,h,bottomOrientations,topOrientations]";
+
+
 Interpolate2DField::usage = "Interpolate2DField[data] accepts the output of Load2DField, and interpolates the matrix to third order, returning an InterpolationFunciton.";
 CylindricalFieldExtrapolation::usage = "FieldInterpolation[{x,y,z},fun2d] returns the field at position {x,y,z} of a cylindrically symmetric, radial field defined by the 2D vector field fun2d, which is a slice of the field through the z-x plane. You almost certainly want to set fun2d to the output of Interpolate2DField.";
-Plot2DField::usage = "Plot2DField[fun2d] (OR Plot2DField[{fun2d1,fun2d2,...}] (doesn't work)) takes a InterpolatingFunction which is a 2D vector field and plots it. You probably want fun2d to be the output of Interpolate2DField.";
+Interpolate3DField::usage = "Interpolate2DField[data] accepts the output of Load3DField, and interpolates the matrix to third order, returning an InterpolationFunciton.";
+
+
 CompareSolutionFields::usage = "CompareSolutionFields[{z1,z2,z3},fun2d,{zz1,zz2,zz3},funn2d] takes the normalized inner product between solution translations {z1,z2,z3} and {zz1,zz2,zz3} over the possible volume swept by the magnet motors.";
 
 
-(* ::Subsubsection:: *)
+(* ::Subsection:: *)
 (*Implementations*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*Loading and Saving*)
+
+
+Begin["`Private`"];
+
+
+Save2DField[filename_,rbounds_,zbounds_,magmat_]:=
+	Block[{rmin,rmax,zmin,zmax,mat},
+		rmin=rbounds[[1]];
+		rmax=rbounds[[2]];
+		zmin=zbounds[[1]];
+		zmax=zbounds[[2]];
+		mat=magmat;
+		Save[filename,{rmin,rmax,zmin,zmax,mat}];
+		Print["Save Complete."];
+	]
+
+
+Load2DField[filename_String,M_]:=
+	Block[{rmin,rmax,zmin,zmax,mat},
+		Get[filename];
+		{{rmin,rmax},{zmin,zmax},(M/1000)*mat}
+	]
+
+
+Save3DField[filename_,xbounds_,ybounds_,zbounds_,magmat_]:=
+	Block[{xmin,xmax,ymin,ymax,zmin,zmax,mat},
+		xmin=xbounds[[1]];
+		xmax=xbounds[[2]];
+		ymin=ybounds[[1]];
+		ymax=ybounds[[2]];
+		zmin=zbounds[[1]];
+		zmax=zbounds[[2]];
+		mat=magmat;
+		Save[filename,{xmin,xmax,ymin,ymax,zmin,zmax,mat}];
+		Print["Save Complete."];
+	]
+
+
+Load3DField[filename_String,M_]:=
+	Block[{xmin,xmax,ymin,ymax,zmin,zmax,mat},
+		Get[filename];
+		{{xmin,xmax},{ymin,ymax},{zmin,zmax},(M/1000)*mat}
+	]
+
+
+End[];
+
+
+(* ::Subsubsection::Closed:: *)
+(*Field of a Disk*)
 
 
 Begin["`Private`"];
@@ -172,23 +245,93 @@ ComputeDiskFieldAndSave[filename_,{rmin_,rmax_,dr_},{zmin_,zmax_,dz_},m_:1000,d_
 	]
 
 
-Save2DField[filename_,rbounds_,zbounds_,magmat_]:=
-	Block[{rmin,rmax,zmin,zmax,mat},
-		rmin=rbounds[[1]];
-		rmax=rbounds[[2]];
-		zmin=zbounds[[1]];
-		zmax=zbounds[[2]];
-		mat=magmat;
-		Save[filename,{rmin,rmax,zmin,zmax,mat}];
-		Print["Save Complete."];
+End[];
+
+
+(* ::Subsubsection:: *)
+(*Field of a Halbach Array*)
+
+
+Begin["`Private`"];
+
+
+CubeComputeFieldAtPoint[{x_?NumberQ,y_?NumberQ,z_?NumberQ},m_:1000,l_:5,w_:5,h_:5]:=
+	If[
+		Abs[x]<=l/2&&Abs[y]<=w/2&&Abs[z]<=h/2, {0,0,0},
+		Module[{fun,x0,y0,z0},
+			fun[x0_,y0_,z0_]:=With[{r=Sqrt[(x0-x)^2+(y0-y)^2+(z0-z)^2]},
+				(m/r^3)*(3*(z-z0)*{x-x0,y-y0,z-z0}/r^2 - {0,0,1})
+			];
+			NIntegrate[fun[x0,y0,z0],{x0,-l/2,l/2},{y0,-w/2,w/2},{z0,-h/2,h/2},AccuracyGoal->5]
+		]
 	]
 
 
-Load2DField[filename_String,M_]:=
-	Block[{rmin,rmax,zmin,zmax,mat},
-		Get[filename];
-		{{rmin,rmax},{zmin,zmax},(M/1000)*mat}
+ComputeCubeFieldAndSave[filename_,{xmin_,xmax_,dx_},{ymin_,ymax_,dy_},{zmin_,zmax_,dz_},m_:1000,l_:5,w_:5,h_:5,parallel_:False]:=
+	Module[{data,tablefcn,x,y,z},
+		tablefcn=If[parallel,ParallelTable[##,Method->"CoarsestGrained"]&,Table];
+		data=tablefcn[
+				CubeComputeFieldAtPoint[{x,y,z},m,l,w,h],
+				{x,xmin,xmax,dx},
+				{y,ymin,ymax,dy},
+				{z,zmin,zmax,dz}
+			];
+		Save3DField[
+			filename,
+			{xmin,xmax},
+			{ymin,ymax},
+			{zmin,zmax},
+			data
+		]
 	]
+
+
+CubeMagnet[{x_,y_,z_},fun3dup_,fun3dright_,orientation_]:=
+	Which[
+		orientation===1,
+			{Sign[x]*Sign[z],Sign[y]*Sign[z],1}*fun3dup[Abs[x],Abs[y],Abs[z]],
+		orientation===2,
+			{1,Sign[y]*Sign[x],Sign[z]*Sign[x]}*fun3dright[Abs[x],Abs[y],Abs[z]],
+		orientation===3,
+			-{Sign[x]*Sign[z],Sign[y]*Sign[z],1}*fun3dup[Abs[x],Abs[y],Abs[z]],
+		orientation===4,
+			-{1,Sign[y]*Sign[x],Sign[z]*Sign[x]}*fun3dright[Abs[x],Abs[y],Abs[z]]
+	]
+
+
+HalbachTopField[{x_,y_,z_},{topPos_,bottomPos_,azimuth_},fun3dup_,fun3dright_,gap_:1.4125,m_:1000,l_:6.35,w_:6.35,h_:6.35/4,orientations_:{2,1,4,3,2,1}]:=
+	Module[{numMagnets,B},
+		numMagnets=Length[orientations];
+		(* put the top magnets 4*h+gap above the origin *)
+		B=Sum[CubeMagnet[{x,y,z}-{l/2+(k-1)*l+topPos,0,4*h+gap+h/2},fun3dup,fun3dright,orientations[[k]]],{k,numMagnets}];
+		m*(B)/1000
+	]
+
+
+HalbachBottomField[{x_,y_,z_},{topPos_,bottomPos_,azimuth_},fun3dup_,fun3dright_,gap_:1.4125,m_:1000,l_:6.35,w_:6.35,h_:6.35/4,orientations_:{3,2,1,4,3,2}]:=
+	Module[{numMagnets,B},
+		numMagnets=Length[orientations];
+		(* stack four magnets vertically for each orientation *)
+		B=Sum[CubeMagnet[{x,y,z}-{l/2+(k-1)*l+bottomPos,0,h/2+(j-1)*h},fun3dup,fun3dright,orientations[[k]]],{k,numMagnets},{j,4}];
+		m*(B)/1000
+	]
+
+
+HalbachField[{x_,y_,z_},{topPos_,bottomPos_,azimuth_},fun3dup_,fun3dright_,gap_:1.4125,m_:1000,l_:6.35,w_:6.35,h_:6.35/4,bottomOrientations_:{3,2,1,4,3,2},topOrientations_:{2,1,4,3,2,1}]:=
+	(
+		HalbachTopField[{x,y,z},{topPos,bottomPos,azimuth},fun3dup,fun3dright,gap,m,l,w,h,topOrientations]+
+		HalbachBottomField[{x,y,z},{topPos,bottomPos,azimuth},fun3dup,fun3dright,gap,m,l,w,h,bottomOrientations]
+	)
+
+
+End[];
+
+
+(* ::Subsubsection::Closed:: *)
+(*Interpolating Fields*)
+
+
+Begin["`Private`"];
 
 
 Interpolate2DField[data_]:=
@@ -226,6 +369,43 @@ CylindricalFieldExtrapolation[{x_,y_,z_},intfun2d_]:=
 		out=CoordinatesToCartesian[{val[[1]],\[Phi],val[[2]]},Cylindrical];
 		If[z>=0,out,out*{-1,-1,1}]
 	]
+
+
+Interpolate3DField[data_]:=
+	Block[{xmin,xmax,ymin,ymax,zmin,zmax,mat,L,W,H},
+		xmin = data[[1,1]];
+		xmax = data[[1,2]];
+		ymin = data[[2,1]];
+		ymax = data[[2,2]];
+		zmin = data[[3,1]];
+		zmax = data[[3,2]];
+		L = Dimensions[data[[4]]][[1]];
+		W = Dimensions[data[[4]]][[2]];
+		H = Dimensions[data[[4]]][[3]];
+		Interpolation[
+			Flatten[
+				Table[
+					{
+						xmin+(xmax-xmin)(i-1)/(L-1), 
+						ymin+(ymax-ymin)(j-1)/(W-1), 
+						zmin+(zmax-zmin)(k-1)/(H-1), 
+						data[[4,i,j,k]]
+					},
+					{i,H},{j,W},{k,H}
+				],
+			2]
+		]
+	]
+
+
+End[];
+
+
+(* ::Subsubsection::Closed:: *)
+(*Plotting and Comparing (might be partially broken)*)
+
+
+Begin["`Private`"];
 
 
 (* ::Text:: *)
@@ -386,7 +566,7 @@ PositionGivenField::usage = "PositionGivenField[{z1,z2,z3},m,B,BCoords:Cartesian
 finds the position you should set the motors to in order to get the field B in coordinate system BCoords. You can demand that the z-motor be greater than 6.
 The output is in the form {costfunctionvalue,{{x,y,z},m}}, where costfunctionvalue has units of MHz, {x,y,z} is where you should put the motors, and m is the magnetization ratio (the same number you input).
 PositionGivenField[solution,B,BCoords:Cartesian,minz:6] returns PositionGivenField[solution[[1]],solution[[3]],B,BCoords:Cartesian,minz:6].";
-AlignField::usage = "AlignField[{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},m,nvOrientation,absB,minz:6] invokes PositionGivenField to find the motor position at which the magnetic field is aligned with the given nvOrienation, and with field strength Babs in Gauss.
+AlignField::usage = "AlignField[{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},m,nvOrientation,absB,minz:6] invokes PositionGivenField to find the motor position at which the magnetic field is aligned with the given nvOrienation, and with field strength Babs in Gauss. WARNING: The sign of the field matters. For example, if you ask for an alignment with orientation 4, it will try to find a field which is parallel (and not anti-parallel) to that axis. You can input negative values of Babs if you want to search for anti-aligned solutions.
 AlignField[solution,nvOrientation,absB,minz:6] returns AlignField[Sequence@@solution,nvOrientation,absB,minz:6]";
 
 
@@ -647,7 +827,7 @@ PredictNVPASVector[{r1_,r2_,r3_},nvOrientation_,solution_]:=PredictNVPASVector[{
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Microwave Wire Functions*)
 
 
