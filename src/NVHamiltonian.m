@@ -107,7 +107,7 @@ ValidReferenceFrameQ[input_]:=MemberQ[{LabFrame,ZFSFrame,CrystalFrame,ZeemanFram
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Matrices, Bases, and Linear Algebra*)
 
 
@@ -227,11 +227,11 @@ IdentityInsert[C_,dimA_,dimB_,n1_,n2_,n3_]:=IdentityMatrix[n1]\[CircleTimes]Iden
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Physical Quantities*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Usage Declarations*)
 
 
@@ -253,7 +253,7 @@ $constants::usage = "A list of replacement rules for the numerical values of phy
 InsertConstants::usage = "InsertConstants[expr] replaces all physical constants appearing in the expression expr with their numerical value. Check the usage text of a given physical constant for the units used.";
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Implementations*)
 
 
@@ -279,18 +279,18 @@ InsertConstants[expr_]:=expr/.$constants
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Frames and Vectors*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Usage Declarations*)
 
 
 Coordinates::usage = "";
-Cartesian::usage = "";
-Spherical::usage = "";
-Cylindrical::usage = "";
+Cartesian::usage = "{x,y,z}";
+Spherical::usage = "{r,\[Theta],\[Phi]} where \[Theta] is the azimuthal angle.";
+Cylindrical::usage = "{\[Rho],\[Theta],z}";
 
 
 Vector::usage = "";
@@ -325,7 +325,7 @@ EulerAngles::usage = "EulerAngles[\[Theta]z1,\[Theta]y,\[Theta]z2] returns a Fra
 PlotFrame::usage = "PlotFrame[frame1,frame2,...] plots each Frame given as an argement on the same figure.";
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Implementations*)
 
 
@@ -399,6 +399,17 @@ Vector/:Times[\[Lambda]1___,v_Vector,\[Lambda]2___]:=Vector[Times[\[Lambda]1,\[L
 
 
 Vector/:Minus[v_Vector]:=Vector[-Value@Cartesian@v,Cartesian]
+
+
+Vector/:Norm[v_Vector]:=
+	Which[
+		Coordinates@v===Spherical,
+			First@Value@v,
+		Coordinates@v===Cartesian,
+			Norm[Value@v],
+		Coordinates@v===Cylindrical,
+			Sqrt[(First@Value@v)^2+(Last@Value@v)^2]
+	]
 
 
 End[];
@@ -728,6 +739,9 @@ Carbon::usage = "Carbon[{Apar,Aperp},vector]";
 Nitrogen::usage = "Nucleus[isotope,{Apar,Aperp},quadrapolar]";
 
 
+DipoleCarbon::usage = "DipoleCarbon[vector] returns a Carbon head, whose hyperfine interaction is just an electron-carbon13 dipole interaction.";
+
+
 Tensor::usage = "";
 Location::usage = "";
 QuadrapoleTensor::usage = "";
@@ -739,7 +753,7 @@ GyromagneticRatio::usage = "";
 (*Implementations*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Carbon*)
 
 
@@ -763,6 +777,26 @@ Carbon/:SpinDim[Carbon[___]]:=2
 
 
 Carbon/:GyromagneticRatio[Carbon[___]]:=\[Gamma]c
+
+
+End[];
+
+
+(* ::Subsubsection:: *)
+(*Dipole Carbon*)
+
+
+Begin["`Private`"];
+
+
+(* ::Text:: *)
+(*We want the units to be in Hz; this is why the factor of 2\[Pi] appears. (Remember that the gyromagnetic ratios are not in angular units). As a check to make sure these numbers are right, we know that the dipolar coupling between two hydrogen atoms separated by .2nm is 15kHz (Levitt pg 212).*)
+
+
+DipoleCarbon[vector_Vector]:=
+	With[{R=\[Lambda] Norm[vector]},
+		Carbon[2 \[Pi] ((-\[Mu]0 \[Gamma]e \[Gamma]c \[HBar])/(4 \[Pi] R^3)){2,-1},vector]
+	]
 
 
 End[];
@@ -884,7 +918,7 @@ DipoleDipoleHamiltonian[spin1_,spin2_,\[Gamma]1_,\[Gamma]2_,v1_Vector,v2_Vector]
 		If[PossibleZeroQ[R],
 			Message[DipoleDipoleHamiltonian::equallocations];
 			ConstantArray[0,{SpinDim[spin1]*SpinDim[spin2],SpinDim[spin1]*SpinDim[spin2]}],
-			((-\[Mu]0 \[Gamma]1 \[Gamma]2 \[HBar])/(4\[Pi] R^3))*(3(Total@(Spin[spin1]*e))\[CircleTimes](Total@(Spin[spin2]*e))/R^2-Spin[spin1,1]\[CircleTimes]Spin[spin2,1]-Spin[spin1,2]\[CircleTimes]Spin[spin2,2]-Spin[spin1,3]\[CircleTimes]Spin[spin2,3])
+			(2 \[Pi] (-\[Mu]0 \[Gamma]1 \[Gamma]2 \[HBar])/(4\[Pi] R^3))*(3(Total@(Spin[spin1]*e))\[CircleTimes](Total@(Spin[spin2]*e))/R^2-Spin[spin1,1]\[CircleTimes]Spin[spin2,1]-Spin[spin1,2]\[CircleTimes]Spin[spin2,2]-Spin[spin1,3]\[CircleTimes]Spin[spin2,3])
 		]
 	]
 
@@ -1200,7 +1234,7 @@ AverageHamiltonian[{Ht_,t_,T_},order_,fn_->True]:=Total[Array[(-I)^(#-1)/T&,orde
 MagnusConvergenceTest[{At_,t_,T_}]:=Integrate[Abs[Eigenvalues[At,1]],{t,0,T}][[1]]
 
 
-NVAverageHamiltonian[order_,nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
+NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 	Module[
 		{H,H0,U,ndim,sgn,t,zfs,numerical,angularUnits,fn,Heff},
 
@@ -1224,13 +1258,13 @@ NVAverageHamiltonian[order_,nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 		If[numerical,fn=Simplify,fn=Chop];
 
 		(* Find the change of frame required *)
-		H0 = ZFSHamiltonian[zfs, OptionValue[NVSpin]]\[CircleTimes]IdentityMatrix[ndim];
+		H0 = ZFSHamiltonian[\[Omega]rot, OptionValue[NVSpin]]\[CircleTimes]IdentityMatrix[ndim];
 		U[sgn_] = MatrixExp[sgn I t H0];
 
 		(* Finally, do the actual calculation *)
 		If[order < 0,
 			Heff[s_]=U[1].(H-H0).U[-1]/.t->s;Heff,
-			AverageHamiltonian[{U[1].(H-H0).U[-1],t,2\[Pi]/zfs},order,fn->True]
+			AverageHamiltonian[{U[1].(H-H0).U[-1],t,2\[Pi]/\[Omega]rot},order,fn->True]
 		]
 	]
 
