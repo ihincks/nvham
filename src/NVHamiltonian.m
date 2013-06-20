@@ -132,7 +132,7 @@ $e3=RotMatZ[4Pi/3].$e1;
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*NV Geometry*)
 
 
@@ -354,7 +354,7 @@ FillConstants[consts_:$physicalConstants]:=If[NumberQ[#],#,#=N[#/.consts]]&/@con
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*NV Parameters from Literature*)
 
 
@@ -416,7 +416,7 @@ NitrogenHyperfineTensor[nitrogenIsotope_,source_]:=Piecewise[{
 {10^6*({
  {3.65, 0, 0},
  {0, 3.65, 0},
- {0, 0, 3.3}
+ {0, 0, 3.03}
 }),nitrogenIsotope==15&&source=="Felton09"}
 },({
  {0, 0, 0},
