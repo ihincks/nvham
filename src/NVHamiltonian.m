@@ -7,30 +7,63 @@ BeginPackage["NVHamiltonian`"];
 (*Todo:*)
 (*-Verify BondFrame is correct*)
 (*-Change the static field frame if necessary*)
+(*-Move the SpectrumData function here, or into QuantumUtils` from NVUtils`*)
+
+
+(* ::Section::Closed:: *)
+(*Ensure dependencies are met*)
+
+
+(* ::Text:: *)
+(*QuantumUtils` is a private work-a-day Mathematica package maintained by CoryLab for internal use. Many functions required by the NVSim code package are implemented in QuantumUtils`. Since many users of NVSim` at CoryLab will also want to use QuantumUtils` in the same Kernel session, the following logic is necessary to avoid writing multiple definitions of the same symbol in different contexts. Note that this logic is self contained, and will not appear in other sections of this package.*)
+
+
+$hasQuantumUtils = Length[Position[$Packages,"QuantumUtils`"]]>0;
+$hasNVUtils = Length[Position[$Packages,"NVUtils`"]]>0;
+
+
+(* ::Text:: *)
+(*Automatically import NVUtils` if neither of the *Utils` are around.*)
+
+
+If[Not[$hasQuantumUtils||$hasNVUtils],
+	Print["Warning: Neither QuantumUtils` nor NVUtils` was detected. Automatically importing NVUtils`."];
+	Needs["NVUtils`"];
+];
+
+
+(* ::Text:: *)
+(*Since the BeginPackage command makes all contexts inactive besides System` and NVHamiltonian`, we need to call Needs between the BeginPackage and EndPackage command. This is usually acheived using the second argument to BeginPackage, but we have special circumstances.*)
+
+
+If[$hasQuantumUtils,Needs["QuantumUtils`"]];
+If[$hasNVUtils,Needs["NVUtils`"]];
+
+
+(* ::Text:: *)
+(*The following unlucky functions are defined QuantumUtils`, but have different defintions in NVHamiltonian`. Therefore, it makes the most sense just to remove them here.*)
+
+
+If[$hasQuantumUtils,
+	With[{removeMe={QuantumUtils`ZeemanHamiltonian,QuantumUtils`HyperfineHamiltonian}},
+		ClearAll/@removeMe;
+		Remove/@removeMe;
+	]
+];
 
 
 (* ::Section::Closed:: *)
 (*Error Messages*)
 
 
-(* ::Subsection::Closed:: *)
-(*Matrices, Bases, and Linear Algebra*)
-
-
-Spin::badindex = "An invalid spin index was entered.";
-
-
-IdentityInsert::baddimensions = "The size of the input matrix does not match the product of the specified dimensions.";
-
-
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Frames and Vectors*)
 
 
 Frame::notorthonormal = "The first three arguments of Frame must form an orthonormal basis for R^3.";
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Options*)
 
 
@@ -50,7 +83,7 @@ StaticField::badframe = "The static field's frame must be one of LabFrame, Cryst
 StaticField::notvector = "The static field must be input as a Vector, e.g., Vector[{0,0,10}, Cartesian].";
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Hamiltonians*)
 
 
@@ -108,130 +141,10 @@ End[];
 
 
 (* ::Section::Closed:: *)
-(*Matrices, Bases, and Linear Algebra*)
-
-
-(* ::Subsection:: *)
-(*Usage Declarations*)
-
-
-X::usage = "The 2x2 Pauli X operator.";
-Y::usage = "The 2x2 Pauli Y operator.";
-Z::usage = "The 2x2 Pauli Z operator.";
-
-
-Sx::usage = "The 3x3 Spin-1 X operator.";
-Sy::usage = "The 3x3 Spin-1 Y operator.";
-Sz::usage = "The 3x3 Spin-1 Z operator.";
-
-
-Spin::usage = "Spin[s] returns the spin operators for spin s particles. Spin[Carbon[...]] and Spin[Nitrogen[...]] return the spin operators of the respected nucleus.";
-SpinDim::usage = "SpinDim[s] returns the dimension of Hilbert space corresponding to spin number s. For example, s=1/2 will return 2, and s=1 will return 3.";
-
-
-IdentityInsert::usage = "IdentityInsert[C,dimA,dimB,n1,n2,n3] assumes C is a square matrix acting on a bipartite system with dimensions dimA and dimB and proceeds to add identity operations before, in-between, and after the bipartite system, with dimensions n1, n2, and n3, respectively.";
-
-
-Com::usage = "Com[A,B]=A.B-B.A";
-NestCom::usage="NestCom[B,A,n] returns the nested commutator if B and A:
-NestCom[B,A,0]=A,
-NestCom[B,A,1]=Com[B,A],
-...
-NestCom[B,A,n]=Com[B,NestCom[B,A,n-1]].";
-
-
-(* ::Subsection:: *)
-(*Implementations*)
-
-
-(* ::Subsubsection::Closed:: *)
-(*Spin operators*)
-
-
-Begin["`Private`"];
-
-
-X={{0,1},{1,0}};
-Y={{0,-I},{I,0}};
-Z={{1,0},{0,-1}};
-
-
-Sx={{0,1,0},{1,0,1},{0,1,0}}/Sqrt[2];
-Sy={{0,-I,0},{I,0,-I},{0,I,0}}/Sqrt[2];
-Sz={{1,0,0},{0,0,0},{0,0,-1}};
-
-
-Spin[1/2]={X,Y,Z}/2;
-Spin[1]={Sx,Sy,Sz};
-
-
-Spin[s_,i_]:=
-	If[i>3||i<1,
-		Message[Spin::badindex];Abort;,		
-		Spin[s][[i]]
-	]
-
-
-SpinDim[s_?NumericQ]:=2*s+1
-
-
-End[];
-
-
-(* ::Subsubsection:: *)
-(*Algebra*)
-
-
-Begin["`Private`"];
-
-
-CircleTimes[A_]:=A
-CircleTimes[A__]:=KroneckerProduct[A]
-
-
-Com[A_,B_]:=A.B-B.A
-
-
-NestCom[B_,A_,0]:=A;
-NestCom[B_,A_,n_Integer]:=NestCom[B,A,n]=Com[B,NestCom[B,A,n-1]]
-
-
-End[];
-
-
-(* ::Subsubsection::Closed:: *)
-(*Tensor Manipulation*)
-
-
-Begin["`Private`"];
-
-
-(* ::Text:: *)
-(*First deal with the most difficult case where we want to insert an identity operation into the middle.*)
-
-
-IdentityInsert[C_,dimA_,dimB_,n_]:=
-	If[Length[C]!=dimA*dimB,
-		Message[IdentityInsert::baddimensions];Abort;,
-		ArrayFlatten[Map[IdentityMatrix[n]\[CircleTimes]#&,Partition[C,{dimA,dimB}],{2}]]
-	]
-
-
-(* ::Text:: *)
-(*Now expand the definition to the left and right sides too.*)
-
-
-IdentityInsert[C_,dimA_,dimB_,n1_,n2_,n3_]:=IdentityMatrix[n1]\[CircleTimes]IdentityInsert[C,dimA,dimB,n2]\[CircleTimes]IdentityMatrix[n3]
-
-
-End[];
-
-
-(* ::Section:: *)
 (*Physical Quantities*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Usage Declarations*)
 
 
@@ -253,7 +166,7 @@ $constants::usage = "A list of replacement rules for the numerical values of phy
 InsertConstants::usage = "InsertConstants[expr] replaces all physical constants appearing in the expression expr with their numerical value. Check the usage text of a given physical constant for the units used.";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Implementations*)
 
 
@@ -279,11 +192,11 @@ InsertConstants[expr_]:=expr/.$constants
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Frames and Vectors*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Usage Declarations*)
 
 
@@ -727,7 +640,7 @@ CheckOptions[OptionsPattern[NVHamiltonian]]:=
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Nuclei*)
 
 
@@ -782,7 +695,7 @@ Carbon/:GyromagneticRatio[Carbon[___]]:=\[Gamma]c
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Dipole Carbon*)
 
 
@@ -823,13 +736,13 @@ Nitrogen/:QuadrapoleTensor[Nitrogen[_,_,Q_]]:=DiagonalMatrix[{0,0,Q}]
 Nitrogen/:Isotope[Nitrogen[isotope_,___]]:=isotope
 
 
-Nitrogen/:Spin[Nitrogen[x___]]:=If[Isotope[Nitrogen[x]]===13,1/2,1]
+Nitrogen/:Spin[Nitrogen[x___]]:=If[Isotope[Nitrogen[x]]===15,1/2,1]
 
 
 Nitrogen/:SpinDim[n:Nitrogen[___]]:=SpinDim[Spin[n]]
 
 
-Nitrogen/:GyromagneticRatio[Nitrogen[x___]]:=If[Isotope[Nitrogen[x]]===13,\[Gamma]n13,\[Gamma]n14]
+Nitrogen/:GyromagneticRatio[Nitrogen[x___]]:=If[Isotope[Nitrogen[x]]===15,\[Gamma]n15,\[Gamma]n14]
 
 
 End[];
@@ -841,6 +754,9 @@ End[];
 
 (* ::Subsection::Closed:: *)
 (*Usage Declarations*)
+
+
+ClearAll[ZeemanHamiltonian,HyperfineHamiltonian];
 
 
 ZFSHamiltonian::usage = "";
@@ -906,7 +822,7 @@ HyperfineHamiltonian[spin1_,spin2_,A_]:=
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Dipole Dipole Hamiltonian*)
 
 
@@ -939,7 +855,7 @@ QuadrapolarHamiltonian[spin_,A_?Matrix3Q]:=Total[Table[A[[i,j]]*Spin[spin,i].Spi
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Combined Hamiltonian*)
 
 
@@ -1088,71 +1004,6 @@ End[];
 
 
 (* ::Section::Closed:: *)
-(*Plotting Tools*)
-
-
-(* ::Subsection:: *)
-(*Usage Declarations*)
-
-
-Resolution::usage = "Resolution is an option for SpectrumData which decides when two frequencies are close enough to be considered the same frequency. The default value is $MachineEpsilon. Units of Resolution are MHz.";
-SpectrumData::usage = "SpectrumData[nvHamiltonian] accepts a numerical NV Hamiltonian (where the first product space is that of the electron) and returns a list of the form {{freq1, rate1},{freq2,rate2},...}, containing the frequencies and respective rates of transitions under microwave radiation. The rates are normalized to sum to 1. The option Resolution is accepted, which decides when two freqencies are equal.";
-
-
-SpectrumPlot::usage = "SpectrumPlot[nvhamiltonian,\[Sigma]] displays a simple plot of the spectrum of the input numerical Hamiltonian.";
-
-
-(* ::Subsection:: *)
-(*Implementations*)
-
-
-Begin["`Private`"];
-
-
-Options[SpectrumData]={Resolution->0.001, AngularUnits->True};
-SpectrumData[ham_,OptionsPattern[]]:=
-	Module[{U,D,C,probs,freqs,output},
-		If[PossibleZeroQ[Mod[Length[ham],3]],
-			C = Spin[1,1]\[CircleTimes]IdentityMatrix[Length[ham]/3];,
-			C = Spin[1/2,1]\[CircleTimes]IdentityMatrix[Length[ham]/2];
-		];
-
-		{D, U} = Eigensystem[ham/10^6];
-		U = Normalize/@U;
-
-		probs = Abs[Flatten[UpperTriangularize[U.C.U\[ConjugateTranspose]]]]^2;
-		probs = probs/Total[probs];
-		freqs = Abs@Flatten@UpperTriangularize@Outer[Subtract,D,D,1];_
-
-		If[OptionValue[AngularUnits],freqs=freqs/(2\[Pi])];
-
-		output = Select[{freqs,probs}\[Transpose],(Last@#>OptionValue[Resolution])&];
-		output = Sort[output,First@#1>First@#2&];
-		output = Split[output,Abs[First@#1-First@#2]<=OptionValue[Resolution]&];
-		output = Map[{Mean[#[[All,1]]],Total[#[[All,2]]]}&,output,1];
-		output
-	]
-
-
-Options[SpectrumPlot]=Join[Options[Plot],Options[SpectrumData],{}];
-SpectrumPlot[ham_,\[Sigma]_,opt:OptionsPattern[]]:=
-	Module[{spectData,spectrum,minFreq,maxFreq,freqDiff,minPlot,maxPlot,plotOptions},
-		spectData = SpectrumData[ham,Resolution->OptionValue[Resolution],AngularUnits->OptionValue[AngularUnits]];
-		spectrum[f_]=Total[Last[#]*Exp[-(f-First[#])^2/(2*\[Sigma]^2)]&/@spectData];
-		minFreq = First@Last@spectData;
-		maxFreq = First@First@spectData;
-		freqDiff = maxFreq - minFreq;
-		minPlot = minFreq - Max[0.1*freqDiff,5*\[Sigma]];
-		maxPlot = maxFreq + Max[0.1*freqDiff,5*\[Sigma]];
-		plotOptions = Sequence@@Select[{opt},MemberQ[(Options[Plot])[[All,1]],First[#]]&];
-		Plot[spectrum[f],{f,minPlot,maxPlot},AxesOrigin->{minPlot,0},Evaluate@plotOptions]
-	]
-
-
-End[];
-
-
-(* ::Section:: *)
 (*Approximation Tools*)
 
 
@@ -1160,20 +1011,7 @@ End[];
 (*Usage Declarations*)
 
 
-MagnusExpansionTerm::usage="MagnusExpansionTerm[{At,t,T},k] Returns the k-th term in the magnus expansions (k=1,2,..),
-of the time dependent operator At with time parameter t, integrated over the time period 0 to T.";
-MagnusExpansion::usage="MagnusExpansion[{At,T,T},k] returns a list of the first k (k=1,2,3,..) terms of the Magnus Expansion of time dependent operator At with time paramter t, intergrated over the period 0 to T.";
-
-
-AverageHamiltonianTerm::usage="AverageHamiltonianTerm[{Ht,t,T},k] Returns the k-th term in the average hamiltonian expansion (k=0,1,2,..),
-of the time dependent Hamiltonian Ht with time parameter t, integrated over the time period 0 to T.";
-AverageHamiltonian::usage="AverageHamiltonian[{Ht,T,T},k] returns the k-th order (k=0,1,2,3,..) Average Hamiltonian expansions of the time dependent Hamiltonian Ht with time paramter t, intergrated over the period 0 to T.";
-
-
-MagnusConvergenceTest::usage="MagnusConvergenceTest[{H,t,T}] performs the integral \!\(\*SuperscriptBox[SubscriptBox[\(\[Integral]\), \(0\)], \(T\)]\)\[RightDoubleBracketingBar]H[t]\[RightDoubleBracketingBar]dt where \[RightDoubleBracketingBar]\[CenterDot]\[RightDoubleBracketingBar] is the operator norm. If this quantity is less than \[Pi], then the Magnus series converges.";
-
-
-NVAverageHamiltonian::usage="NVAverageHamiltonian[order,...] returns the order'th order average NV Hamiltonian. Here, '...' represents any arguments you would pass into the function NVHamiltonian. If order is negative, the effective Hamiltonian is returned.";
+NVAverageHamiltonian::usage="NVAverageHamiltonian[order,\[Omega]rot,...] returns the order'th order average NV Hamiltonian in the \[Omega]rot*Sz^2 frame. Always specify \[Omega]rot in terms of frequency; it is multipled by 2\[Pi] to get angular frequencey if the Hamiltonian uses angular frequency units. Here, '...' represents any arguments you would pass into the function NVHamiltonian. If order is negative, the effective Hamiltonian is returned.";
 
 
 (* ::Subsection:: *)
@@ -1184,59 +1022,12 @@ Begin["`Private`"];
 
 
 (* ::Text:: *)
-(*The following is a recursive formula for computing the magnus expanion to arbitrary order. It works with symbolic or numberic matrices, though it can get quite slow for higher orders with symbolic matrices. The recursive formula is based off the one given on the Wikipedia page for the Magnus Expansion. *)
-(*We use the convention that the Magnus Expansion states with first term k=1, while the Average Hamiltonian starts with first term k=0, and divided by the appropriate factor of i and the intergration time to make it a Hamiltonian. *)
-
-
-MagnusGenerator[{At_,t_,T_},{n_,1},fn_:Identity]:=
-	MagnusGenerator[{At,t,T},{n,1},fn]=
-		fn@Com[MagnusExpansionTerm[{At,t,T},n-1,fn],At/.{t->T}]
-
-MagnusGenerator[{At_,t_,T_},{n_,j_},fn_:Identity]:=
-	MagnusGenerator[{At,t,T},{n,j},fn]=
-		fn@If[j===n-1,
-			NestCom[MagnusExpansionTerm[{At,t,T},1,fn],(At/.{t->T}),n-1],
-			Total[
-				Com[MagnusExpansionTerm[{At,t,T},#,fn],MagnusGenerator[{At,t,T},{n-#,j-1},fn]]&/@Range[n-j]
-			]
-		]
-
-MagnusExpansionTerm[{At_,t_,T_},1,fn_:Identity]:=
-	MagnusExpansionTerm[{At,t,T},1,fn]=
-		fn@Integrate[At,{t,0,T}]
-
-MagnusExpansionTerm[{At_,t_,T_},k_,fn_:Identity]:=
-	MagnusExpansionTerm[{At,t,T},k,fn]=
-		fn@Total[BernoulliB[#]*Integrate[MagnusGenerator[{At,t,t1},{k,#},fn],{t1,0,T}]/#!&/@Range[k-1]]
-
-MagnusExpansion[{At_,t_,T_},order_]:=MagnusExpansionTerm[{At,t,T},#]&/@Range[order];
-
-
-(* ::Text:: *)
-(*The following allows for optional arguments which can speed up symbolic calculations, in general using the Simply->True option will be the fastest with symbolic matrices.*)
-
-
-MagnusExpansion[{At_,t_,T_},order_,Simplify->True]:=MagnusExpansionTerm[{At,t,T},#,Simplify]&/@Range[order];
-MagnusExpansion[{At_,t_,T_},order_,FullSimplify->True]:=MagnusExpansionTerm[{At,t,T},#,FullSimplify]&/@Range[order];
-MagnusExpansion[{At_,t_,T_},order_,Chop->True]:=MagnusExpansionTerm[{At,t,T},#,Chop]&/@Range[order];
-
-
-(* ::Text:: *)
-(*Finally we include an AverageHamiltonian function which sums up the magnus terms, correctly renormalized to be the average Hamiltonian over the period T. Further we use the Physics convention of starting the AverageHamiltonian with 0th order term, instead of the lowest order being 1st as in the Magnus Expansion.*)
-
-
-AverageHamiltonianTerm[{Ht_,t_,T_},k_,fn_:Identity]:=(-I)^k*MagnusExpansionTerm[{Ht,t,T},k+1,fn]/T
-
-AverageHamiltonian[{Ht_,t_,T_},order_]:=Total[Array[(-I)^(#-1)/T&,order+1]*MagnusExpansion[{Ht,t,T},order+1]]
-AverageHamiltonian[{Ht_,t_,T_},order_,fn_->True]:=Total[Array[(-I)^(#-1)/T&,order+1]*MagnusExpansion[{Ht,t,T},order+1,fn->True]]
-
-
-MagnusConvergenceTest[{At_,t_,T_}]:=Integrate[Abs[Eigenvalues[At,1]],{t,0,T}][[1]]
+(*Knowing what happens when we conjugate by the rotating frame unitary, we can precompute the average Hamiltonians a bit in terms of the floquet coefficients. In partucular, we can precompute all of the intergrals, and are just left with sums of nested comutators. These are the formulas used below.*)
 
 
 NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 	Module[
-		{H,H0,U,ndim,sgn,t,zfs,numerical,angularUnits,fn,Heff},
+		{H,H0,U,ndim,sgn,t,\[Omega],numerical,angularUnits,Heff,Hm,Hp,Hout,z,rotation},
 
 		(* First calculate the lab frame hamiltonian *)
 		H = NVHamiltonian[nuclei, opt];
@@ -1250,21 +1041,33 @@ NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamilton
 
 		(* Get some numbers we will need. *)
 		ndim = Times@@(SpinDim/@{nuclei});
-		zfs = OptionValue[ZeroFieldSplitting];
-		If[numerical,zfs=InsertConstants[zfs]];
-		If[angularUnits,zfs=2*\[Pi]*zfs];
+		\[Omega]=If[numerical,InsertConstants[\[Omega]rot],\[Omega]rot];
+		If[angularUnits,\[Omega]=2*\[Pi]*\[Omega]];
 
-		(* Decide whether to Simplify or Chop between each magnus order calculation*)
-		If[numerical,fn=Simplify,fn=Chop];
-
-		(* Find the change of frame required *)
-		H0 = ZFSHamiltonian[\[Omega]rot, OptionValue[NVSpin]]\[CircleTimes]IdentityMatrix[ndim];
-		U[sgn_] = MatrixExp[sgn I t H0];
-
-		(* Finally, do the actual calculation *)
+    	(* Finally, do the actual calculation *)
 		If[order < 0,
+			H0 = ZFSHamiltonian[\[Omega], OptionValue[NVSpin]]\[CircleTimes]IdentityMatrix[ndim];
+			U[sgn_] = MatrixExp[sgn I t H0];
 			Heff[s_]=U[1].(H-H0).U[-1]/.t->s;Heff,
-			AverageHamiltonian[{U[1].(H-H0).U[-1],t,2\[Pi]/\[Omega]rot},order,fn->True]
+			z=ConstantArray[0,{ndim,ndim}];
+			rotation=\[Omega]*IdentityMatrix[ndim];
+			(* Compute the three Floquet coefficients *)
+			H0 = ArrayFlatten[{{H[[1;;ndim,1;;ndim]]-rotation,z,H[[1;;ndim,2*ndim+1;;-1]]},{z,H[[ndim+1;;2*ndim,ndim+1;;2*ndim]],z},{H[[2*ndim+1;;-1,1;;ndim]],z,H[[2*ndim+1;;-1,2*ndim+1;;-1]]-rotation}}];
+			Hm = ArrayFlatten[{{z,z,z},{H[[ndim+1;;2*ndim,1;;ndim]],z,H[[ndim+1;;2*ndim,2*ndim+1;;-1]]},{z,z,z}}];
+			Hp = ArrayFlatten[{{z,H[[1;;ndim,ndim+1;;2*ndim]],z},{z,z,z},{z,H[[2*ndim+1;;-1,ndim+1;;2*ndim]],z}}];
+			Hout=H0;
+			If[order>=1,
+				Hout=Hout+(Com[H0,Hp]-Com[H0,Hm]-Com[Hm,Hp])/\[Omega];
+			];
+			If[order>=2,
+				Hout=Hout+(
+					 (Com[Hm,Com[H0,Hp]]+Com[Hp,Com[H0,Hm]])
+					-2(Com[H0,Com[H0,Hp]]+Com[H0,Com[H0,Hm]])
+					+(Com[Hp,Com[Hp,H0]]+Com[Hm,Com[Hm,H0]]-Com[Hm,Com[Hp,H0]]-Com[Hp,Com[Hm,H0]])
+					+2(Com[Hp,Com[Hm,Hp]]+Com[Hm,Com[Hp,Hm]]))/(2*\[Omega]^2);
+			];
+			If[order>=3,Print["Warning: Third order AH not implemented. Truncating to second order instead."];];
+			Hout
 		]
 	]
 

@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       157,          7]
-NotebookDataLength[     12541,        357]
-NotebookOptionsPosition[     11050,        302]
-NotebookOutlinePosition[     11404,        318]
-CellTagsIndexPosition[     11361,        315]
+NotebookDataLength[     12766,        359]
+NotebookOptionsPosition[     11213,        304]
+NotebookOutlinePosition[     11627,        320]
+CellTagsIndexPosition[     11584,        317]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -78,6 +78,9 @@ Cell[BoxData[
       RowBox[{"{", 
        RowBox[{"\"\<src\>\"", ",", "\"\<NVCalibrationTools.m\>\""}], "}"}], 
       ",", "\[IndentingNewLine]", 
+      RowBox[{"{", 
+       RowBox[{"\"\<src\>\"", ",", "\"\<NVUtils.m\>\""}], "}"}], ",", 
+      "\[IndentingNewLine]", 
       RowBox[{"{", "\"\<nvdoc\>\"", "}"}], ",", "\[IndentingNewLine]", 
       RowBox[{"{", "\"\<data\>\"", "}"}]}], "\[IndentingNewLine]", "}"}]}]}], 
   ";"}]], "Input",
@@ -91,7 +94,8 @@ Cell[BoxData[
    3.55084270214047*^9}, {3.550914647046626*^9, 3.5509146480046673`*^9}, {
    3.551211949732646*^9, 3.551211957227024*^9}, {3.5533496468612328`*^9, 
    3.5533496561966333`*^9}, {3.553682532808467*^9, 3.5536825394090977`*^9}, {
-   3.55716816575772*^9, 3.5571681775896807`*^9}}]
+   3.55716816575772*^9, 3.5571681775896807`*^9}, {3.581088914488221*^9, 
+   3.581088928635614*^9}}]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -148,9 +152,7 @@ Cell[BoxData[
  CellChangeTimes->{{3.525436089553322*^9, 3.52543612270824*^9}, 
    3.549207095925441*^9}],
 
-Cell["\<\
-To override the defaults, change this line:\
-\>", "Text",
+Cell["To override the defaults, change this line:", "Text",
  CellChangeTimes->{{3.525436132812014*^9, 3.525436139442808*^9}}],
 
 Cell[BoxData[
@@ -301,9 +303,9 @@ Cell[BoxData[
 }, Open  ]]
 },
 WindowSize->{693, 1000},
-WindowMargins->{{0, Automatic}, {Automatic, 0}},
-FrontEndVersion->"8.0 for Mac OS X x86 (32-bit, 64-bit Kernel) (October 5, \
-2011)",
+WindowMargins->{{-7, Automatic}, {Automatic, 0}},
+PrivateNotebookOptions->{"VersionedStylesheet"->{"Default.nb"[8.] -> False}},
+FrontEndVersion->"9.0 for Linux x86 (64-bit) (February 7, 2013)",
 StyleDefinitions->"Default.nb"
 ]
 (* End of Notebook Content *)
@@ -318,45 +320,45 @@ CellTagsIndex->{}
 (*NotebookFileOutline
 Notebook[{
 Cell[CellGroupData[{
-Cell[579, 22, 183, 2, 42, "Subtitle"],
-Cell[765, 26, 277, 6, 26, "Text"],
+Cell[579, 22, 183, 2, 56, "Subtitle"],
+Cell[765, 26, 277, 6, 51, "Text"],
 Cell[CellGroupData[{
-Cell[1067, 36, 104, 1, 34, "Subsection"],
-Cell[1174, 39, 295, 6, 41, "Text"]
+Cell[1067, 36, 104, 1, 45, "Subsection"],
+Cell[1174, 39, 295, 6, 71, "Text"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[1506, 50, 151, 2, 34, "Subsection"],
-Cell[1660, 54, 137, 1, 26, "Text"],
-Cell[1800, 57, 1713, 36, 118, "Input"]
+Cell[1506, 50, 151, 2, 45, "Subsection"],
+Cell[1660, 54, 137, 1, 31, "Text"],
+Cell[1800, 57, 1884, 40, 209, "Input"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[3550, 98, 106, 1, 34, "Subsection"],
-Cell[3659, 101, 203, 4, 26, "Text"],
-Cell[3865, 107, 433, 9, 27, "Input"]
+Cell[3721, 102, 106, 1, 45, "Subsection"],
+Cell[3830, 105, 203, 4, 31, "Text"],
+Cell[4036, 111, 433, 9, 55, "Input"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[4335, 121, 116, 1, 34, "Subsection"],
-Cell[4454, 124, 635, 10, 56, "Text"],
-Cell[5092, 136, 533, 12, 88, "Input"],
-Cell[5628, 150, 133, 3, 26, "Text"],
-Cell[5764, 155, 252, 6, 27, "Input"]
+Cell[4506, 125, 116, 1, 45, "Subsection"],
+Cell[4625, 128, 635, 10, 91, "Text"],
+Cell[5263, 140, 533, 12, 121, "Input"],
+Cell[5799, 154, 125, 1, 31, "Text"],
+Cell[5927, 157, 252, 6, 55, "Input"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[6053, 166, 158, 2, 67, "Section"],
-Cell[6214, 170, 448, 10, 56, "Text"],
-Cell[6665, 182, 1100, 26, 103, "Input"]
+Cell[6216, 168, 158, 2, 81, "Section"],
+Cell[6377, 172, 448, 10, 91, "Text"],
+Cell[6828, 184, 1100, 26, 165, "Input"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[7802, 213, 168, 2, 67, "Section"],
-Cell[7973, 217, 222, 4, 41, "Text"],
-Cell[8198, 223, 280, 7, 27, "Input"],
-Cell[8481, 232, 469, 13, 41, "Text"],
-Cell[8953, 247, 1590, 34, 163, "Input"]
+Cell[7965, 215, 168, 2, 81, "Section"],
+Cell[8136, 219, 222, 4, 41, "Text"],
+Cell[8361, 225, 280, 7, 27, "Input"],
+Cell[8644, 234, 469, 13, 41, "Text"],
+Cell[9116, 249, 1590, 34, 163, "Input"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[10580, 286, 105, 1, 67, "Section"],
-Cell[10688, 289, 181, 4, 26, "Text"],
-Cell[10872, 295, 150, 3, 27, "Input"]
+Cell[10743, 288, 105, 1, 67, "Section"],
+Cell[10851, 291, 181, 4, 26, "Text"],
+Cell[11035, 297, 150, 3, 27, "Input"]
 }, Open  ]]
 }, Open  ]]
 }

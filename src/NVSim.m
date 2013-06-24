@@ -1,9 +1,9 @@
 (* ::Package:: *)
 
-BeginPackage["NVSim`", {"QuantumUtils`","Predicates`","NVHamiltonian`"}]
+BeginPackage["NVSim`"]
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Predicates*)
 
 
@@ -94,11 +94,11 @@ FunctionListQ[lst_]:=ListQ[lst]
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Options and Helper Functions*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Usage Declarations*)
 
 
@@ -352,7 +352,7 @@ Protect[PollingInterval,StepSize,IntitialState,NumericEvaluation,Observables,Fun
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Single Pulse Evaluator*)
 
 
