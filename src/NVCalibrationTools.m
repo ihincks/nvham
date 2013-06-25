@@ -591,7 +591,8 @@ $typicalSolution = {{1.34,23.5,-5.3},{0,-0.977,-0.04},.71};
 ImportSplittingData[filename_String,scale_List:{1,1,1,1,1}]:=
 	Catch[
 		If[FindFile[filename]==$Failed,Throw["File "<>filename<>" not found."];];
-		Block[{x=Flatten[Import[filename],1]},
+		Block[{x=Import[filename]},
+			If[Length[Dimensions[x]]>2,x=Flatten[x,1];];
 			If[Dimensions[x][[2]]!=5,Throw["Your data doesn't appear to include NV orientations. Call ImportSplittingData[filename,nvOrientation] to specify all your orientations as equal."]];
 			x=(#*scale)&/@x;
 			ReplacePart[x\[Transpose],5->Round[x[[All,5]]]]\[Transpose]
@@ -600,7 +601,8 @@ ImportSplittingData[filename_String,scale_List:{1,1,1,1,1}]:=
 ImportSplittingData[filename_String,nvOrientation_Integer,scale_List:{1,1,1,1,1}]:=
 	Catch[
 		If[FindFile[filename]==$Failed,Throw["File "<>filename<>" not found."];];
-		Block[{x=Flatten[Import[filename],1]},
+		Block[{x=Import[filename]},
+			If[Length[Dimensions[x]]>2,x=Flatten[x,1];];
 			x=Join[x[[All,{1,2,3,4}]]\[Transpose],{Table[nvOrientation,{k,Length[x]}]}]\[Transpose];
 			(#*scale)&/@x
 		]

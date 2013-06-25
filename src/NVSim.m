@@ -3,6 +3,9 @@
 BeginPackage["NVSim`"]
 
 
+Needs["QuantumUtils`"];
+
+
 (* ::Section::Closed:: *)
 (*Predicates*)
 
