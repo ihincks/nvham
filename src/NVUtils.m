@@ -21,7 +21,7 @@ Spin::badindex = "An invalid spin index was entered.";
 IdentityInsert::baddimensions = "The size of the input matrix does not match the product of the specified dimensions.";
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Matrices, Bases, and Linear Algebra*)
 
 
@@ -127,7 +127,7 @@ Begin["`Private`"];
 IdentityInsert[C_,dimA_,dimB_,n_]:=
 	If[Length[C]!=dimA*dimB,
 		Message[IdentityInsert::baddimensions];Abort;,
-		ArrayFlatten[Map[IdentityMatrix[n]\[CircleTimes]#&,Partition[C,{dimA,dimB}],{2}]]
+		ArrayFlatten[Map[IdentityMatrix[n]\[CircleTimes]#&,Partition[C,{dimB,dimB}],{2}]]
 	]
 
 

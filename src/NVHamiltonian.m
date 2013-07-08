@@ -640,7 +640,7 @@ CheckOptions[OptionsPattern[NVHamiltonian]]:=
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Nuclei*)
 
 
@@ -666,7 +666,7 @@ GyromagneticRatio::usage = "";
 (*Implementations*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Carbon*)
 
 
@@ -855,7 +855,7 @@ QuadrapolarHamiltonian[spin_,A_?Matrix3Q]:=Total[Table[A[[i,j]]*Spin[spin,i].Spi
 End[];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Combined Hamiltonian*)
 
 
@@ -1003,7 +1003,7 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[]]:=
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Approximation Tools*)
 
 
@@ -1049,6 +1049,7 @@ NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamilton
 			H0 = ZFSHamiltonian[\[Omega], OptionValue[NVSpin]]\[CircleTimes]IdentityMatrix[ndim];
 			U[sgn_] = MatrixExp[sgn I t H0];
 			Heff[s_]=U[1].(H-H0).U[-1]/.t->s;Heff,
+
 			z=ConstantArray[0,{ndim,ndim}];
 			rotation=\[Omega]*IdentityMatrix[ndim];
 			(* Compute the three Floquet coefficients *)
@@ -1056,6 +1057,7 @@ NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamilton
 			Hm = ArrayFlatten[{{z,z,z},{H[[ndim+1;;2*ndim,1;;ndim]],z,H[[ndim+1;;2*ndim,2*ndim+1;;-1]]},{z,z,z}}];
 			Hp = ArrayFlatten[{{z,H[[1;;ndim,ndim+1;;2*ndim]],z},{z,z,z},{z,H[[2*ndim+1;;-1,ndim+1;;2*ndim]],z}}];
 			Hout=H0;
+
 			If[order>=1,
 				Hout=Hout+(Com[H0,Hp]-Com[H0,Hm]-Com[Hm,Hp])/\[Omega];
 			];
