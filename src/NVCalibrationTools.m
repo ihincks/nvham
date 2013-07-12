@@ -9,7 +9,7 @@ On[General::obspkg];
 (*Predicates*)
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Four NV Magnetometry*)
 
 
@@ -43,9 +43,11 @@ FourNVZeemanSplittings[B_,BCoords_:Spherical,crystalOrientation_:{0,0,0},method_
 If[method=="secular",
 Table[With[
 {H=NVHamiltonian["B"->B,"BCoords"->BCoords,"crystalOrientation"->crystalOrientation,"nvOrientation"->n]},
-H[[1,1]]-H[[3,3]]],{n,4}]*((1/$Gauss/(2*\[Gamma]e))/.Join[$units,$physicalConstants])
+H[[1,1]]-H[[3,3]]],{n,4}]/(2*\[Pi]*10^6)/.Join[$units,$physicalConstants]
 ,
-"Exact splitting method not implemented yet; the secular approximation is pretty good anyways."
+Table[With[
+{H=NVHamiltonian["B"->B,"BCoords"->BCoords,"crystalOrientation"->crystalOrientation,"nvOrientation"->n]},
+Abs[#[[3]]-#[[2]]]&@Sort[Eigenvalues[H]]],{n,4}]/(2*\[Pi]*10^6)/.Join[$units,$physicalConstants]
 ]
 
 
@@ -469,7 +471,7 @@ CompareSolutionFields[{z1_,z2_,z3_},fun2d_,{zz1_,zz2_,zz3_},funn2d_]:=
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Initializing Magnetic Fields*)
 
 
@@ -516,7 +518,7 @@ LoadField[data_,method_]:=
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Magnet Calibration From Position Array of Splitting Data	*)
 
 
