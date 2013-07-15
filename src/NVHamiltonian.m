@@ -5,7 +5,6 @@ BeginPackage["NVHamiltonian`"];
 
 (* ::Text:: *)
 (*Todo:*)
-(*-Verify BondFrame is correct*)
 (*-Change the static field frame if necessary*)
 (*-Move the SpectrumData function here, or into QuantumUtils` from NVUtils`*)
 
@@ -389,7 +388,7 @@ Begin["`Private`"];
 (*You can think of converting between frames as first converting to the canonical basis, and then from this converting to the desired frame.*)
 
 
-FrameChangeMatrix[fromFrame_,toFrame_]:=FrameMatrix[toFrame].FrameMatrix[fromFrame]\[Transpose]
+FrameChangeMatrix[fromFrame_,toFrame_]:=FrameMatrix[toFrame]\[Transpose].FrameMatrix[fromFrame]
 
 
 (* ::Text:: *)
@@ -419,7 +418,7 @@ FrameCompose[fa_Frame,fb_Frame,rest___]:=FrameCompose[Frame[Simplify[FrameMatrix
 End[];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Special Frames*)
 
 
@@ -444,7 +443,7 @@ EulerAngles[\[Theta]z1_,\[Theta]y_,\[Theta]z2_]=Frame[RotationMatrix[\[Theta]z2,
 (*The bond frame is most easily describable in spherical coordinates, so convert first. Note that all "bond frame means" is some frame in which the z vector is parallel to the input vector of BondFrame; the x-y vectors are chosen sort of arbitrarily, but it doesn't matter because the tensor should be cylindrically symmetric.*)
 
 
-BondFrame[v_Vector]:=With[{s=Value@ChangeCoordinates[v,Spherical]},EulerAngles[0,s[[3]],s[[2]]]]
+BondFrame[v_Vector]:=With[{s=Value@ChangeCoordinates[v,Spherical]},EulerAngles[s[[2]],s[[3]],0]]
 
 
 End[];
@@ -640,11 +639,11 @@ CheckOptions[OptionsPattern[NVHamiltonian]]:=
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Nuclei*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Usage Declarations*)
 
 
@@ -662,22 +661,24 @@ Isotope::usage = "";
 GyromagneticRatio::usage = "";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Implementations*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Carbon*)
 
 
 Begin["`Private`"];
 
 
-Carbon/:Tensor[Carbon[{Apar_,Aperp_},v_Vector]]:=FrameChange[DiagonalMatrix[{Aperp,Aperp,Apar}],IdentityFrame,BondFrame[v]]
+Carbon/:Tensor[Carbon[{Apar_,Aperp_},v_Vector]]:=FrameChange[DiagonalMatrix[{Aperp,Aperp,Apar}],BondFrame[v],IdentityFrame]
+Carbon/:Tensor[Carbon[{Axx_,Ayy_,Azz_},v_Vector]]:=FrameChange[DiagonalMatrix[{Axx,Ayy,Azz}],BondFrame[v],IdentityFrame]
 Carbon/:Tensor[Carbon[A_?Matrix3Q]]:=A
 
 
 Carbon/:Location[Carbon[_,v_Vector]]:=v
+Carbon/:Location[Carbon[_]]:=Vector[{0,0,0},Cartesian]
 
 
 Carbon/:Isotope[Carbon[___]]:=13
@@ -748,7 +749,271 @@ Nitrogen/:GyromagneticRatio[Nitrogen[x___]]:=If[Isotope[Nitrogen[x]]===15,\[Gamm
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
+(*Hyperfine Parameter Database*)
+
+
+(* ::Text:: *)
+(*In this section, for convenience, we catalog various measurements and calculations of nuclear hyperfine tensors from literature.*)
+
+
+(* ::Subsection::Closed:: *)
+(*Usage Declarations*)
+
+
+NucleiDatabase::usage = "NVHamiltonian has included a number of measured and simulated values of hyperfine tensors of nuclei surrounding the NV defect in the diamond lattice. Each paper is given its own function which when called, returns either a Carbon or Nitrogen instance. The format of these function names is AuthorYearNucleus[...]. This function serves to remind the user of the names of these functions. Call NucleiDatabase[] to return a table of these names, and some more info.";
+
+
+Gali08Nucleus::usage = 
+"Gali08Nucleus[distance, index] returns the index'th nucleus at the specified distance from the vacancy, 
+as calculated using ab initio supercell simulations. No numeric or alphanumeric labels were attached to
+the various nuclei, so we reference them by their quoted distance to the vacancy, which happen to be 
+unique in their simulation. Data is taken from Gali et al., Table II, \"Ab initio supercell calculations 
+on nitrogen-vacancy center in diamond: Electronic structure and hyperfine tensors\", 
+DOI: 10.1103/PhysRevB.77.155206.  Since only the eigenvalues of the tensors are provided in the paper, it 
+is assumed that the eigenvectors lie on the line joining the nucleus and the vacancy. This will not in 
+general be true. In the case where there is ambiguity about which nuclei correspond to which distance 
+from the vacancy, a best guess was made (The 2.49, 3.86 and 5.00 carbons were chosen to be the ones 
+below the equator instead of above, the carbons at 2.92 and 2.93 might be switched )."
+
+
+Felton09Nucleus::usage = 
+"Felton09Nucleus[label, index] returns the index'th nucleus of the given label, where the label is one of 
+the following strings: \"14N\", \"15N\", \"Ca\", or \"Cg\". Data is taken from Felton et al., Tables II 
+and III, \"Hyperfine interaction in the ground state of the negatively charged nitrogen vacancy center 
+in diamond\", DOI: 10.1103/PhysRevB.79.075203. Since only the eigenvalues of the tensors are provided in 
+the paper, it is assumed that the eigenvectors lie on the line joining the nucleus and the vacancy. This 
+will not in general be true.";
+
+
+Childress06Nucleus::usage =
+"Childress06Nucleus[label] returns the carbon corresponding to the specified label, which can either be 
+the string \"D\" or \"E\". These data is taken from Childress et al., Supplementary Online Material,
+\"Coherent Dynamics of Coupled Electron and Nuclear Spin Qubits in Diamond\", DOI: 
+10.1126/science.1131871.";
+
+
+Shim13Nucleus::usage = 
+"Shim13Nucleus[index] returns the index'th carbon, where index can be 1, 2, or 3; the three carbon sites 
+closest to the vacancy. This data is taken from Shim et al., \"Characterization of hyperfine interaction 
+between single electron and single nuclear spins in diamond assisted by quantum beat from the nuclear 
+spin\", arXiv:1307.0257.";
+
+
+Taminiau12Nucleus::usage = 
+"Taminiau12Nucleus[label] returns the carbon of the specified label, where label can be any of the 
+integers 1,2,3,4,5, or 6. These are distant carbons, and only their 0th order hyperfine parameters were 
+measured, hence the carbon that is returned will have a hyperfine tensor with only the bottom row 
+populated. These data are taken frome Taminiau et al., Table I, \"Detection and Control of Individual 
+Nuclear Spins Using a Weakly Coupled Electron Spin\", DOI: 10.1103/PhysRevLett.109.137602.";
+
+
+(* ::Subsection:: *)
+(*Implementations*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*Nuclei Database*)
+
+
+Begin["`Private`"];
+
+
+NucleiDatabase[] :=
+	Grid[
+		{
+			{"Function Name", "Arguments", "Possible Label Values (Shell Count)", "Description", "Paper", "DOI"},
+			{Gali08Nucleus, "label, index", "1.68 (1), 1.61 (3), 2.47 (6), 2.49 (3), 2.9 (6), 2.92 (3), 2.93 (3), 3.85 (6), 3.86 (3), 4.99 (6), 5.0 (3)", "Computer simulated hyperfine values", "Ab initio supercell calculations on nitrogen-vacancy center in diamond: Electronic structure and hyperfine tensors", "10.1103/PhysRevB.77.155206"},
+			{Felton09Nucleus, "label, index", "\"14N\" (1), \"15N\" (1), \"Ca\" (3), \"Cg\" (6)", "ESR measurements of bulk sample", "Hyperfine interaction in the ground state of the negatively charged nitrogen vacancy center in diamond", "10.1103/PhysRevB.79.075203"},
+			{Childress06Nucleus, "label", "\"D\", \"E\"", "Fits from ESEEM experiment. Arbitrary choices from fit degeneracy.", "Coherent Dynamics of Coupled Electron and Nuclear Spin Qubits in Diamond", "10.1126/science.1131871"},
+			{Shim13Nucleus, "index", "(3)", "Precision measurement fitting to ground state shift due to off-axis magnet", "Characterization of hyperfine interaction between single electron and single nuclear spins in diamond assisted by quantum beat from the nuclear spin", "arXiv:1307.0257"},
+			{Taminiau12Nucleus, "label", "1, 2, 3, 4, 5, 6", "Distant carbon spins, only 0th order pieces measured.", "Detection and Control of Individual Nuclear Spins Using a Weakly Coupled Electron Spin", "10.1103/PhysRevLett.109.137602"}
+		},
+		Frame->All,
+		ItemStyle->Directive["Text", FontSize->10, ParagraphIndent->0, LineIndent->0],
+		Alignment->Left,
+		Spacings->{1,1},
+		Background->{None,{LightGreen, None}}
+	]
+
+
+End[];
+
+
+(* ::Subsubsection::Closed:: *)
+(*Gali et al., 2008*)
+
+
+Begin["`Private`"];
+
+
+Gali08Nucleus[label_] := Gali08Nucleus[label, 1]
+
+
+Gali08Nucleus[1.68, 1] = Nitrogen[14, {-1.7,-1.7}, 0];
+
+
+Gali08Nucleus[1.61, 1] = Carbon[{19.5, 110.2, 185.4}, E1];
+Gali08Nucleus[1.61, 2] = Carbon[{19.5, 110.2, 185.4}, E2];
+Gali08Nucleus[1.61, 3] = Carbon[{19.5, 110.2, 185.4}, E3];
+
+
+Gali08Nucleus[2.47, 1] = Carbon[{-4.8,-3.7,-1.5}, E1-E2];
+Gali08Nucleus[2.47, 2] = Carbon[{-4.8,-3.7,-1.5}, E1-E3];
+Gali08Nucleus[2.47, 3] = Carbon[{-4.8,-3.7,-1.5}, E2-E1];
+Gali08Nucleus[2.47, 4] = Carbon[{-4.8,-3.7,-1.5}, E2-E3];
+Gali08Nucleus[2.47, 5] = Carbon[{-4.8,-3.7,-1.5}, E3-E1];
+Gali08Nucleus[2.47, 6] = Carbon[{-4.8,-3.7,-1.5}, E3-E2];
+
+
+Gali08Nucleus[2.49, 1] = Carbon[{-7.4,-7.3,-5.8}, E1-E0];
+Gali08Nucleus[2.49, 2] = Carbon[{-7.4,-7.3,-5.8}, E2-E0];
+Gali08Nucleus[2.49, 3] = Carbon[{-7.4,-7.3,-5.8}, E3-E0];
+
+
+Gali08Nucleus[2.9, 1] = Carbon[{2.8,3.3,4.6}, E1-E2+E0];
+Gali08Nucleus[2.9, 2] = Carbon[{2.8,3.3,4.6}, E1-E3+E0];
+Gali08Nucleus[2.9, 3] = Carbon[{2.8,3.3,4.6}, E2-E1+E0];
+Gali08Nucleus[2.9, 4] = Carbon[{2.8,3.3,4.6}, E2-E3+E0];
+Gali08Nucleus[2.9, 5] = Carbon[{2.8,3.3,4.6}, E3-E1+E0];
+Gali08Nucleus[2.9, 6] = Carbon[{2.8,3.3,4.6}, E3-E2+E0];
+
+
+Gali08Nucleus[2.92, 1] = Carbon[{1.4,2.4,2.9}, E1-E2+E3];
+Gali08Nucleus[2.92, 2] = Carbon[{1.4,2.4,2.9}, E2-E3+E1];
+Gali08Nucleus[2.92, 3] = Carbon[{1.4,2.4,2.9}, E3-E1+E2];
+
+
+Gali08Nucleus[2.93, 1] = Carbon[{3.4,4.7,4.9}, E1-E0+E2];
+Gali08Nucleus[2.93, 2] = Carbon[{3.4,4.7,4.9}, E2-E0+E3];
+Gali08Nucleus[2.93, 3] = Carbon[{3.4,4.7,4.9}, E3-E0+E1];
+
+
+Gali08Nucleus[3.85, 1] = Carbon[{13.5,14.2,19.4}, 2*E1-E2];
+Gali08Nucleus[3.85, 2] = Carbon[{13.5,14.2,19.4}, 2*E1-E3];
+Gali08Nucleus[3.85, 3] = Carbon[{13.5,14.2,19.4}, 2*E2-E1];
+Gali08Nucleus[3.85, 4] = Carbon[{13.5,14.2,19.4}, 2*E2-E3];
+Gali08Nucleus[3.85, 5] = Carbon[{13.5,14.2,19.4}, 2*E3-E1];
+Gali08Nucleus[3.85, 6] = Carbon[{13.5,14.2,19.4}, 2*E3-E2];
+
+
+Gali08Nucleus[3.86, 1] = Carbon[{12.8,12.8,18}, 2*E1-E0];
+Gali08Nucleus[3.86, 2] = Carbon[{12.8,12.8,18}, 2*E2-E0];
+Gali08Nucleus[3.86, 3] = Carbon[{12.8,12.8,18}, 2*E3-E0];
+
+
+Gali08Nucleus[4.99, 1] = Carbon[{2.6,2.7,3.8}, 2*E1-2*E2];
+Gali08Nucleus[4.99, 2] = Carbon[{2.6,2.7,3.8}, 2*E1-2*E3];
+Gali08Nucleus[4.99, 3] = Carbon[{2.6,2.7,3.8}, 2*E2-2*E1];
+Gali08Nucleus[4.99, 4] = Carbon[{2.6,2.7,3.8}, 2*E2-2*E3];
+Gali08Nucleus[4.99, 5] = Carbon[{2.6,2.7,3.8}, 2*E3-2*E1];
+Gali08Nucleus[4.99, 6] = Carbon[{2.6,2.7,3.8}, 2*E3-2*E2];
+
+
+Gali08Nucleus[5.0, 1] = Carbon[{1.5,1.5,2.2}, 2*E1-2*E0];
+Gali08Nucleus[5.0, 2] = Carbon[{1.5,1.5,2.2}, 2*E2-2*E0];
+Gali08Nucleus[5.0, 3] = Carbon[{1.5,1.5,2.2}, 2*E3-2*E0];
+
+
+End[];
+
+
+(* ::Subsubsection::Closed:: *)
+(*Felton et al., 2009*)
+
+
+Begin["`Private`"];
+
+
+Felton09Nucleus[label_] := Felton09Nucleus[label, 1]
+
+
+Felton09Nucleus["14N", 1] = Nitrogen[14, {-2.14,-2.7}, -5.01];
+
+
+Felton09Nucleus["15N", 1] = Nitrogen[15, {3.03,3.65}, 0];
+
+
+Felton09Nucleus["Ca", 1] = Carbon[{198.2,120.8}, E1];
+Felton09Nucleus["Ca", 2] = Carbon[{198.2,120.8}, E2];
+Felton09Nucleus["Ca", 3] = Carbon[{198.2,120.8}, E3];
+
+
+Felton09Nucleus["Cg", 1] = Carbon[{18.49,13.26}, 2*E1-E2];
+Felton09Nucleus["Cg", 2] = Carbon[{18.49,13.26}, 2*E1-E3];
+Felton09Nucleus["Cg", 3] = Carbon[{18.49,13.26}, 2*E2-E1];
+Felton09Nucleus["Cg", 4] = Carbon[{18.49,13.26}, 2*E2-E3];
+Felton09Nucleus["Cg", 5] = Carbon[{18.49,13.26}, 2*E3-E1];
+Felton09Nucleus["Cg", 6] = Carbon[{18.49,13.26}, 2*E3-E2];
+
+
+End[];
+
+
+(* ::Subsubsection::Closed:: *)
+(*Childress et al., 2006*)
+
+
+Begin["`Private`"];
+
+
+Childress06Nucleus["D"] = Carbon[{{0.4,-2.2,-2.1},{-2.2,2.6,-0.4},{-2.1,-0.4,3.5}}];
+
+
+Childress06Nucleus["E"] = Carbon[{{5,-6.3,-2.9},{-6.3,4.2,-2.3},{-2.9,-2.3,8.2}}];
+
+
+End[];
+
+
+(* ::Subsubsection::Closed:: *)
+(*Shim et al., 2013*)
+
+
+Begin["`Private`"];
+
+
+Shim13Nucleus[1] = Carbon[{30.3,122.9,226.6}, Vector[{1,0,123.5*\[Pi]/180}, Spherical]];
+Shim13Nucleus[2] = Carbon[{30.3,122.9,226.6}, Vector[{1,2*\[Pi]/3,123.5*\[Pi]/180}, Spherical]];
+Shim13Nucleus[3] = Carbon[{30.3,122.9,226.6}, Vector[{1,4*\[Pi]/3,123.5*\[Pi]/180}, Spherical]];
+
+
+End[];
+
+
+(* ::Subsubsection::Closed:: *)
+(*Taminiau et al., 2012*)
+
+
+(* ::Text:: *)
+(*TODO: In this case it might make more sense to search the carbon lattice for the closest dipolar interaction, and then scale it to reproduce the same coupling.*)
+
+
+Begin["`Private`"];
+
+
+Taminiau12Nucleus[1] = Carbon[{{0,0,0},{0,0,0},{0.0838 Sin[21*\[Pi]/180],0,0.0838 Cos[21*\[Pi]/180]}}];
+
+
+Taminiau12Nucleus[2] = Carbon[{{0,0,0},{0,0,0},{0.047 Sin[30*\[Pi]/180],0,0.047 Cos[30*\[Pi]/180]}}];
+
+
+Taminiau12Nucleus[3] = Carbon[{{0,0,0},{0,0,0},{0.055 Sin[54*\[Pi]/180],0,0.055 Cos[54*\[Pi]/180]}}];
+
+
+Taminiau12Nucleus[4] = Carbon[{{0,0,0},{0,0,0},{0.019 Sin[133*\[Pi]/180],0,0.019 Cos[133*\[Pi]/180]}}];
+
+
+Taminiau12Nucleus[5] = Carbon[{{0,0,0},{0,0,0},{0.033 Sin[132*\[Pi]/180],0,0.033 Cos[132*\[Pi]/180]}}];
+
+
+Taminiau12Nucleus[6] = Carbon[{{0,0,0},{0,0,0},{0.0251 Sin[51*\[Pi]/180],0,0.0251 Cos[51*\[Pi]/180]}}];
+
+
+End[];
+
+
+(* ::Section::Closed:: *)
 (*Hamiltonians*)
 
 
@@ -1003,7 +1268,7 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[]]:=
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Approximation Tools*)
 
 
