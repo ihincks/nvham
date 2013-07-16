@@ -191,7 +191,7 @@ InsertConstants[expr_]:=expr/.$constants
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Frames and Vectors*)
 
 
@@ -377,7 +377,7 @@ FrameMatrix[f_Frame]:=((List@@Cartesian[f])[[1;;3]])\[Transpose]
 End[];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Changing, Inverting and Composing Frames*)
 
 
@@ -418,7 +418,7 @@ FrameCompose[fa_Frame,fb_Frame,rest___]:=FrameCompose[Frame[Simplify[FrameMatrix
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Special Frames*)
 
 
@@ -443,7 +443,7 @@ EulerAngles[\[Theta]z1_,\[Theta]y_,\[Theta]z2_]=Frame[RotationMatrix[\[Theta]z2,
 (*The bond frame is most easily describable in spherical coordinates, so convert first. Note that all "bond frame means" is some frame in which the z vector is parallel to the input vector of BondFrame; the x-y vectors are chosen sort of arbitrarily, but it doesn't matter because the tensor should be cylindrically symmetric.*)
 
 
-BondFrame[v_Vector]:=With[{s=Value@ChangeCoordinates[v,Spherical]},EulerAngles[s[[2]],s[[3]],0]]
+BondFrame[v_Vector]:=With[{s=Value@ChangeCoordinates[v,Spherical]},EulerAngles[0,s[[3]],s[[2]]]]
 
 
 End[];
@@ -661,7 +661,7 @@ Isotope::usage = "";
 GyromagneticRatio::usage = "";
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Implementations*)
 
 
@@ -749,8 +749,8 @@ Nitrogen/:GyromagneticRatio[Nitrogen[x___]]:=If[Isotope[Nitrogen[x]]===15,\[Gamm
 End[];
 
 
-(* ::Section::Closed:: *)
-(*Hyperfine Parameter Database*)
+(* ::Section:: *)
+(*Nuclear Database*)
 
 
 (* ::Text:: *)
@@ -761,7 +761,7 @@ End[];
 (*Usage Declarations*)
 
 
-NucleiDatabase::usage = "NVHamiltonian has included a number of measured and simulated values of hyperfine tensors of nuclei surrounding the NV defect in the diamond lattice. Each paper is given its own function which when called, returns either a Carbon or Nitrogen instance. The format of these function names is AuthorYearNucleus[...]. This function serves to remind the user of the names of these functions. Call NucleiDatabase[] to return a table of these names, and some more info.";
+NuclearDatabase::usage = "NVHamiltonian has included a number of measured and simulated values of hyperfine tensors of nuclei surrounding the NV defect in the diamond lattice. Each paper is given its own function which when called, returns either a Carbon or Nitrogen instance. The format of these function names is AuthorYearNucleus[...]. This function serves to remind the user of the names of these functions. Call NuclearDatabase[] to return a table of these names, and some more info.";
 
 
 Gali08Nucleus::usage = 
@@ -813,13 +813,13 @@ Nuclear Spins Using a Weakly Coupled Electron Spin\", DOI: 10.1103/PhysRevLett.1
 
 
 (* ::Subsubsection::Closed:: *)
-(*Nuclei Database*)
+(*Nuclear Database*)
 
 
 Begin["`Private`"];
 
 
-NucleiDatabase[] :=
+NuclearDatabase[] :=
 	Grid[
 		{
 			{"Function Name", "Arguments", "Possible Label Values (Shell Count)", "Description", "Paper", "DOI"},
@@ -850,69 +850,69 @@ Begin["`Private`"];
 Gali08Nucleus[label_] := Gali08Nucleus[label, 1]
 
 
-Gali08Nucleus[1.68, 1] = Nitrogen[14, {-1.7,-1.7}, 0];
+Gali08Nucleus[1.68, 1] = Nitrogen[14, 10^6*{-1.7,-1.7}, 0];
 
 
-Gali08Nucleus[1.61, 1] = Carbon[{19.5, 110.2, 185.4}, E1];
-Gali08Nucleus[1.61, 2] = Carbon[{19.5, 110.2, 185.4}, E2];
-Gali08Nucleus[1.61, 3] = Carbon[{19.5, 110.2, 185.4}, E3];
+Gali08Nucleus[1.61, 1] = Carbon[10^6*{19.5, 110.2, 185.4}, E1];
+Gali08Nucleus[1.61, 2] = Carbon[10^6*{19.5, 110.2, 185.4}, E2];
+Gali08Nucleus[1.61, 3] = Carbon[10^6*{19.5, 110.2, 185.4}, E3];
 
 
-Gali08Nucleus[2.47, 1] = Carbon[{-4.8,-3.7,-1.5}, E1-E2];
-Gali08Nucleus[2.47, 2] = Carbon[{-4.8,-3.7,-1.5}, E1-E3];
-Gali08Nucleus[2.47, 3] = Carbon[{-4.8,-3.7,-1.5}, E2-E1];
-Gali08Nucleus[2.47, 4] = Carbon[{-4.8,-3.7,-1.5}, E2-E3];
-Gali08Nucleus[2.47, 5] = Carbon[{-4.8,-3.7,-1.5}, E3-E1];
-Gali08Nucleus[2.47, 6] = Carbon[{-4.8,-3.7,-1.5}, E3-E2];
+Gali08Nucleus[2.47, 1] = Carbon[10^6*{-4.8,-3.7,-1.5}, E1-E2];
+Gali08Nucleus[2.47, 2] = Carbon[10^6*{-4.8,-3.7,-1.5}, E1-E3];
+Gali08Nucleus[2.47, 3] = Carbon[10^6*{-4.8,-3.7,-1.5}, E2-E1];
+Gali08Nucleus[2.47, 4] = Carbon[10^6*{-4.8,-3.7,-1.5}, E2-E3];
+Gali08Nucleus[2.47, 5] = Carbon[10^6*{-4.8,-3.7,-1.5}, E3-E1];
+Gali08Nucleus[2.47, 6] = Carbon[10^6*{-4.8,-3.7,-1.5}, E3-E2];
 
 
-Gali08Nucleus[2.49, 1] = Carbon[{-7.4,-7.3,-5.8}, E1-E0];
-Gali08Nucleus[2.49, 2] = Carbon[{-7.4,-7.3,-5.8}, E2-E0];
-Gali08Nucleus[2.49, 3] = Carbon[{-7.4,-7.3,-5.8}, E3-E0];
+Gali08Nucleus[2.49, 1] = Carbon[10^6*{-7.4,-7.3,-5.8}, E1-E0];
+Gali08Nucleus[2.49, 2] = Carbon[10^6*{-7.4,-7.3,-5.8}, E2-E0];
+Gali08Nucleus[2.49, 3] = Carbon[10^6*{-7.4,-7.3,-5.8}, E3-E0];
 
 
-Gali08Nucleus[2.9, 1] = Carbon[{2.8,3.3,4.6}, E1-E2+E0];
-Gali08Nucleus[2.9, 2] = Carbon[{2.8,3.3,4.6}, E1-E3+E0];
-Gali08Nucleus[2.9, 3] = Carbon[{2.8,3.3,4.6}, E2-E1+E0];
-Gali08Nucleus[2.9, 4] = Carbon[{2.8,3.3,4.6}, E2-E3+E0];
-Gali08Nucleus[2.9, 5] = Carbon[{2.8,3.3,4.6}, E3-E1+E0];
-Gali08Nucleus[2.9, 6] = Carbon[{2.8,3.3,4.6}, E3-E2+E0];
+Gali08Nucleus[2.9, 1] = Carbon[10^6*{2.8,3.3,4.6}, E1-E2+E0];
+Gali08Nucleus[2.9, 2] = Carbon[10^6*{2.8,3.3,4.6}, E1-E3+E0];
+Gali08Nucleus[2.9, 3] = Carbon[10^6*{2.8,3.3,4.6}, E2-E1+E0];
+Gali08Nucleus[2.9, 4] = Carbon[10^6*{2.8,3.3,4.6}, E2-E3+E0];
+Gali08Nucleus[2.9, 5] = Carbon[10^6*{2.8,3.3,4.6}, E3-E1+E0];
+Gali08Nucleus[2.9, 6] = Carbon[10^6*{2.8,3.3,4.6}, E3-E2+E0];
 
 
-Gali08Nucleus[2.92, 1] = Carbon[{1.4,2.4,2.9}, E1-E2+E3];
-Gali08Nucleus[2.92, 2] = Carbon[{1.4,2.4,2.9}, E2-E3+E1];
-Gali08Nucleus[2.92, 3] = Carbon[{1.4,2.4,2.9}, E3-E1+E2];
+Gali08Nucleus[2.92, 1] = Carbon[10^6*{1.4,2.4,2.9}, E1-E2+E3];
+Gali08Nucleus[2.92, 2] = Carbon[10^6*{1.4,2.4,2.9}, E2-E3+E1];
+Gali08Nucleus[2.92, 3] = Carbon[10^6*{1.4,2.4,2.9}, E3-E1+E2];
 
 
-Gali08Nucleus[2.93, 1] = Carbon[{3.4,4.7,4.9}, E1-E0+E2];
-Gali08Nucleus[2.93, 2] = Carbon[{3.4,4.7,4.9}, E2-E0+E3];
-Gali08Nucleus[2.93, 3] = Carbon[{3.4,4.7,4.9}, E3-E0+E1];
+Gali08Nucleus[2.93, 1] = Carbon[10^6*{3.4,4.7,4.9}, E1-E0+E2];
+Gali08Nucleus[2.93, 2] = Carbon[10^6*{3.4,4.7,4.9}, E2-E0+E3];
+Gali08Nucleus[2.93, 3] = Carbon[10^6*{3.4,4.7,4.9}, E3-E0+E1];
 
 
-Gali08Nucleus[3.85, 1] = Carbon[{13.5,14.2,19.4}, 2*E1-E2];
-Gali08Nucleus[3.85, 2] = Carbon[{13.5,14.2,19.4}, 2*E1-E3];
-Gali08Nucleus[3.85, 3] = Carbon[{13.5,14.2,19.4}, 2*E2-E1];
-Gali08Nucleus[3.85, 4] = Carbon[{13.5,14.2,19.4}, 2*E2-E3];
-Gali08Nucleus[3.85, 5] = Carbon[{13.5,14.2,19.4}, 2*E3-E1];
-Gali08Nucleus[3.85, 6] = Carbon[{13.5,14.2,19.4}, 2*E3-E2];
+Gali08Nucleus[3.85, 1] = Carbon[10^6*{13.5,14.2,19.4}, 2*E1-E2];
+Gali08Nucleus[3.85, 2] = Carbon[10^6*{13.5,14.2,19.4}, 2*E1-E3];
+Gali08Nucleus[3.85, 3] = Carbon[10^6*{13.5,14.2,19.4}, 2*E2-E1];
+Gali08Nucleus[3.85, 4] = Carbon[10^6*{13.5,14.2,19.4}, 2*E2-E3];
+Gali08Nucleus[3.85, 5] = Carbon[10^6*{13.5,14.2,19.4}, 2*E3-E1];
+Gali08Nucleus[3.85, 6] = Carbon[10^6*{13.5,14.2,19.4}, 2*E3-E2];
 
 
-Gali08Nucleus[3.86, 1] = Carbon[{12.8,12.8,18}, 2*E1-E0];
-Gali08Nucleus[3.86, 2] = Carbon[{12.8,12.8,18}, 2*E2-E0];
-Gali08Nucleus[3.86, 3] = Carbon[{12.8,12.8,18}, 2*E3-E0];
+Gali08Nucleus[3.86, 1] = Carbon[10^6*{12.8,12.8,18}, 2*E1-E0];
+Gali08Nucleus[3.86, 2] = Carbon[10^6*{12.8,12.8,18}, 2*E2-E0];
+Gali08Nucleus[3.86, 3] = Carbon[10^6*{12.8,12.8,18}, 2*E3-E0];
 
 
-Gali08Nucleus[4.99, 1] = Carbon[{2.6,2.7,3.8}, 2*E1-2*E2];
-Gali08Nucleus[4.99, 2] = Carbon[{2.6,2.7,3.8}, 2*E1-2*E3];
-Gali08Nucleus[4.99, 3] = Carbon[{2.6,2.7,3.8}, 2*E2-2*E1];
-Gali08Nucleus[4.99, 4] = Carbon[{2.6,2.7,3.8}, 2*E2-2*E3];
-Gali08Nucleus[4.99, 5] = Carbon[{2.6,2.7,3.8}, 2*E3-2*E1];
-Gali08Nucleus[4.99, 6] = Carbon[{2.6,2.7,3.8}, 2*E3-2*E2];
+Gali08Nucleus[4.99, 1] = Carbon[10^6*{2.6,2.7,3.8}, 2*E1-2*E2];
+Gali08Nucleus[4.99, 2] = Carbon[10^6*{2.6,2.7,3.8}, 2*E1-2*E3];
+Gali08Nucleus[4.99, 3] = Carbon[10^6*{2.6,2.7,3.8}, 2*E2-2*E1];
+Gali08Nucleus[4.99, 4] = Carbon[10^6*{2.6,2.7,3.8}, 2*E2-2*E3];
+Gali08Nucleus[4.99, 5] = Carbon[10^6*{2.6,2.7,3.8}, 2*E3-2*E1];
+Gali08Nucleus[4.99, 6] = Carbon[10^6*{2.6,2.7,3.8}, 2*E3-2*E2];
 
 
-Gali08Nucleus[5.0, 1] = Carbon[{1.5,1.5,2.2}, 2*E1-2*E0];
-Gali08Nucleus[5.0, 2] = Carbon[{1.5,1.5,2.2}, 2*E2-2*E0];
-Gali08Nucleus[5.0, 3] = Carbon[{1.5,1.5,2.2}, 2*E3-2*E0];
+Gali08Nucleus[5.0, 1] = Carbon[10^6*{1.5,1.5,2.2}, 2*E1-2*E0];
+Gali08Nucleus[5.0, 2] = Carbon[10^6*{1.5,1.5,2.2}, 2*E2-2*E0];
+Gali08Nucleus[5.0, 3] = Carbon[10^6*{1.5,1.5,2.2}, 2*E3-2*E0];
 
 
 End[];
@@ -928,23 +928,23 @@ Begin["`Private`"];
 Felton09Nucleus[label_] := Felton09Nucleus[label, 1]
 
 
-Felton09Nucleus["14N", 1] = Nitrogen[14, {-2.14,-2.7}, -5.01];
+Felton09Nucleus["14N", 1] = Nitrogen[14, 10^6*{-2.14,-2.7}, 10^6*-5.01];
 
 
-Felton09Nucleus["15N", 1] = Nitrogen[15, {3.03,3.65}, 0];
+Felton09Nucleus["15N", 1] = Nitrogen[15, 10^6*{3.03,3.65}, 0];
 
 
-Felton09Nucleus["Ca", 1] = Carbon[{198.2,120.8}, E1];
-Felton09Nucleus["Ca", 2] = Carbon[{198.2,120.8}, E2];
-Felton09Nucleus["Ca", 3] = Carbon[{198.2,120.8}, E3];
+Felton09Nucleus["Ca", 1] = Carbon[10^6*{198.2,120.8}, E1];
+Felton09Nucleus["Ca", 2] = Carbon[10^6*{198.2,120.8}, E2];
+Felton09Nucleus["Ca", 3] = Carbon[10^6*{198.2,120.8}, E3];
 
 
-Felton09Nucleus["Cg", 1] = Carbon[{18.49,13.26}, 2*E1-E2];
-Felton09Nucleus["Cg", 2] = Carbon[{18.49,13.26}, 2*E1-E3];
-Felton09Nucleus["Cg", 3] = Carbon[{18.49,13.26}, 2*E2-E1];
-Felton09Nucleus["Cg", 4] = Carbon[{18.49,13.26}, 2*E2-E3];
-Felton09Nucleus["Cg", 5] = Carbon[{18.49,13.26}, 2*E3-E1];
-Felton09Nucleus["Cg", 6] = Carbon[{18.49,13.26}, 2*E3-E2];
+Felton09Nucleus["Cg", 1] = Carbon[10^6*{18.49,13.26}, 2*E1-E2];
+Felton09Nucleus["Cg", 2] = Carbon[10^6*{18.49,13.26}, 2*E1-E3];
+Felton09Nucleus["Cg", 3] = Carbon[10^6*{18.49,13.26}, 2*E2-E1];
+Felton09Nucleus["Cg", 4] = Carbon[10^6*{18.49,13.26}, 2*E2-E3];
+Felton09Nucleus["Cg", 5] = Carbon[10^6*{18.49,13.26}, 2*E3-E1];
+Felton09Nucleus["Cg", 6] = Carbon[10^6*{18.49,13.26}, 2*E3-E2];
 
 
 End[];
@@ -957,10 +957,10 @@ End[];
 Begin["`Private`"];
 
 
-Childress06Nucleus["D"] = Carbon[{{0.4,-2.2,-2.1},{-2.2,2.6,-0.4},{-2.1,-0.4,3.5}}];
+Childress06Nucleus["D"] = Carbon[10^6*{{0.4,-2.2,-2.1},{-2.2,2.6,-0.4},{-2.1,-0.4,3.5}}];
 
 
-Childress06Nucleus["E"] = Carbon[{{5,-6.3,-2.9},{-6.3,4.2,-2.3},{-2.9,-2.3,8.2}}];
+Childress06Nucleus["E"] = Carbon[10^6*{{5,-6.3,-2.9},{-6.3,4.2,-2.3},{-2.9,-2.3,8.2}}];
 
 
 End[];
@@ -973,9 +973,9 @@ End[];
 Begin["`Private`"];
 
 
-Shim13Nucleus[1] = Carbon[{30.3,122.9,226.6}, Vector[{1,0,123.5*\[Pi]/180}, Spherical]];
-Shim13Nucleus[2] = Carbon[{30.3,122.9,226.6}, Vector[{1,2*\[Pi]/3,123.5*\[Pi]/180}, Spherical]];
-Shim13Nucleus[3] = Carbon[{30.3,122.9,226.6}, Vector[{1,4*\[Pi]/3,123.5*\[Pi]/180}, Spherical]];
+Shim13Nucleus[1] = Carbon[10^6*{30.3,122.9,226.6}, Vector[{1,0,123.5*\[Pi]/180}, Spherical]];
+Shim13Nucleus[2] = Carbon[10^6*{30.3,122.9,226.6}, Vector[{1,2*\[Pi]/3,123.5*\[Pi]/180}, Spherical]];
+Shim13Nucleus[3] = Carbon[10^6*{30.3,122.9,226.6}, Vector[{1,4*\[Pi]/3,123.5*\[Pi]/180}, Spherical]];
 
 
 End[];
@@ -992,28 +992,28 @@ End[];
 Begin["`Private`"];
 
 
-Taminiau12Nucleus[1] = Carbon[{{0,0,0},{0,0,0},{0.0838 Sin[21*\[Pi]/180],0,0.0838 Cos[21*\[Pi]/180]}}];
+Taminiau12Nucleus[1] = Carbon[10^6*{{0,0,0},{0,0,0},{0.0838 Sin[21*\[Pi]/180],0,0.0838 Cos[21*\[Pi]/180]}}];
 
 
-Taminiau12Nucleus[2] = Carbon[{{0,0,0},{0,0,0},{0.047 Sin[30*\[Pi]/180],0,0.047 Cos[30*\[Pi]/180]}}];
+Taminiau12Nucleus[2] = Carbon[10^6*{{0,0,0},{0,0,0},{0.047 Sin[30*\[Pi]/180],0,0.047 Cos[30*\[Pi]/180]}}];
 
 
-Taminiau12Nucleus[3] = Carbon[{{0,0,0},{0,0,0},{0.055 Sin[54*\[Pi]/180],0,0.055 Cos[54*\[Pi]/180]}}];
+Taminiau12Nucleus[3] = Carbon[10^6*{{0,0,0},{0,0,0},{0.055 Sin[54*\[Pi]/180],0,0.055 Cos[54*\[Pi]/180]}}];
 
 
-Taminiau12Nucleus[4] = Carbon[{{0,0,0},{0,0,0},{0.019 Sin[133*\[Pi]/180],0,0.019 Cos[133*\[Pi]/180]}}];
+Taminiau12Nucleus[4] = Carbon[10^6*{{0,0,0},{0,0,0},{0.019 Sin[133*\[Pi]/180],0,0.019 Cos[133*\[Pi]/180]}}];
 
 
-Taminiau12Nucleus[5] = Carbon[{{0,0,0},{0,0,0},{0.033 Sin[132*\[Pi]/180],0,0.033 Cos[132*\[Pi]/180]}}];
+Taminiau12Nucleus[5] = Carbon[10^6*{{0,0,0},{0,0,0},{0.033 Sin[132*\[Pi]/180],0,0.033 Cos[132*\[Pi]/180]}}];
 
 
-Taminiau12Nucleus[6] = Carbon[{{0,0,0},{0,0,0},{0.0251 Sin[51*\[Pi]/180],0,0.0251 Cos[51*\[Pi]/180]}}];
+Taminiau12Nucleus[6] = Carbon[10^6*{{0,0,0},{0,0,0},{0.0251 Sin[51*\[Pi]/180],0,0.0251 Cos[51*\[Pi]/180]}}];
 
 
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Hamiltonians*)
 
 
@@ -1187,6 +1187,9 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[]]:=
 						labFrame = FrameCompose[FrameInverse[OptionValue[CrystalOrientation]],crystalFrame];
 				];
 		];
+
+		(* Now write the magnetic field in the appropriate frame *)
+		cartesianB = FrameChange[cartesianB, OptionValue[StaticFieldFrame], IdentityFrame];
 
 		(* Determine the spin of the NV center. *)
 		nvSpin = OptionValue[NVSpin];
