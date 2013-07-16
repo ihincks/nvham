@@ -191,7 +191,7 @@ InsertConstants[expr_]:=expr/.$constants
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Frames and Vectors*)
 
 
@@ -377,7 +377,7 @@ FrameMatrix[f_Frame]:=((List@@Cartesian[f])[[1;;3]])\[Transpose]
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Changing, Inverting and Composing Frames*)
 
 
@@ -749,7 +749,7 @@ Nitrogen/:GyromagneticRatio[Nitrogen[x___]]:=If[Isotope[Nitrogen[x]]===15,\[Gamm
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Nuclear Database*)
 
 
@@ -1013,7 +1013,7 @@ Taminiau12Nucleus[6] = Carbon[10^6*{{0,0,0},{0,0,0},{0.0251 Sin[51*\[Pi]/180],0,
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Hamiltonians*)
 
 
@@ -1189,7 +1189,7 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[]]:=
 		];
 
 		(* Now write the magnetic field in the appropriate frame *)
-		cartesianB = FrameChange[cartesianB, OptionValue[StaticFieldFrame], IdentityFrame];
+		cartesianB = FrameChange[cartesianB, OptionValue[StaticFieldFrame]/.frames, IdentityFrame];
 
 		(* Determine the spin of the NV center. *)
 		nvSpin = OptionValue[NVSpin];
