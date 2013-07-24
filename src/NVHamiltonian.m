@@ -191,7 +191,7 @@ InsertConstants[expr_]:=expr/.$constants
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Frames and Vectors*)
 
 
@@ -327,7 +327,7 @@ Vector/:Norm[v_Vector]:=
 End[];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Frames*)
 
 
@@ -377,7 +377,7 @@ FrameMatrix[f_Frame]:=((List@@Cartesian[f])[[1;;3]])\[Transpose]
 End[];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Changing, Inverting and Composing Frames*)
 
 
@@ -1013,7 +1013,7 @@ Taminiau12Nucleus[6] = Carbon[10^6*{{0,0,0},{0,0,0},{0.0251 Sin[51*\[Pi]/180],0,
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Hamiltonians*)
 
 
@@ -1167,8 +1167,8 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[]]:=
 			OptionValue[OutputFrame]===ZFSFrame,
 				zfsFrame = IdentityFrame;
 				crystalFrame = FrameInverse[NVOrientationToFrame[OptionValue[NVOrientation]]];
-				labFrame = FrameCompose[OptionValue[CrystalOrientation],crystalFrame];
-				zeemanFrame = FrameCompose[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[StaticFieldFrame]/.frames];,
+				labFrame = FrameCompose[crystalFrame,FrameInverse[OptionValue[CrystalOrientation]]];
+				zeemanFrame = FrameCompose[OptionValue[StaticFieldFrame]/.frames,EulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];,
 			OptionValue[OutputFrame]===ZeemanFrame,
 				zeemanFrame = IdentityFrame;
 				(* The ZeemanFrame case is special because the StaticField has the option of being written in any frame. *)
@@ -1256,7 +1256,7 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[]]:=
 		If[OptionValue[AngularUnits]===Automatic, angularUnits = numerical;, angularUnits = OptionValue[AngularUnits];];
 		preFactor = If[angularUnits, preFactor=2*\[Pi], 1];
 
-		(* Not that it _really_ matters, but do the search and replace for constants before expanding to the
+		(* Not that it _really _ matters, but do the search and replace for constants before expanding to the
 		   full Hilbert space because it should be a bit faster, at least, asymtotically.  *)
 		If[numerical,
 			termList = InsertConstants[termList];
