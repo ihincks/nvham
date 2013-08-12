@@ -1,8 +1,6 @@
 (* ::Package:: *)
 
-Off[General::obspkg];
-BeginPackage["NVCalibrationTools`",{"VectorAnalysis`","NVHamiltonian`"}]
-On[General::obspkg];
+BeginPackage["NVCalibrationTools`",{"NVHamiltonian`"}]
 
 
 (* ::Section:: *)
@@ -248,7 +246,7 @@ ComputeDiskFieldAndSave[filename_,{rmin_,rmax_,dr_},{zmin_,zmax_,dz_},m_:1000,d_
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Field of a Halbach Array*)
 
 
@@ -327,7 +325,7 @@ HalbachField[{x_,y_,z_},{topPos_,bottomPos_,azimuth_},fun3dup_,fun3dright_,gap_:
 End[];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Interpolating Fields*)
 
 
@@ -366,7 +364,7 @@ CylindricalFieldExtrapolation[{x_,y_,z_},intfun2d_]:=
 		r=Sqrt[x^2+y^2];
 		\[Phi]=If[x==0&&y==0,0,ArcTan[x,y]];
 		val=intfun2d[r,Abs[z]];
-		out=CoordinatesToCartesian[{val[[1]],\[Phi],val[[2]]},Cylindrical];
+		out={Cos[\[Phi]]*val[[1]],Sin[\[Phi]]*val[[1]],val[[2]]};
 		If[z>=0,out,out*{-1,-1,1}]
 	]
 
@@ -532,13 +530,13 @@ CompareDataWithFourOrientations::usage = "CompareDataWithFourOrientations[data] 
 
 MagToLab::usage = "MagToLab[{x,y,z}] converts the numbers on the magnet motor controller to labframe oriented coordinates (Note: without the translation, which is what we are trying to find).";
 LabToMag::usage = "LabToMag[{x,y,z}] converts labframe oriented coordinates to the weird coordinates of the magnet motor (Note: without the translation, which is what we are trying to find).";
-NVZeemanSplitting::usage = "NVZeemanSplitting[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},nvOrientation] computes the Zeeman splitting of the NV electron given the magnetic field, the crystal orientation, and the nv orientation. Uses the secular approximation..";
+NVZeemanSplitting::usage = "NVZeemanSplitting[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},nvOrientation] computes the Zeeman splitting of the NV electron given the magnetic field, the crystal orientation, and the nv orientation. Uses eigenvales; not the secular approximation.";
 
 
-FakeData::usage = "FakeData[\[Sigma],points,nvOrientation_Integer,{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},m]
-generates fake data of the form {{x1,y1,z1,splitting1,nvorientation1},...} by sampling from a Gaussian of variance \[Sigma] at each point of the list points={{x1,y1,z1},{x2,y2,z3},...}, with the given frame transformation z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3 and magnitization m.
-FakeData[\[Sigma],points,nvOrientations_List,{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},m]
-generates fake data of the form {{x1,y1,z1,splitting1,nvorientation1},...} by sampling from a Gaussian of variance \[Sigma] at each point of the list points={{x1,y1,z1},{x2,y2,z3},...} with respective nv orientations nvOrientations={nv1,nv2,...}, with the given frame transformation z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3 and magnetization m.
+FakeData::usage = "FakeData[\[Sigma],points,nvOrientation_Integer,{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m]
+generates fake data of the form {{x1,y1,z1,splitting1,nvorientation1},...} by sampling from a Gaussian of variance \[Sigma] at each point of the list points={{x1,y1,z1},{x2,y2,z3},...}, with the given frame transformation z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3, offset field {B1,B2,B3} and magnitization m.
+FakeData[\[Sigma],points,nvOrientations_List,{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m]
+generates fake data of the form {{x1,y1,z1,splitting1,nvorientation1},...} by sampling from a Gaussian of variance \[Sigma] at each point of the list points={{x1,y1,z1},{x2,y2,z3},...} with respective nv orientations nvOrientations={nv1,nv2,...}, with the given frame transformation z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3, offset field {B1,B2,B3} and magnetization m.
 FakeData[\[Sigma],points,nvOrientations_List,solution] calls FakeData[\[Sigma],points,nvOrientations_List,Sequence@@solution]
 FakeData, in all cases, returns an output which is compatible with the data input of both PlotSplittingData and CalibrateField.";
 PlotSplittingData::usage = "PlotSplittingData[data,minsplit:0] 
@@ -546,35 +544,35 @@ shows you the splitting at each point in space in your data set.
 All data points which have a splitting less than minsplit will be Black, otherwise, each NV orientation gets a different colour.";
 
 
-MostInformativeSpot::usage = "MostInformativeSpot[{z11,z12,z13},{\[Alpha]11,\[Alpha]12,\[Alpha]13},m1,{z21,z22,z23},{\[Alpha]21,\[Alpha]22,\[Alpha]23},m2,nvOrientation,minsplitting:15,maxsplitting:280,minz:6]
-computes where you should do your next measurement to maximally distinguish (which means to maximize the difference of the splittings) the two solutions given by the two z's, \[Alpha]'s, and m's. You can specifiy the maximum and minimum splitting you can tolerate, as well as the lowest z3 value
+MostInformativeSpot::usage = "MostInformativeSpot[{z11,z12,z13},{\[Alpha]11,\[Alpha]12,\[Alpha]13},{B11,B12,B13},m1,{z21,z22,z23},{\[Alpha]21,\[Alpha]22,\[Alpha]23},{B21,B22,B23},m2,nvOrientation,minsplitting:15,maxsplitting:280,minz:6]
+computes where you should do your next measurement to maximally distinguish (which means to maximize the difference of the splittings) the two solutions given by the two z's, \[Alpha]'s, B's and m's. You can specifiy the maximum and minimum splitting you can tolerate, as well as the lowest z3 value
 MostInformativeSpot[solution1,solution2,nvOrientation,minsplitting:15,maxsplitting:280,minz:6] calls MostInformativeSpot[Sequence@@solution1,Sequence@@solution2,nvOrientation,minsplitting:15,maxsplitting:280,minz:6]";
-MagnetFittingCostFunction::usage = "MagnetFittingCostFunction[{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},m,data]
-runs the cost function used by CalibrateField on the potential solution {z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3}, where m is the magnetization factor, and data is of the same form as accepted by CalibrateField.
+MagnetFittingCostFunction::usage = "MagnetFittingCostFunction[{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m,data]
+runs the cost function used by CalibrateField on the potential solution {z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3}, where m is the magnetization factor and {B1,B2,B3} is the offset field, and data is of the same form as accepted by CalibrateField.
 MagnetFittingCostFunction[solution,data] returns MagnetFittingCostFunction[Sequence@@solution,data]";
-CalibrateField::usage = "CalibrateField[data,m,constraints:{{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]}},method:\"NelderMead\",minsplit:13]
+CalibrateField::usage = "CalibrateField[data,m,constraints:{{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]}},method:\"NelderMead\",minsplit:13]
  does a numerical minimization to find the best frame transformation between the magnet origin and the NV PAS given the data.
 The data should be a list of the form {{x1,y1,z1,S1,nv1},{x2,y2,z2,S2,nv2},...} where the x,y,z are the positions of the magnet motor, the S's are the splittings in MHz, and the nv's are the NV orientations. m is the magenetization factor, and minsplit specifies which data points to throw out.
-The output of the function is of the form {mincostfunctionvalue,{{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},m}} where mincostfunctionvalue is in units \!\(\*SuperscriptBox[\(MHz\), \(2\)]\), {z1,z2,z3} is the translation of the stage, {\[Alpha]1,\[Alpha]2,\[Alpha]3} are the Euler angles, and m is the magnetization (the same number you input).";
-CalibrateFieldForBulk::usage = "CalibrateFieldForBulk is the same as CalibrateField, except that the cost function is also averaged over nv orientations.";
+The output of the function is of the form {mincostfunctionvalue,{{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m}} where mincostfunctionvalue is in units \!\(\*SuperscriptBox[\(MHz\), \(2\)]\), {z1,z2,z3} is the translation of the stage, {\[Alpha]1,\[Alpha]2,\[Alpha]3} are the Euler angles, {B1,B2,B3} is a constant offset field in Gauss, and m is the magnetization (the same number you input).";
 
 
 $typicalSolution::usage = "$typicalSolution is the sort of output you expect to get from CalibrateField. This is useful for feeding into functions like FakeData and PredictSplitting.";
 
 
-PositionGivenField::usage = "PositionGivenField[{z1,z2,z3},m,B,BCoords:Cartesian,minz:6]
-finds the position you should set the motors to in order to get the field B in coordinate system BCoords. You can demand that the z-motor be greater than 6.
-The output is in the form {costfunctionvalue,{{x,y,z},m}}, where costfunctionvalue has units of MHz, {x,y,z} is where you should put the motors, and m is the magnetization ratio (the same number you input).
-PositionGivenField[solution,B,BCoords:Cartesian,minz:6] returns PositionGivenField[solution[[1]],solution[[3]],B,BCoords:Cartesian,minz:6].";
-AlignField::usage = "AlignField[{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},m,nvOrientation,absB,minz:6] invokes PositionGivenField to find the motor position at which the magnetic field is aligned with the given nvOrienation, and with field strength Babs in Gauss. WARNING: The sign of the field matters. For example, if you ask for an alignment with orientation 4, it will try to find a field which is parallel (and not anti-parallel) to that axis. You can input negative values of Babs if you want to search for anti-aligned solutions.
+PositionGivenField::usage = "PositionGivenField[{z1,z2,z3},{B1,B2,B3},m,Bvector,minz:6]
+finds the position you should set the motors to in order to get the magenetic field Bvector (Bvector=Vector[{Bx,By,Bz},Coords]) in the lab frame. You can demand that the z-motor be greater than minz.
+{z1,z2,z3}, {B1,B2,B3}, and m, are part of the calibration solution.
+The output is in the form {costfunctionvalue,{x,y,z}}, where costfunctionvalue has units of MHz, {x,y,z} is where you should put the motors.
+PositionGivenField[solution,B,BCoords:Cartesian,minz:6] returns PositionGivenField[solution[[1]],solution[[3]],solution[[4]],Bvector,minz:6].";
+AlignField::usage = "AlignField[{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m,nvOrientation,absB,minz:6] invokes PositionGivenField to find the motor position at which the magnetic field is aligned with the given nvOrienation, and with field strength Babs in Gauss. WARNING: The sign of the field matters. For example, if you ask for an alignment with orientation 4, it will try to find a field which is parallel (and not anti-parallel) to that axis. You can input negative values of Babs if you want to search for anti-aligned solutions.
 AlignField[solution,nvOrientation,absB,minz:6] returns AlignField[Sequence@@solution,nvOrientation,absB,minz:6]";
 
 
-PredictSplitting::usage = "PredictSplitting[{r1,r2,r3},nvOrientation,{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},m] 
-predicts what the splitting will be at the magnet position {r1,r2,r3} given the the solution specified by z, \[Alpha] and m.
+PredictSplitting::usage = "PredictSplitting[{r1,r2,r3},nvOrientation,{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m] 
+predicts what the splitting will be at the magnet position {r1,r2,r3} given the the solution specified by z, \[Alpha], B and m.
 PredictSplitting[{r1,r2,r3},nvOrientation,solution] returns PredictSplitting[{r1,r2,r3},nvOrientation,Sequence@@solution].";
-PredictNVPASVector::usage = "PredictNVPASVector[{r1,r2,r3},nvOrientation,{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},m] 
-predicts what the magnetic field vector will be at the magnet position {r1,r2,r3} in the NV PAS given the the solution specified by z, \[Alpha] and m.
+PredictNVPASVector::usage = "PredictNVPASVector[{r1,r2,r3},nvOrientation,{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m] 
+predicts what the magnetic field vector will be at the magnet position {r1,r2,r3} in the NV PAS given the the solution specified by z, \[Alpha], B and m.
 PredictNVPASVector[{r1,r2,r3},nvOrientation,solution] returns PredictNVPASVector[{r1,r2,r3},nvOrientation,Sequence@@solution].";
 
 
@@ -585,7 +583,7 @@ PredictNVPASVector[{r1,r2,r3},nvOrientation,solution] returns PredictNVPASVector
 Begin["`Private`"];
 
 
-$typicalSolution = {{1.34,23.5,-5.3},{0,-0.977,-0.04},.71};
+$typicalSolution = {{1.34,23.5,-5.3},{0,-0.977,-0.04},{0,0,0},.71};
 
 
 ImportSplittingData[filename_String,scale_List:{1,1,1,1,1}]:=
@@ -616,7 +614,7 @@ CompareDataWithFourOrientations[data_,plotRange_:{0,25}]:=
 	GraphicsRow[
 		Join[
 			{PlotSplittingData[data,0,plotRange]},
-			PlotSplittingData[#,0,plotRange]&/@Table[FakeData[$MachineEpsilon,ExtractPositionArray[data],n,{1,23,-5},{0,-ArcCos[-1/3]/2,0},1],{n,4}]
+			PlotSplittingData[#,0,plotRange]&/@Table[FakeData[$MachineEpsilon,ExtractPositionArray[data],n,Sequence@@$typicalSolution],{n,4}]
 		],
 		ImageSize->1500
 	]
@@ -631,36 +629,44 @@ LabToMag[{x_,y_,z_}]:={-y,x,-z};
 
 
 (* ::Text:: *)
-(*The following were found by running NVHamiltonian, taking the secular approximation, and finding the difference between the first and third diagonal component (so the following are a secular approximation to the splitting).*)
+(*First get the Hamiltonians for each orientation in units of MHz, where the magnetic field is entered in the LabFrame. This is stored in MagHam.dat because the simplification it involves is lengthy.*)
 
 
-NVZeemanSplitting[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},1]=2*1000*Abs[With[{cz2=Cos[\[Theta]z2],sz2=Sin[\[Theta]z2],cy=Cos[\[Theta]y],sy=Sin[\[Theta]y]},0.0028025 Bz cy+0.0028025 Bx cz2 sy+0.0028025 By sy sz2]];
-NVZeemanSplitting[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},2]=2*1000*Abs[With[{cz1=Cos[\[Theta]z1],sz1=Sin[\[Theta]z1],cz2=Cos[\[Theta]z2],sz2=Sin[\[Theta]z2],cy=Cos[\[Theta]y],sy=Sin[\[Theta]y]},-0.00264222 Bz cz1 sy-0.000934165 Bx cz2 sy+0.00264222 By cz2 sz1-0.000934165 By sy sz2-0.00264222 Bx sz1 sz2+cy (-0.000934165 Bz+cz1 (0.00264222 Bx cz2+0.00264222 By sz2))]];
-NVZeemanSplitting[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},3]=2*1000*Abs[With[{cz1=Cos[\[Theta]z1],sz1=Sin[\[Theta]z1],cz2=Cos[\[Theta]z2],sz2=Sin[\[Theta]z2],cy=Cos[\[Theta]y],sy=Sin[\[Theta]y]},-0.000934165 Bx cz2 sy-0.00132111 By cz2 sz1+0.00228823 Bz sy sz1-0.000934165 By sy sz2+0.00132111 Bx sz1 sz2+cz1 (0.00228823 By cz2+0.00132111 Bz sy-0.00228823 Bx sz2)+cy (-0.000934165 Bz-0.00228823 Bx cz2 sz1-0.00228823 By sz1 sz2+cz1 (-0.00132111 Bx cz2-0.00132111 By sz2))]];
-NVZeemanSplitting[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},4]=2*1000*Abs[With[{cz1=Cos[\[Theta]z1],sz1=Sin[\[Theta]z1],cz2=Cos[\[Theta]z2],sz2=Sin[\[Theta]z2],cy=Cos[\[Theta]y],sy=Sin[\[Theta]y]},-0.000934165 Bx cz2 sy-0.00132111 By cz2 sz1-0.00228823 Bz sy sz1-0.000934165 By sy sz2+0.00132111 Bx sz1 sz2+cz1 (-0.00228823 By cz2+0.00132111 Bz sy+0.00228823 Bx sz2)+cy (-0.000934165 Bz+0.00228823 Bx cz2 sz1+0.00228823 By sz1 sz2+cz1 (-0.00132111 Bx cz2-0.00132111 By sz2))]];
+Get[Evaluate@FileNameJoin[{"data","MagHam.dat"}]];
 
 
-NVZeemanSplitting[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},5]=NVZeemanSplitting[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},1];
-NVZeemanSplitting[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},6]=NVZeemanSplitting[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},2];
-NVZeemanSplitting[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},7]=NVZeemanSplitting[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},3];
-NVZeemanSplitting[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},8]=NVZeemanSplitting[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},4];
+(* ::Text:: *)
+(*Now the zeeman splitting is simply the difference of the two biggest eigenvalues of MagHam*)
 
 
-FakeData[\[Sigma]_,points_,nvOrientation_Integer,{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},m_]:=
+NVZeemanSplitting[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},n_]:=Abs@First@Differences@Eigenvalues[MagHam[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},n],2]
+
+
+(* ::Text:: *)
+(*Define for orientations 5-8 too...*)
+
+
+NVZeemanSplitting[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},5]:=NVZeemanSplitting[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},1]
+NVZeemanSplitting[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},6]:=NVZeemanSplitting[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},2]
+NVZeemanSplitting[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},7]:=NVZeemanSplitting[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},3]
+NVZeemanSplitting[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},8]:=NVZeemanSplitting[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},4]
+
+
+FakeData[\[Sigma]_,points_,nvOrientation_Integer,{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,B3_},m_]:=
 	With[{x=#[[1]],y=#[[2]],z=#[[3]]},
 		{
 			x,y,z,
 			RandomVariate[NormalDistribution[
-				NVZeemanSplitting[Field[MagToLab[{z1,z2,z3}-{x,y,z}],m],{\[Alpha]1,\[Alpha]2,\[Alpha]3},nvOrientation],\[Sigma]]],
+				NVZeemanSplitting[Field[MagToLab[{z1,z2,z3}-{x,y,z}],m]+{B1,B2,B3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},nvOrientation],\[Sigma]]],
 			nvOrientation
 		}
 	]&/@points
-FakeData[\[Sigma]_,points_,nvOrientations_List,{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},m_]:=
+FakeData[\[Sigma]_,points_,nvOrientations_List,{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,B3_},m_]:=
 	With[{x=#[[1]],y=#[[2]],z=#[[3]],nv=#[[4]]},
 		{
 			x,y,z,
 			RandomVariate[NormalDistribution[
-				NVZeemanSplitting[Field[MagToLab[{z1,z2,z3}-{x,y,z}],m],{\[Alpha]1,\[Alpha]2,\[Alpha]3},nv],\[Sigma]]],
+				NVZeemanSplitting[Field[MagToLab[{z1,z2,z3}-{x,y,z}],m]+{B1,B2,B3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},nv],\[Sigma]]],
 			nv
 		}
 	]&/@(Join[points\[Transpose],{nvOrientations}]\[Transpose])
@@ -688,10 +694,10 @@ PlotSplittingData[data_,minsplit_:0,plotRange_:{0,25}]:=
 (*Here is the cost function for the fitting. WARNING: it is duplicated in the CalibrationField for efficiency reasons. If you change one, be sure to change the other.*)
 
 
-MagnetFittingCostFunction[{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},m_,data_]:=
+MagnetFittingCostFunction[{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,B3_},m_,data_]:=
 	Sum[
 			(NVZeemanSplitting[
-				Field[MagToLab[{z1,z2,z3}-data[[k,{1,2,3}]]],m],
+				Field[MagToLab[{z1,z2,z3}-data[[k,{1,2,3}]]],m]+{B1,B2,B3},
 				{\[Alpha]1,\[Alpha]2,\[Alpha]3},
 				data[[k,5]]
 			]-data[[k,4]])^2
@@ -701,10 +707,10 @@ MagnetFittingCostFunction[{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},m_,da
 MagnetFittingCostFunction[solution_,data_]:=MagnetFittingCostFunction[Sequence@@solution,data]
 
 
-MostInformativeSpot[{z11_,z12_,z13_},{\[Alpha]11_,\[Alpha]12_,\[Alpha]13_},m1_,{z21_,z22_,z23_},{\[Alpha]21_,\[Alpha]22_,\[Alpha]23_},m2_,nvOrientation_,minsplitting_:15,maxsplitting_:280,minz_:6]:=
+MostInformativeSpot[{z11_,z12_,z13_},{\[Alpha]11_,\[Alpha]12_,\[Alpha]13_},{B11_,B12_,B13_},m1_,{z21_,z22_,z23_},{\[Alpha]21_,\[Alpha]22_,\[Alpha]23_},{B21_,B22_,B23_},m2_,nvOrientation_,minsplitting_:15,maxsplitting_:280,minz_:6]:=
 	Block[{r1,r2,r3,S1,S2,cost,result,values},
-		S1[rr1_Real,rr2_Real,rr3_Real]:=NVZeemanSplitting[Field[MagToLab[{z11-rr1,z12-rr2,z13-rr3}],m1],{\[Alpha]11,\[Alpha]12,\[Alpha]13},nvOrientation];
-		S2[rr1_Real,rr2_Real,rr3_Real]:=NVZeemanSplitting[Field[MagToLab[{z21-rr1,z22-rr2,z23-rr3}],m2],{\[Alpha]21,\[Alpha]22,\[Alpha]23},nvOrientation];
+		S1[rr1_Real,rr2_Real,rr3_Real]:=NVZeemanSplitting[Field[MagToLab[{z11-rr1,z12-rr2,z13-rr3}],m1]+{B11,B12,B13},{\[Alpha]11,\[Alpha]12,\[Alpha]13},nvOrientation];
+		S2[rr1_Real,rr2_Real,rr3_Real]:=NVZeemanSplitting[Field[MagToLab[{z21-rr1,z22-rr2,z23-rr3}],m2]+{B21,B22,B23},{\[Alpha]21,\[Alpha]22,\[Alpha]23},nvOrientation];
 		cost[rr1_Real,rr2_Real,rr3_Real]:=(S1[rr1,rr2,rr3]-S2[rr1,rr2,rr3])^2;
 		{result,values}=NMaximize[
 			{cost[r1,r2,r3],0<=r1<=25,0<=r2<=25,minz<=r3<=25,minsplitting<S1[r1,r2,r3]<maxsplitting,minsplitting<S2[r1,r2,r3]<maxsplitting},
@@ -718,79 +724,44 @@ MostInformativeSpot[{z11_,z12_,z13_},{\[Alpha]11_,\[Alpha]12_,\[Alpha]13_},m1_,{
 MostInformativeSpot[solution1_,solution2_,nvOrientation_,minsplitting_:15,maxsplitting_:280,minz_:6]:=MostInformativeSpot[Sequence@@solution1,Sequence@@solution2,nvOrientation,minsplitting,maxsplitting,minz]
 
 
-CalibrateField[data_,m_,constraints_:{{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]}},method_:"NelderMead",minsplit_:13]:=
-	Block[{z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3,cost,sdata,cons,result,values},
+CalibrateField[data_,m_,constraints_:{{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]}},method_:"NelderMead",minsplit_:13]:=
+	Block[{z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3,B1,B2,B3,cost,sdata,cons,result,values},
 		sdata=Select[data,(#[[4]]>=minsplit)&];
-		cost[zz1_,zz2_,zz3_,\[Alpha]\[Alpha]1_,\[Alpha]\[Alpha]2_,\[Alpha]\[Alpha]3_]:=
+		cost[zz1_,zz2_,zz3_,\[Alpha]\[Alpha]1_,\[Alpha]\[Alpha]2_,\[Alpha]\[Alpha]3_,BB1_,BB2_,BB3_]:=
 			Sum[
 				(
 					NVZeemanSplitting[
-						Field[MagToLab[{z1,z2,z3}-sdata[[k,{1,2,3}]]],m],
-						{\[Alpha]1,\[Alpha]2,\[Alpha]3},sdata[[k,5]]]-sdata[[k,4]]
+						Field[MagToLab[{zz1,zz2,zz3}-sdata[[k,{1,2,3}]]],m]+{BB1,BB2,BB3},
+						{\[Alpha]\[Alpha]1,\[Alpha]\[Alpha]2,\[Alpha]\[Alpha]3},sdata[[k,5]]]-sdata[[k,4]]
 				)^2,
 				{k,1,Length[sdata]}
 			]/Length[sdata];
 		{result,values}=NMinimize[
 			{
-				Hold[cost[z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3]],
+				Hold[cost[z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3,B1,B2,B3]],
 				constraints[[1,1]]<=z1<=constraints[[1,2]],
 				constraints[[2,1]]<=z2<=constraints[[2,2]],
 				constraints[[3,1]]<=z3<=constraints[[3,2]],
 				constraints[[4,1]]<=\[Alpha]1<=constraints[[4,2]],
 				constraints[[5,1]]<=\[Alpha]2<=constraints[[5,2]],
-				constraints[[6,1]]<=\[Alpha]3<=constraints[[6,2]]
+				constraints[[6,1]]<=\[Alpha]3<=constraints[[6,2]],
+				constraints[[7,1]]<=B1<=constraints[[7,2]],
+				constraints[[7,1]]<=B2<=constraints[[7,2]],
+				constraints[[7,1]]<=B3<=constraints[[7,2]]
 			},
-			{z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3},
+			{z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3,B1,B2,B3},
 			Method->method,
 			MaxIterations->3000
 		];
-		{z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3}={z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3}/.values;
-		{result,{{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},m}}
+		{z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3,B1,B2,B3}={z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3,B1,B2,B3}/.values;
+		{result,{{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m}}
 	]
 
 
-(* ::Text:: *)
-(*This function assumes you have scanned your data along an axis where all four nv orientations give the same splitting.*)
-
-
-CalibrateFieldForBulk[data_,m_,constraints_:{{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]}},method_:"NelderMead",minsplit_:13]:=
-	Block[{z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3,cost,sdata,cons,result,values},
-		sdata=Select[data,(#[[4]]>=minsplit)&];
-		cost[zz1_,zz2_,zz3_,\[Alpha]\[Alpha]1_,\[Alpha]\[Alpha]2_,\[Alpha]\[Alpha]3_]:=
-			Sum[
-				Sum[
-					(
-						NVZeemanSplitting[
-							Field[MagToLab[{z1,z2,z3}-sdata[[k,{1,2,3}]]],m],
-							{\[Alpha]1,\[Alpha]2,\[Alpha]3},nvOrientation]-sdata[[k,4]]
-					)^2,
-					{nvOrientation,4}
-				]/4,
-				{k,1,Length[sdata]}
-			]/Length[sdata];
-		{result,values}=NMinimize[
-			{
-				Hold[cost[z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3]],
-				constraints[[1,1]]<=z1<=constraints[[1,2]],
-				constraints[[2,1]]<=z2<=constraints[[2,2]],
-				constraints[[3,1]]<=z3<=constraints[[3,2]],
-				constraints[[4,1]]<=\[Alpha]1<=constraints[[4,2]],
-				constraints[[5,1]]<=\[Alpha]2<=constraints[[5,2]],
-				constraints[[6,1]]<=\[Alpha]3<=constraints[[6,2]]
-			},
-			{z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3},
-			Method->method,
-			MaxIterations->3000
-		];
-		{z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3}={z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3}/.values;
-		{result,{{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},m}}
-	]
-
-
-PositionGivenField[{z1_,z2_,z3_},m_,B_,BCoords_:Cartesian,minz_:6]:=
+PositionGivenField[{z1_,z2_,z3_},{B1_,B2_,B3_},m_,Bvec_,minz_:6]:=
 	Block[{cost,Bcart,result,values,r1,r2,r3},
-		Bcart=CoordinatesToCartesian[B,BCoords];
-		cost[rr1_Real,rr2_Real,rr3_Real]:=Norm[Bcart-Field[MagToLab[{z1,z2,z3}-{rr1,rr2,rr3}],m]]^2;
+		Bcart=Value@Cartesian@Bvec;
+		cost[rr1_Real,rr2_Real,rr3_Real]:=Norm[Bcart-(Field[MagToLab[{z1,z2,z3}-{rr1,rr2,rr3}],m]+{B1,B2,B3})]^2;
 		{result,values}=NMinimize[
 			{
 				cost[r1,r2,r3],
@@ -800,29 +771,29 @@ PositionGivenField[{z1_,z2_,z3_},m_,B_,BCoords_:Cartesian,minz_:6]:=
 			MaxIterations->3000,
 			Method->"NelderMead"
 		];
-		{Sqrt[result],{{r1,r2,r3}/.values,m}}
+		{Sqrt[result],{r1,r2,r3}/.values}
 	]
-PositionGivenField[solution_,B_,BCoords_:Cartesian,minz_:6]:=PositionGivenField[solution[[1]],solution[[3]],B,BCoords,minz]
+PositionGivenField[solution_,B_,BCoords_:Cartesian,minz_:6]:=PositionGivenField[solution[[1]],solution[[3]],solution[[4]],B,BCoords,minz]
 
 
-AlignField[{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},m_,nvOrientation_,absB_,minz_:6]:=
+AlignField[{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,B3_},m_,nvOrientation_,absB_,minz_:6]:=
 	PositionGivenField[
 		{z1,z2,z3},
+		{B1,B2,B3},
 		m,
-		RotateBfromNVPAS[{0,0,-absB},{\[Alpha]1,\[Alpha]2,\[Alpha]3},nvOrientation,Cartesian],
-		Cartesian,
+		Vector[FrameChange[{0,0,absB},IdentityFrame,FrameCompose[EulerAngles[\[Alpha]1,\[Alpha]2,\[Alpha]3],NVOrientationToFrame[nvOrientation]]],Cartesian],
 		minz
 	];
 AlignField[solution_,nvOrientation_,absB_,minz_:6]:=AlignField[Sequence@@solution,nvOrientation,absB,minz]
 
 
-PredictSplitting[{r1_,r2_,r3_},nvOrientation_,{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},m_]:=
-	NVZeemanSplitting[Field[MagToLab[{z1,z2,z3}-{r1,r2,r3}],m],{\[Alpha]1,\[Alpha]2,\[Alpha]3},nvOrientation]
+PredictSplitting[{r1_,r2_,r3_},nvOrientation_,{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,B3_},m_]:=
+	NVZeemanSplitting[Field[MagToLab[{z1,z2,z3}-{r1,r2,r3}],m]+{B1,B2,B3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},nvOrientation]
 PredictSplitting[{r1_,r2_,r3_},nvOrientation_,solution_]:=PredictSplitting[{r1,r2,r3},nvOrientation,Sequence@@solution]
 
 
-PredictNVPASVector[{r1_,r2_,r3_},nvOrientation_,{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},m_]:=
-	RotateBtoNVPAS[CoordinatesFromCartesian[Field[MagToLab[{z1,z2,z3}-{r1,r2,r3}],m],Spherical],{\[Alpha]1,\[Alpha]2,\[Alpha]3},nvOrientation,Spherical]
+PredictNVPASVector[{r1_,r2_,r3_},nvOrientation_,{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,B3_},m_]:=
+	Vector[FrameChange[Field[MagToLab[{z1,z2,z3}-{r1,r2,r3}],m]+{B1,B2,B3},FrameCompose[EulerAngles[\[Alpha]1,\[Alpha]2,\[Alpha]3],NVOrientationToFrame[nvOrientation]],IdentityFrame],Cartesian]
 PredictNVPASVector[{r1_,r2_,r3_},nvOrientation_,solution_]:=PredictNVPASVector[{r1,r2,r3},nvOrientation,Sequence@@solution]
 
 

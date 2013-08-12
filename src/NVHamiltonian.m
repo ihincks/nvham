@@ -275,7 +275,7 @@ ChangeCoordinates[v_Vector,newCoords_]:=Vector[ChangeCoordinates[Value@v,Coordin
 End[];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Vectors*)
 
 
@@ -397,7 +397,7 @@ FrameChangeMatrix[fromFrame_,toFrame_]:=FrameMatrix[toFrame]\[Transpose].FrameMa
 
 FrameChange[v_?Vector3Q,fromFrame_,toFrame_]:=FrameChangeMatrix[fromFrame,toFrame].v
 FrameChange[M_?Matrix3Q,fromFrame_,toFrame_]:=With[{F=FrameChangeMatrix[fromFrame,toFrame]},F.M.F\[Transpose]]
-FrameChange[v_Vector,fromFrame_,toFrame_]:=ChangeCoordinates[FrameChangeMatrix[fromFrame,toFrame].ChangeCoordinates[v,Cartesian],Cartesian,Coordinates@v]
+FrameChange[v_Vector,fromFrame_,toFrame_]:=ChangeCoordinates[Vector[FrameChangeMatrix[fromFrame,toFrame].(Value@Cartesian@v),Cartesian],Coordinates@v]
 
 
 (* ::Text:: *)
