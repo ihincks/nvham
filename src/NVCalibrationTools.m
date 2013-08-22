@@ -1,6 +1,6 @@
 (* ::Package:: *)
 
-BeginPackage["NVCalibrationTools`",{"NVHamiltonian`"}]
+BeginPackage["NVCalibrationTools`",{"NVHamiltonian`","NVSim`"}]
 
 
 (* ::Section:: *)
@@ -94,7 +94,7 @@ StandardDeviation/@Transpose[monteCarloBFields]
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Magnetic Fields*)
 
 
@@ -514,7 +514,7 @@ LoadField[data_,method_]:=
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Magnet Calibration From Position Array of Splitting Data	*)
 
 
@@ -530,7 +530,8 @@ CompareDataWithFourOrientations::usage = "CompareDataWithFourOrientations[data] 
 
 MagToLab::usage = "MagToLab[{x,y,z}] converts the numbers on the magnet motor controller to labframe oriented coordinates (Note: without the translation, which is what we are trying to find).";
 LabToMag::usage = "LabToMag[{x,y,z}] converts labframe oriented coordinates to the weird coordinates of the magnet motor (Note: without the translation, which is what we are trying to find).";
-NVZeemanSplitting::usage = "NVZeemanSplitting[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},nvOrientation] computes the Zeeman splitting of the NV electron given the magnetic field, the crystal orientation, and the nv orientation. Uses eigenvales; not the secular approximation.";
+NVZeemanSplitting::usage = "NVZeemanSplitting[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},nvOrientation] computes the Zeeman splitting of the NV electron in MHz given the magnetic field, the crystal orientation, and the nv orientation. Uses eigenvales; not the secular approximation.";
+NVCenterFrequency::usage = "NVCenterFrequency[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},nvOrientation] computes the center frequency of the NV electron in MHz given the magnetic field, the crystal orientation, and the nv orientation. Uses eigenvales; not the secular approximation.";
 
 
 FakeData::usage = "FakeData[\[Sigma],points,nvOrientation_Integer,{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m]
@@ -571,6 +572,9 @@ AlignField[solution,nvOrientation,absB,minz:6] returns AlignField[Sequence@@solu
 PredictSplitting::usage = "PredictSplitting[{r1,r2,r3},nvOrientation,{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m] 
 predicts what the splitting will be at the magnet position {r1,r2,r3} given the the solution specified by z, \[Alpha], B and m.
 PredictSplitting[{r1,r2,r3},nvOrientation,solution] returns PredictSplitting[{r1,r2,r3},nvOrientation,Sequence@@solution].";
+PredictCenterFreq::usage = "PredictCenterFreq[{r1,r2,r3},nvOrientation,{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m] 
+predicts what the center frequency will be at the magnet position {r1,r2,r3} given the the solution specified by z, \[Alpha], B and m.
+PredictCenterFreq[{r1,r2,r3},nvOrientation,solution] returns PredictCenterFreq[{r1,r2,r3},nvOrientation,Sequence@@solution].";
 PredictNVPASVector::usage = "PredictNVPASVector[{r1,r2,r3},nvOrientation,{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m] 
 predicts what the magnetic field vector will be at the magnet position {r1,r2,r3} in the NV PAS given the the solution specified by z, \[Alpha], B and m.
 PredictNVPASVector[{r1,r2,r3},nvOrientation,solution] returns PredictNVPASVector[{r1,r2,r3},nvOrientation,Sequence@@solution].";
@@ -650,6 +654,17 @@ NVZeemanSplitting[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},5]:=NVZeema
 NVZeemanSplitting[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},6]:=NVZeemanSplitting[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},2]
 NVZeemanSplitting[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},7]:=NVZeemanSplitting[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},3]
 NVZeemanSplitting[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},8]:=NVZeemanSplitting[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},4]
+
+
+(* ::Text:: *)
+(*Similarly figure out the centre frequencies:*)
+
+
+NVCenterFrequency[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},n_]:=With[{e=Sort@Eigenvalues[MagHam[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},n]]},((e[[2]]-e[[1]])+(e[[3]]-e[[1]]))/2]
+NVCenterFrequency[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},5]:=NVCenterFrequency[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},1]
+NVCenterFrequency[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},6]:=NVCenterFrequency[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},2]
+NVCenterFrequency[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},7]:=NVCenterFrequency[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},3]
+NVCenterFrequency[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},8]:=NVCenterFrequency[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},4]
 
 
 FakeData[\[Sigma]_,points_,nvOrientation_Integer,{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,B3_},m_]:=
@@ -792,9 +807,207 @@ PredictSplitting[{r1_,r2_,r3_},nvOrientation_,{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]
 PredictSplitting[{r1_,r2_,r3_},nvOrientation_,solution_]:=PredictSplitting[{r1,r2,r3},nvOrientation,Sequence@@solution]
 
 
+PredictCenterFreq[{r1_,r2_,r3_},nvOrientation_,{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,B3_},m_]:=
+	NVCenterFrequency[Field[MagToLab[{z1,z2,z3}-{r1,r2,r3}],m]+{B1,B2,B3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},nvOrientation]
+PredictCenterFreq[{r1_,r2_,r3_},nvOrientation_,solution_]:=PredictCenterFreq[{r1,r2,r3},nvOrientation,Sequence@@solution]
+
+
 PredictNVPASVector[{r1_,r2_,r3_},nvOrientation_,{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,B3_},m_]:=
-	Vector[FrameChange[Field[MagToLab[{z1,z2,z3}-{r1,r2,r3}],m]+{B1,B2,B3},FrameCompose[EulerAngles[\[Alpha]1,\[Alpha]2,\[Alpha]3],NVOrientationToFrame[nvOrientation]],IdentityFrame],Cartesian]
+	Vector[FrameChange[Field[MagToLab[{z1,z2,z3}-{r1,r2,r3}],m]+{B1,B2,B3},IdentityFrame,FrameCompose[EulerAngles[\[Alpha]1,\[Alpha]2,\[Alpha]3],NVOrientationToFrame[nvOrientation]]],Cartesian]
 PredictNVPASVector[{r1_,r2_,r3_},nvOrientation_,solution_]:=PredictNVPASVector[{r1,r2,r3},nvOrientation,Sequence@@solution]
+
+
+End[];
+
+
+(* ::Section:: *)
+(*Carbon Hyperfine Estimation*)
+
+
+(* ::Subsubsection:: *)
+(*Usage Declarations*)
+
+
+EnhancedLarmourFormula::usage = "EnhancedLarmourFormula[B_,\[Theta]_,\[Phi]_,\[Alpha]_,A1_,A2_,A3_] returns the enhanced Larmour precession frequency in Hz of a carbon coupled to an NV to second order, where {B,\[Theta],\[Phi]} describes the static magnetic field in the PAS, and the hyperfine tensor is {{A1,0,\[Alpha]},{0,A2,0},{\[Alpha],0,A3}} in the same frame."
+
+
+EnhancedLarmourSimulation::usage = "EnhancedLarmourSimulation[staticField,A,T,\[CapitalOmega],doplot:True]";
+
+
+EnhancedLarmourHyperfineReconstruction::usage = "EnhancedLarmourHyperfineReconstruction[enhancedLarmourFreqs,staticFields,A\[Phi],method:\"NelderMead\"]";
+EnhancedLarmourHyperfineErrorBars::usage = "EnhancedLarmourHyperfineErrorBars[enhancedLarmourFreqs_,enhancedLarmourStds_,staticFields_,staticFieldStds_,A\[Phi]_,N_,opt:OptionsPattern[EnhancedLarmourHyperfineReconstruction]]";
+
+
+(* ::Subsubsection:: *)
+(*Implementations*)
+
+
+Begin["`Private`"];
+
+
+(* ::Text:: *)
+(*Load the enhanced Larmour formula from file to save time. It can be calculated from scratch by calling:*)
+(*	A={{A1,0,\[Alpha]},{0,A2,0},{\[Alpha],0,A3}}*)
+(*	H=NVAverageHamiltonian[2,\[CapitalDelta],Carbon[A],StaticField->Vector[{B,\[Theta],\[Phi]},Spherical],Numerical->False];*)
+(*	With[{HH=H[[3;;4,3;;4]]},Sqrt[Tr[H.X]^2+Tr[H.Y]^2+Tr[H.Z]^2]]*)
+(*With subsequent value insertions and simplifications...*)
+
+
+End[];
+Get[Evaluate@FileNameJoin[{"data","EnhancedLarmourFormula.dat"}]];
+Begin["`Private`"];
+
+
+(* ::Text:: *)
+(*This private function takes the output of EvalPulse and tries to fit a cosine to the first observable.*)
+
+
+FitCosine[data_]:=
+	Module[{model,A,B,\[Omega],t,soln},
+		model[t_]=A+B*Cos[2\[Pi] \[Omega] t];
+		soln=FindFit[First@Observables[data,TimeVector->True],model[t],{A,B,\[Omega]},{t},Method->NMinimize];
+		{model,soln}
+	]
+
+
+EnhancedLarmourSimulation[staticField_,A_,T_,\[CapitalOmega]_,doplot_:True,order_:-1]:=
+	Module[
+		{Hsim,stepsize,D,P0,rabidata,imperfectdata,perfectdata,pmod,psol,imod,isol,t\[Pi],UP,\[Rho]0,M0,fit,\[Omega]el,fig,U},
+		(* Set the synthesizer to be at the leftmost of the four peaks *)
+		D=10^6*NVCenterFrequency[Value@Cartesian[staticField],{0,0,0},1]-(10^6*NVZeemanSplitting[Value@Cartesian[staticField],{0,0,0},1]+Norm[A[[3]]])/2;
+		stepsize=(10^6/D)/30;
+		(* Define the Hamiltonian *)
+		U=Module[{\[Theta],\[Phi]},
+			\[Theta]=ArcTan[A[[3,1]],A[[3,2]]];
+			\[Phi]=ArcTan[A[[3,3]],Norm[A[[3,{1,2}]]]];
+			U=Subscript[\[DoubleStruckOne], 9]\[CircleTimes](MatrixExp[-I (\[Theta]/2) Y].MatrixExp[-I (\[Phi]/2) Z]);
+		];
+		If[order>=0,
+			Hsim=U.Simplify[NVAverageHamiltonian[order,D,Carbon[A],Felton09Nucleus["14N"],StaticField->staticField,Numerical->True]/(10^6)].U\[ConjugateTranspose];,
+			Hsim[t_]=Simplify[NVAverageHamiltonian[-1,D,Carbon[A],Felton09Nucleus["14N"],StaticField->staticField,Numerical->True][t/10^6]/(10^6)];
+		];
+		P0=S0\[CircleTimes]Subscript[\[DoubleStruckOne], 6];
+		(* Run a rabi experiment to see where the CNOT is *)
+		PrintTemporary["Determining CNOT time..."];
+		rabidata=EvalPulse[Hsim,{{{.5/\[CapitalOmega],\[CapitalOmega]}},2\[Pi]{Sx\[CircleTimes]Subscript[\[DoubleStruckOne], 6]}},InitialState->P0/6,Observables->{P0},PollingInterval->30*stepsize,StepSize->stepsize];
+		t\[Pi]=First@SelMin[First@N@Observables[rabidata,TimeVector->True],{2}];
+		(* The imperfect CNOT *)
+		PrintTemporary["Computing nonideal CNOT..."];
+		UP=Last@Unitaries@EvalPulse[Hsim,{{{t\[Pi],\[CapitalOmega]}},2\[Pi]{Sx\[CircleTimes]Subscript[\[DoubleStruckOne], 6]}},StepSize->stepsize];
+		\[Rho]0=UP.P0.UP\[ConjugateTranspose]/6;
+		\[Rho]0=\[Rho]0*(IdentityMatrix[3]\[CircleTimes]ConstantArray[1,{6,6}]);
+		M0=UP\[ConjugateTranspose].P0.UP;
+		(* Gather the imperfect data *)
+		PrintTemporary["Performing experiment with nonideal CNOT..."];
+		imperfectdata=Module[{\[Rho]=\[Rho]0,U=Last@Unitaries@EvalPulse[Hsim,10^6/D,StepSize->stepsize],nsteps,dstep},
+			nsteps=Round[10^-6*D*T];
+			dstep=Round[nsteps/200];
+			{{Observables,{Table[\[Rho]=U.\[Rho].U\[ConjugateTranspose];Re[Tr[\[Rho].M0]],{n,0,nsteps}][[1;;-1;;dstep]]}\[Transpose]},{TimeVector,Table[(10^6/D)*n,{n,0,nsteps}][[1;;-1;;dstep]]}}
+		];
+		{imod,isol}=NVCalibrationTools`Private`FitCosine[imperfectdata];
+		(* The perfect CNOT *)
+		UP=MatrixExp[-I (\[Pi]/2){{0,0,0},{0,0,1},{0,1,0}}\[CircleTimes]Subscript[\[DoubleStruckOne], 3]\[CircleTimes]{{1,0},{0,0}}];
+		\[Rho]0=UP.P0.UP\[ConjugateTranspose]/6;
+		\[Rho]0=\[Rho]0*(IdentityMatrix[3]\[CircleTimes]ConstantArray[1,{6,6}]);
+		M0=UP\[ConjugateTranspose].P0.UP;
+		(* Gather the perfect data *)
+		PrintTemporary["Performing experiment with ideal CNOT..."];
+		perfectdata=Module[{\[Rho]=\[Rho]0,U=Last@Unitaries@EvalPulse[Hsim,10^6/D,StepSize->stepsize],nsteps,dstep},
+			nsteps=Round[10^-6*D*T];
+			dstep=Round[nsteps/1000];
+			{{Observables,{Table[\[Rho]=U.\[Rho].U\[ConjugateTranspose];Re[Tr[\[Rho].M0]],{n,0,nsteps}][[1;;-1;;dstep]]}\[Transpose]},{TimeVector,Table[(10^6/D)*n,{n,0,nsteps}][[1;;-1;;dstep]]}}
+		];
+		{pmod,psol}=NVCalibrationTools`Private`FitCosine[perfectdata];
+		(* Use the formula to figure it out *)
+		\[Omega]el=EnhancedLarmourFormula[Sequence@@(Value@Spherical[staticField]),A[[3,1]]/10^6,A[[1,1]]/10^6,A[[2,2]]/10^6,A[[3,3]]/10^6]/10^3;
+		(* Plot or not *)
+		fig=If[doplot,
+			Column[{
+				GraphicsRow[{
+					ListPlot[Observables[rabidata,TimeVector->True],Joined->True,PlotLabel->"Rabi experiment -- chose time "<>ToString[1000*t\[Pi]]<>"ns"],
+					Show[{
+						ListPlot[Observables[imperfectdata,TimeVector->True],Joined->True,PlotRange->{0,1},PlotLabel->"Actual CNOT. Fit frequency: "<>ToString[isol[[3,2]]]<>"MHz\n(A,B)=("<>ToString[isol[[1,2]]]<>","<>ToString[isol[[2,2]]]<>")"],
+						Plot[imod[t]/.isol,{t,0,Max@TimeVector@imperfectdata}, PlotRange->{0,1},PlotStyle->{Thick,Red}]
+					}],
+					Show[{
+						ListPlot[Observables[perfectdata,TimeVector->True],Joined->True,PlotRange->{0,1},PlotLabel->"Ideal CNOT. Fit frequency: "<>ToString[psol[[3,2]]]<>"MHz\n(A,B)=("<>ToString[psol[[1,2]]]<>","<>ToString[psol[[2,2]]]<>")"],
+						Plot[pmod[t]/.psol,{t,0,Max@TimeVector@perfectdata}, PlotRange->{0,1},PlotStyle->{Thick,Red}]
+					}]
+				},ImageSize->1000],
+				TableForm[{Style[#,Bold]&/@{"Non-ideal Simulation","Ideal Simulation","\!\(\*SubscriptBox[\(\[Omega]\), \(L\)]\) formula"},{isol[[3,2]]*10^3,psol[[3,2]]*10^3,\[Omega]el}}]
+			}]
+		];
+		{isol,psol,fig}
+	]
+
+
+Options[EnhancedLarmourHyperfineReconstruction]={"weights"->Automatic,Method->"NelderMead","\[Alpha]Constraints"->{-5,0},"A1Constraints"->{12,18},"A2Constraints"->{10,15}};
+EnhancedLarmourHyperfineReconstruction[enhancedLarmourFreqs_,staticFields_,Asplit_,A\[Phi]_,OptionsPattern[]]:=
+	Module[
+		{\[Alpha],A1,A2,A3,cost,result,values,rotStaticFields,\[Alpha]c,A1c,A2c,A3c,B,\[Theta],\[Phi],data,weights},
+
+		weights=OptionValue["weights"];
+		If[weights===Automatic,weights=ConstantArray[1/Length[enhancedLarmourFreqs],Length[enhancedLarmourFreqs]]];
+
+		rotStaticFields=Value[Spherical[#]]&/@staticFields;
+		rotStaticFields[[All,2]]=rotStaticFields[[All,2]]-A\[Phi];
+
+		(* We can measure the hyperfine splitting, which gives A3^2+a^2 *)
+		A3=Sign[Asplit]*Sqrt[Asplit^2-\[Alpha]^2];
+
+		(* Compiling the cost function gives a ten-fold speedup *)
+		cost=Module[{expr,\[Alpha]\[Alpha],AA1,AA2,AA3},
+			expr=Total[weights*(EnhancedLarmourFormula[Sequence@@#,\[Alpha]\[Alpha],AA1,AA2,A3/.\[Alpha]->\[Alpha]\[Alpha]]&/@rotStaticFields - enhancedLarmourFreqs)^2]/10^6;
+			Compile[{\[Alpha],A1,A2},Evaluate[expr/.{\[Alpha]\[Alpha]->\[Alpha],AA1->A1,AA2->A2}]]
+		];
+
+		\[Alpha]c=OptionValue["\[Alpha]Constraints"];
+		A1c=OptionValue["A1Constraints"];
+		A2c=OptionValue["A2Constraints"];
+
+		{result,values}=NMinimize[
+			{
+				Hold[cost[\[Alpha],A1,A2]],
+				\[Alpha]c[[1]]<=\[Alpha]<=\[Alpha]c[[2]],
+				A1c[[1]]<=A1<=A1c[[2]],
+				A2c[[1]]<=A2<=A2c[[2]]
+			},
+			{\[Alpha],A1,A2},
+			Method->OptionValue[Method],
+			MaxIterations->3000
+		];
+		{Sqrt@result, {{A1,0,\[Alpha]},{0,A2,0},{\[Alpha],0,A3}}/.values}
+	]
+
+
+EnhancedLarmourHyperfineErrorBars[enhancedLarmourFreqs_,enhancedLarmourStds_,staticFields_,staticFieldStds_,Asplit_,A\[Phi]_,N_,opt:OptionsPattern[EnhancedLarmourHyperfineReconstruction]]:=
+	Module[
+		{data,pp,entry},
+
+		DistributeDefinitions[staticFields,staticFieldStds,enhancedLarmourFreqs,enhancedLarmourStds,Asplit,A\[Phi],opt,EnhancedLarmourHyperfineReconstruction];
+		DistributeDefinitions["NVHamiltonian`"];
+
+		data=ParallelTable[
+			Module[{vectorNoise,elfNoise,noisyStaticFields,noisyELFs},
+				vectorNoise[v_,\[Sigma]_]:=Vector[((RandomVariate[NormalDistribution[#,\[Sigma]]])&/@Value[Cartesian[v]]),Cartesian];
+				elfNoise[\[Omega]_,\[Sigma]_]:=RandomVariate[NormalDistribution[\[Omega],\[Sigma]]];
+				noisyStaticFields=Inner[vectorNoise,staticFields,staticFieldStds,List];
+				noisyELFs=Inner[elfNoise,enhancedLarmourFreqs,enhancedLarmourStds,List];
+				EnhancedLarmourHyperfineReconstruction[noisyELFs,noisyStaticFields,Asplit,A\[Phi],opt]
+			],
+			{n,N}
+		];
+
+		Print["Min Cost Value:  "<>ToString[Min[data[[All,1]]]]<>"kHz"<>"\n"<>
+			"Max Cost Value:  "<>ToString[Max[data[[All,1]]]]<>"kHz"<>"\n"<>
+			"Mean Cost Value: "<>ToString[Mean[data[[All,1]]]]<>"kHz"];
+
+		pp[mean_,std_]:=ToString[mean]<>"\[PlusMinus]"<>ToString[std];
+		entry[i_,j_]:=pp[Mean[data[[All,2,i,j]]],StandardDeviation[data[[All,2,i,j]]]];
+
+		Print[MatrixForm[Array[entry,{3,3}]]]
+		
+	]
 
 
 End[];
