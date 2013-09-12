@@ -831,7 +831,13 @@ End[];
 EnhancedLarmourFormula::usage = "EnhancedLarmourFormula[B_,\[Theta]_,\[Phi]_,\[Alpha]_,A1_,A2_,A3_] returns the enhanced Larmour precession frequency in Hz of a carbon coupled to an NV to second order, where {B,\[Theta],\[Phi]} describes the static magnetic field in the PAS, and the hyperfine tensor is {{A1,0,\[Alpha]},{0,A2,0},{\[Alpha],0,A3}} in the same frame."
 
 
+EnhancedLarmourVisibility::usage = "EnhancedLarmourVisibility[staticField,\[Alpha]_,A1_,A2_,A3_,tp_,\[CapitalOmega]_] does a full simulation of an enhanced larmour experiment to return both the enhanced larmour frequency, and the visibility of the frequency.";
+
+
 EnhancedLarmourSimulation::usage = "EnhancedLarmourSimulation[staticField,A,T,\[CapitalOmega],doplot:True]";
+
+
+ELVHyperfineReconstruction::usage = "ELVHyperfineReconstruction[enhancedLarmourFreqs,staticFields,A\[Phi],method:\"NelderMead\"] Enhanced Larmour with Visibility";
 
 
 EnhancedLarmourHyperfineReconstruction::usage = "EnhancedLarmourHyperfineReconstruction[enhancedLarmourFreqs,staticFields,A\[Phi],method:\"NelderMead\"]";
@@ -853,9 +859,7 @@ Begin["`Private`"];
 (*With subsequent value insertions and simplifications...*)
 
 
-End[];
 Get[Evaluate@FileNameJoin[{"data","EnhancedLarmourFormula.dat"}]];
-Begin["`Private`"];
 
 
 (* ::Text:: *)
@@ -868,6 +872,26 @@ FitCosine[data_]:=
 		soln=FindFit[First@Observables[data,TimeVector->True],model[t],{A,B,\[Omega]},{t},Method->NMinimize];
 		{model,soln}
 	]
+
+
+EnhancedLarmourVisibility[staticField_,\[Alpha]_,A1_,A2_,A3_,tp_,\[CapitalOmega]_]:=Module[{\[Rho],M,H,D,A,UP,dU,ndata=100,dt,T,data,\[Omega]elGuess,model,t,offset,amp,\[Omega],soln},
+	\[Omega]elGuess=EnhancedLarmourFormula[Sequence@@Value@Spherical@staticField,\[Alpha],A1,A2,A3];
+	T=4/\[Omega]elGuess;
+	A=10^6*{{A1,0,\[Alpha]},{0,A2,0},{\[Alpha],0,A3}};
+	D=10^6*NVCenterFrequency[Value@Cartesian[staticField],{0,0,0},1]-(10^6*NVZeemanSplitting[Value@Cartesian[staticField],{0,0,0},1]+Norm[A[[3]]])/2;
+	H=NVAverageHamiltonian[2,D,Carbon[A],Felton09Nucleus["14N"],StaticField->staticField,Numerical->True]/(10^6);
+	UP=MatrixExp[-I*tp*(H+2*\[Pi]*\[CapitalOmega]*{{0,1,0},{1,0,1},{0,1,0}}\[CircleTimes]IdentityMatrix[6]/Sqrt[2])];
+	dt=Round[T*D/ndata]*(10^6/D);
+	dU=MatrixExp[-I*dt*H];
+	M=UP\[ConjugateTranspose].({{0,0,0},{0,1,0},{0,0,0}}\[CircleTimes]IdentityMatrix[6]).UP;
+	\[Rho]={{0,0,0},{0,1,0},{0,0,0}}\[CircleTimes]IdentityMatrix[6]/6;
+	\[Rho]=UP.\[Rho].UP\[ConjugateTranspose];
+	\[Rho]=\[Rho]*(IdentityMatrix[3]\[CircleTimes]ConstantArray[1,{6,6}]);
+	data=Table[\[Rho]=dU.\[Rho].dU\[ConjugateTranspose];{n*dt,Re@Tr[\[Rho].M]},{n,ndata}];
+	model[t_]=offset+amp*Cos[2\[Pi] \[Omega] t];
+	soln=FindFit[data,model[t],{{offset,.75},{amp,0.5},{\[Omega],\[Omega]elGuess/10^6}},{t}];
+	{offset,amp,\[Omega]}/.soln
+]
 
 
 EnhancedLarmourSimulation[staticField_,A_,T_,\[CapitalOmega]_,doplot_:True,order_:-1]:=
@@ -938,6 +962,45 @@ EnhancedLarmourSimulation[staticField_,A_,T_,\[CapitalOmega]_,doplot_:True,order
 			}]
 		];
 		{isol,psol,fig}
+	]
+
+
+Options[ELVHyperfineReconstruction]={"weights"->Automatic,Method->"NelderMead","\[Alpha]Constraints"->{-5,0},"A1Constraints"->{12,18},"A2Constraints"->{10,15}};
+ELVHyperfineReconstruction[enhancedLarmourFreqs_,staticFields_,Asplit_,A\[Phi]_,OptionsPattern[]]:=
+	Module[
+		{\[Alpha],A1,A2,A3,cost,result,values,rotStaticFields,\[Alpha]c,A1c,A2c,A3c,B,\[Theta],\[Phi],data,weights},
+
+		weights=OptionValue["weights"];
+		If[weights===Automatic,weights=ConstantArray[1/Length[enhancedLarmourFreqs],Length[enhancedLarmourFreqs]]];
+
+		rotStaticFields=Value[Spherical[#]]&/@staticFields;
+		rotStaticFields[[All,2]]=rotStaticFields[[All,2]]-A\[Phi];
+
+		(* We can measure the hyperfine splitting, which gives A3^2+a^2 *)
+		A3=Sign[Asplit]*Sqrt[Asplit^2-\[Alpha]^2];
+
+		(* Compiling the cost function gives a ten-fold speedup *)
+		cost=Module[{expr,\[Alpha]\[Alpha],AA1,AA2,AA3},
+			expr=Total[weights*(EnhancedLarmourFormula[Sequence@@#,\[Alpha]\[Alpha],AA1,AA2,A3/.\[Alpha]->\[Alpha]\[Alpha]]&/@rotStaticFields - enhancedLarmourFreqs)^2]/10^6;
+			Compile[{\[Alpha],A1,A2},Evaluate[expr/.{\[Alpha]\[Alpha]->\[Alpha],AA1->A1,AA2->A2}]]
+		];
+
+		\[Alpha]c=OptionValue["\[Alpha]Constraints"];
+		A1c=OptionValue["A1Constraints"];
+		A2c=OptionValue["A2Constraints"];
+
+		{result,values}=NMinimize[
+			{
+				Hold[cost[\[Alpha],A1,A2]],
+				\[Alpha]c[[1]]<=\[Alpha]<=\[Alpha]c[[2]],
+				A1c[[1]]<=A1<=A1c[[2]],
+				A2c[[1]]<=A2<=A2c[[2]]
+			},
+			{\[Alpha],A1,A2},
+			Method->OptionValue[Method],
+			MaxIterations->3000
+		];
+		{Sqrt@result, {{A1,0,\[Alpha]},{0,A2,0},{\[Alpha],0,A3}}/.values}
 	]
 
 
