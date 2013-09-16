@@ -94,7 +94,7 @@ StandardDeviation/@Transpose[monteCarloBFields]
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Magnetic Fields*)
 
 
@@ -127,6 +127,9 @@ Interpolate3DField::usage = "Interpolate2DField[data] accepts the output of Load
 
 
 CompareSolutionFields::usage = "CompareSolutionFields[{z1,z2,z3},fun2d,{zz1,zz2,zz3},funn2d] takes the normalized inner product between solution translations {z1,z2,z3} and {zz1,zz2,zz3} over the possible volume swept by the magnet motors.";
+
+
+FieldExplorer::usage = "FieldExplorer[solution] provides an interactive graphical representation of the magnetic field in terms of the motor positioners.";
 
 
 (* ::Subsection:: *)
@@ -325,7 +328,7 @@ HalbachField[{x_,y_,z_},{topPos_,bottomPos_,azimuth_},fun3dup_,fun3dright_,gap_:
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Interpolating Fields*)
 
 
@@ -399,11 +402,40 @@ Interpolate3DField[data_]:=
 End[];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Plotting and Comparing (might be partially broken)*)
 
 
 Begin["`Private`"];
+
+
+FieldExplorer[solution_]:=Module[
+	{field,p={12.5,12.5},coordsxyz},
+		field[{x_,y_},z_]:=solution[[3]]+Field[MagToLab[{x,y,z}-First@solution],Last@solution];
+		coordsxyz[{x_,y_,z_}]:="("<>ToString[x]<>", "<>ToString[y]<>", "<>ToString[z]<>")";
+		Manipulate[
+			Dynamic@Row[{
+				Show[
+					DensityPlot[Norm[field[{x,y},z]],{x,0,25},{y,0,25},PlotLegends->Automatic,ImageSize->400,PlotLabel->"Stream: Field vector projection onto x-y plane.\n Density: Magnitude of total field (Gauss)",FrameLabel->{"X motor (mm)","Y motor (mm)"}],
+					StreamPlot[field[{x,y},z][[{1,2}]],{x,0,25},{y,0,25},ImageSize->400,StreamStyle->Orange],
+					Graphics[Locator[Dynamic@p]]
+				],
+				Spacer[20],
+				Column[{
+					Grid[{
+						{"Field Values in Gauss:",SpanFromLeft},
+						{,},
+						{"Cartesian: ",coordsxyz@field[p,z]},
+						{"Spherical: ",coordsxyz@Value@Spherical@Vector[field[p,z],Cartesian]}
+						},Alignment->Join[{Center},ConstantArray[{Right,Left},2]]
+					],
+					Spacer[40],Spacer[40],
+					Show[Graphics3D[{Thick,Orange,Arrow[{{0,0,0},field[p,z]/Norm[field[p,z]]}]},ImageSize->200,PlotRange->{-1,1}],PlotFrame[IdentityFrame]]
+				},Alignment->Center]
+			}],
+			{{z,6,"Z motor (mm)"},0,25}
+		]
+	]
 
 
 (* ::Text:: *)
@@ -788,7 +820,7 @@ PositionGivenField[{z1_,z2_,z3_},{B1_,B2_,B3_},m_,Bvec_,minz_:6]:=
 		];
 		{Sqrt[result],{r1,r2,r3}/.values}
 	]
-PositionGivenField[solution_,B_,BCoords_:Cartesian,minz_:6]:=PositionGivenField[solution[[1]],solution[[3]],solution[[4]],B,BCoords,minz]
+PositionGivenField[solution_,Bvec_,minz_:6]:=PositionGivenField[solution[[1]],solution[[3]],solution[[4]],Bvec,minz]
 
 
 AlignField[{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,B3_},m_,nvOrientation_,absB_,minz_:6]:=
@@ -796,7 +828,7 @@ AlignField[{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,B3_},m_,nvO
 		{z1,z2,z3},
 		{B1,B2,B3},
 		m,
-		Vector[FrameChange[{0,0,absB},IdentityFrame,FrameCompose[EulerAngles[\[Alpha]1,\[Alpha]2,\[Alpha]3],NVOrientationToFrame[nvOrientation]]],Cartesian],
+		Vector[FrameChange[{0,0,absB},FrameCompose[EulerAngles[\[Alpha]1,\[Alpha]2,\[Alpha]3],NVOrientationToFrame[nvOrientation]],IdentityFrame],Cartesian],
 		minz
 	];
 AlignField[solution_,nvOrientation_,absB_,minz_:6]:=AlignField[Sequence@@solution,nvOrientation,absB,minz]
@@ -820,7 +852,7 @@ PredictNVPASVector[{r1_,r2_,r3_},nvOrientation_,solution_]:=PredictNVPASVector[{
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Carbon Hyperfine Estimation*)
 
 
