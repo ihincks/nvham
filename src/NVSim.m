@@ -355,7 +355,7 @@ Protect[PollingInterval,StepSize,IntitialState,NumericEvaluation,Observables,Fun
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Single Pulse Evaluator*)
 
 
@@ -373,7 +373,7 @@ EvalPulse::usage = "EvalPulse[H,p] is the work house of the simulator. H is the 
 Begin["`Private`"];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Shaped Pulse Evaluators*)
 
 
@@ -589,7 +589,7 @@ EvalPulse[H_?DriftHamNonConstQ,T_?DriftPulseQ,opts:OptionsPattern[SimulationOpti
 			AppendReturnables[U=IdentityMatrix[dim],0];
 			Table[
 				(* in the following loop we know dt evenly divides pt *)
-				Table[U=MatrixExp[-I*NN[dt]*H[NN[s-dt/2]]].U;,{s,dt,pt,dt}];
+				Table[U=MatrixExp[-I*NN[dt]*H[NN[(t-pt)+s-dt/2]]].U;,{s,dt,pt,dt}];
 				AppendReturnables[U,t];,
 				{t,pt,T,pt}
 			];
