@@ -373,7 +373,7 @@ EvalPulse::usage = "EvalPulse[H,p] is the work house of the simulator. H is the 
 Begin["`Private`"];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Shaped Pulse Evaluators*)
 
 
@@ -382,7 +382,7 @@ EvalPulse[H_?DriftHamConstQ,p_?ShapedPulseQ,opts:OptionsPattern[SimulationOption
 		InitializePrivateVariables[opts];
 
 		With[{pulse=GetPulseShapeMatrix[p[[1]]]},
-			amps = NN[If[Length[pulse[[1]]]>2,pulse[[All,{2,-1}]],pulse[[All,{2}]]]];
+			amps = NN[If[Length[pulse[[1]]]>2,pulse[[All,2;;-1]],pulse[[All,{2}]]]];
 			dt = pulse[[All,1]];
 		];
 		Hctls = p[[2]];
@@ -431,7 +431,7 @@ EvalPulse[H_?DriftHamNonConstQ,p_?ShapedPulseQ,opts:OptionsPattern[SimulationOpt
 		InitializePrivateVariables[opts];
 
 		With[{pulse=GetPulseShapeMatrix[p[[1]]]},
-			amps = NN[If[Length[pulse[[1]]]>2,pulse[[All,{2,-1}]],pulse[[All,{2}]]]];
+			amps = NN[If[Length[pulse[[1]]]>2,pulse[[All,2;;-1]],pulse[[All,{2}]]]];
 			dt = pulse[[All,1]];
 		];
 		Hctls = p[[2]];
@@ -534,7 +534,7 @@ EvalPulse[H_?DriftHamQ,p_?ChannelPulseQ,opts:OptionsPattern[SimulationOptions]]:
 	]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Drift Pulse Evaluators*)
 
 
