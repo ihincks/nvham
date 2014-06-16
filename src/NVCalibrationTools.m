@@ -94,11 +94,11 @@ StandardDeviation/@Transpose[monteCarloBFields]
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Magnetic Fields*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Usage Declarations*)
 
 
@@ -129,14 +129,11 @@ Interpolate3DField::usage = "Interpolate2DField[data] accepts the output of Load
 CompareSolutionFields::usage = "CompareSolutionFields[{z1,z2,z3},fun2d,{zz1,zz2,zz3},funn2d] takes the normalized inner product between solution translations {z1,z2,z3} and {zz1,zz2,zz3} over the possible volume swept by the magnet motors.";
 
 
-FieldExplorer::usage = "FieldExplorer[solution] provides an interactive graphical representation of the magnetic field in terms of the motor positioners.";
-
-
 (* ::Subsection:: *)
 (*Implementations*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Loading and Saving*)
 
 
@@ -207,7 +204,7 @@ gg[z_,ZZ_,R_,r_,\[Phi]_]:=( r Sqrt[r^2+R^2-2 r R Cos[\[Phi]]] Cos[ArcTan[R-r Cos
 
 DiskComputeFieldAtPoint[{R_?NumberQ,\[CapitalPhi]_?NumberQ,ZZ_?NumberQ},m_:1000,d_:7.5,h_:2.5]:=
 	Piecewise[{{{0,0,0},-d/2<=R<=d/2 && -h/2<=ZZ<=h/2}},
-		Block[{rm,zm,\[Phi]m,r,\[Phi],z,v,\[Theta],Bdz,Bdr},
+		Module[{rm,zm,\[Phi]m,r,\[Phi],z,v,\[Theta],Bdz,Bdr},
 			rm=(r^2+R^2-2r R Cos[\[Phi]])^(1/2);
 			zm=ZZ-z;
 			\[Phi]m=ArcTan[R-r Cos[\[Phi]],r Sin[\[Phi]]];
@@ -336,7 +333,7 @@ Begin["`Private`"];
 
 
 Interpolate2DField[data_]:=
-	Block[{rmin,rmax,zmin,zmax,mat,W,H},
+	Module[{rmin,rmax,zmin,zmax,mat,W,H},
 		rmin = data[[1,1]];
 		rmax = data[[1,2]];
 		zmin = data[[2,1]];
@@ -363,7 +360,7 @@ Interpolate2DField[data_]:=
 
 
 CylindricalFieldExtrapolation[{x_,y_,z_},intfun2d_]:=
-	Block[{r,\[Phi],val,out},
+	Module[{r,\[Phi],val,out},
 		r=Sqrt[x^2+y^2];
 		\[Phi]=If[x==0&&y==0,0,ArcTan[x,y]];
 		val=intfun2d[r,Abs[z]];
@@ -373,7 +370,7 @@ CylindricalFieldExtrapolation[{x_,y_,z_},intfun2d_]:=
 
 
 Interpolate3DField[data_]:=
-	Block[{xmin,xmax,ymin,ymax,zmin,zmax,mat,L,W,H},
+	Module[{xmin,xmax,ymin,ymax,zmin,zmax,mat,L,W,H},
 		xmin = data[[1,1]];
 		xmax = data[[1,2]];
 		ymin = data[[2,1]];
@@ -402,40 +399,11 @@ Interpolate3DField[data_]:=
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Plotting and Comparing (might be partially broken)*)
 
 
 Begin["`Private`"];
-
-
-FieldExplorer[solution_]:=Module[
-	{field,p={12.5,12.5},coordsxyz},
-		field[{x_,y_},z_]:=solution[[3]]+Field[MagToLab[{x,y,z}-First@solution],Last@solution];
-		coordsxyz[{x_,y_,z_}]:="("<>ToString[x]<>", "<>ToString[y]<>", "<>ToString[z]<>")";
-		Manipulate[
-			Dynamic@Row[{
-				Show[
-					DensityPlot[Norm[field[{x,y},z]],{x,0,25},{y,0,25},PlotLegends->Automatic,ImageSize->400,PlotLabel->"Stream: Field vector projection onto x-y plane.\n Density: Magnitude of total field (Gauss)",FrameLabel->{"X motor (mm)","Y motor (mm)"}],
-					StreamPlot[field[{x,y},z][[{1,2}]],{x,0,25},{y,0,25},ImageSize->400,StreamStyle->Orange],
-					Graphics[Locator[Dynamic@p]]
-				],
-				Spacer[20],
-				Column[{
-					Grid[{
-						{"Field Values in Gauss:",SpanFromLeft},
-						{,},
-						{"Cartesian: ",coordsxyz@field[p,z]},
-						{"Spherical: ",coordsxyz@Value@Spherical@Vector[field[p,z],Cartesian]}
-						},Alignment->Join[{Center},ConstantArray[{Right,Left},2]]
-					],
-					Spacer[40],Spacer[40],
-					Show[Graphics3D[{Thick,Orange,Arrow[{{0,0,0},field[p,z]/Norm[field[p,z]]}]},ImageSize->200,PlotRange->{-1,1}],PlotFrame[IdentityFrame]]
-				},Alignment->Center]
-			}],
-			{{z,6,"Z motor (mm)"},0,25}
-		]
-	]
 
 
 (* ::Text:: *)
@@ -447,7 +415,7 @@ Plot2DField[fun2d_]:=
 		StreamPlot[fun2d[r,z],{r,minr,maxr},{z,minz,maxz}]
 	]
 Plot2DField[fun2dlist_List]:=
-	Block[{minr,maxr,minz,maxz,functions},
+	Module[{minr,maxr,minz,maxz,functions},
 		minr=#[[1,1,1]]&/@fun2dlist;
 		maxr=#[[1,1,2]]&/@fun2dlist;
 		minz=#[[1,2,1]]&/@fun2dlist;
@@ -535,7 +503,7 @@ LoadField[data_,method_]:=
 				If[FindFile[data[[1]]]==$Failed,Throw["File "<>data[[1]]<>" not found."];];
 				With[{fun2d=Interpolate2DField[Load2DField[Sequence@@data]]},
 					Field[{x_,y_,z_},m_:1]:=m*CylindricalFieldExtrapolation[{x,y,z},fun2d];
-				],
+				];,
 			True,
 				Throw["method string not understood by LoadField."];
 		];
@@ -546,7 +514,7 @@ LoadField[data_,method_]:=
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Magnet Calibration From Position Array of Splitting Data	*)
 
 
@@ -575,6 +543,9 @@ FakeData, in all cases, returns an output which is compatible with the data inpu
 PlotSplittingData::usage = "PlotSplittingData[data,minsplit:0] 
 shows you the splitting at each point in space in your data set. 
 All data points which have a splitting less than minsplit will be Black, otherwise, each NV orientation gets a different colour.";
+
+
+FieldExplorer::usage = "FieldExplorer[solution] provides an interactive graphical representation of the magnetic field in terms of the motor positioners.";
 
 
 MostInformativeSpot::usage = "MostInformativeSpot[{z11,z12,z13},{\[Alpha]11,\[Alpha]12,\[Alpha]13},{B11,B12,B13},m1,{z21,z22,z23},{\[Alpha]21,\[Alpha]22,\[Alpha]23},{B21,B22,B23},m2,nvOrientation,minsplitting:15,maxsplitting:280,minz:6]
@@ -625,7 +596,7 @@ $typicalSolution = {{1.34,23.5,-5.3},{0,-0.977,-0.04},{0,0,0},.71};
 ImportSplittingData[filename_String,scale_List:{1,1,1,1,1}]:=
 	Catch[
 		If[FindFile[filename]==$Failed,Throw["File "<>filename<>" not found."];];
-		Block[{x=Import[filename]},
+		Module[{x=Import[filename]},
 			If[Length[Dimensions[x]]>2,x=Flatten[x,1];];
 			If[Dimensions[x][[2]]!=5,Throw["Your data doesn't appear to include NV orientations. Call ImportSplittingData[filename,nvOrientation] to specify all your orientations as equal."]];
 			x=(#*scale)&/@x;
@@ -635,7 +606,7 @@ ImportSplittingData[filename_String,scale_List:{1,1,1,1,1}]:=
 ImportSplittingData[filename_String,nvOrientation_Integer,scale_List:{1,1,1,1,1}]:=
 	Catch[
 		If[FindFile[filename]==$Failed,Throw["File "<>filename<>" not found."];];
-		Block[{x=Import[filename]},
+		Module[{x=Import[filename]},
 			If[Length[Dimensions[x]]>2,x=Flatten[x,1];];
 			x=Join[x[[All,{1,2,3,4}]]\[Transpose],{Table[nvOrientation,{k,Length[x]}]}]\[Transpose];
 			(#*scale)&/@x
@@ -668,7 +639,9 @@ LabToMag[{x_,y_,z_}]:={-y,x,-z};
 (*First get the Hamiltonians for each orientation in units of MHz, where the magnetic field is entered in the LabFrame. This is stored in MagHam.dat because the simplification it involves is lengthy.*)
 
 
+End[];
 Get[Evaluate@FileNameJoin[{"data","MagHam.dat"}]];
+Begin["`Private`"]
 
 
 (* ::Text:: *)
@@ -721,7 +694,7 @@ FakeData[\[Sigma]_,points_,nvOrientation_,solution_]:=FakeData[\[Sigma],points,n
 
 
 PlotSplittingData[data_,minsplit_:0,plotRange_:{0,25}]:=
-	Block[{max,colours},
+	Module[{max,colours},
 		max = Max[data[[All,4]]];
 		colours[nn_]:=(Mod[nn-1,4]+1)/.{1->Blue,2->Green,3->Red,4->Cyan};
 		Graphics3D[
@@ -755,7 +728,7 @@ MagnetFittingCostFunction[solution_,data_]:=MagnetFittingCostFunction[Sequence@@
 
 
 MostInformativeSpot[{z11_,z12_,z13_},{\[Alpha]11_,\[Alpha]12_,\[Alpha]13_},{B11_,B12_,B13_},m1_,{z21_,z22_,z23_},{\[Alpha]21_,\[Alpha]22_,\[Alpha]23_},{B21_,B22_,B23_},m2_,nvOrientation_,minsplitting_:15,maxsplitting_:280,minz_:6]:=
-	Block[{r1,r2,r3,S1,S2,cost,result,values},
+	Module[{r1,r2,r3,S1,S2,cost,result,values},
 		S1[rr1_Real,rr2_Real,rr3_Real]:=NVZeemanSplitting[Field[MagToLab[{z11-rr1,z12-rr2,z13-rr3}],m1]+{B11,B12,B13},{\[Alpha]11,\[Alpha]12,\[Alpha]13},nvOrientation];
 		S2[rr1_Real,rr2_Real,rr3_Real]:=NVZeemanSplitting[Field[MagToLab[{z21-rr1,z22-rr2,z23-rr3}],m2]+{B21,B22,B23},{\[Alpha]21,\[Alpha]22,\[Alpha]23},nvOrientation];
 		cost[rr1_Real,rr2_Real,rr3_Real]:=(S1[rr1,rr2,rr3]-S2[rr1,rr2,rr3])^2;
@@ -772,17 +745,20 @@ MostInformativeSpot[solution1_,solution2_,nvOrientation_,minsplitting_:15,maxspl
 
 
 CalibrateField[data_,m_,constraints_:{{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]},{-\[Infinity],\[Infinity]}},method_:"NelderMead",minsplit_:13]:=
-	Block[{z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3,B1,B2,B3,cost,sdata,cons,result,values},
+	Module[{z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3,B1,B2,B3,cost,sdata,cons,result,values},
 		sdata=Select[data,(#[[4]]>=minsplit)&];
+
 		cost[zz1_,zz2_,zz3_,\[Alpha]\[Alpha]1_,\[Alpha]\[Alpha]2_,\[Alpha]\[Alpha]3_,BB1_,BB2_,BB3_]:=
-			Sum[
+			(Sum[
 				(
 					NVZeemanSplitting[
 						Field[MagToLab[{zz1,zz2,zz3}-sdata[[k,{1,2,3}]]],m]+{BB1,BB2,BB3},
 						{\[Alpha]\[Alpha]1,\[Alpha]\[Alpha]2,\[Alpha]\[Alpha]3},sdata[[k,5]]]-sdata[[k,4]]
 				)^2,
 				{k,1,Length[sdata]}
-			]/Length[sdata];
+			]/Length[sdata]);
+
+
 		{result,values}=NMinimize[
 			{
 				Hold[cost[z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3,B1,B2,B3]],
@@ -800,13 +776,14 @@ CalibrateField[data_,m_,constraints_:{{-\[Infinity],\[Infinity]},{-\[Infinity],\
 			Method->method,
 			MaxIterations->3000
 		];
+
 		{z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3,B1,B2,B3}={z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3,B1,B2,B3}/.values;
 		{result,{{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m}}
 	]
 
 
 PositionGivenField[{z1_,z2_,z3_},{B1_,B2_,B3_},m_,Bvec_,minz_:6]:=
-	Block[{cost,Bcart,result,values,r1,r2,r3},
+	Module[{cost,Bcart,result,values,r1,r2,r3},
 		Bcart=Value@Cartesian@Bvec;
 		cost[rr1_Real,rr2_Real,rr3_Real]:=Norm[Bcart-(Field[MagToLab[{z1,z2,z3}-{rr1,rr2,rr3}],m]+{B1,B2,B3})]^2;
 		{result,values}=NMinimize[
@@ -849,10 +826,39 @@ PredictNVPASVector[{r1_,r2_,r3_},nvOrientation_,{z1_,z2_,z3_},{\[Alpha]1_,\[Alph
 PredictNVPASVector[{r1_,r2_,r3_},nvOrientation_,solution_]:=PredictNVPASVector[{r1,r2,r3},nvOrientation,Sequence@@solution]
 
 
+FieldExplorer[solution_]:=Module[
+	{field,p={12.5,12.5},coordsxyz},
+		field[{x_,y_},z_]:=solution[[3]]+Field[MagToLab[{x,y,z}-First@solution],Last@solution];
+		coordsxyz[{x_,y_,z_}]:="("<>ToString[x]<>", "<>ToString[y]<>", "<>ToString[z]<>")";
+		Manipulate[
+			Dynamic@Row[{
+				Show[
+					DensityPlot[Norm[field[{x,y},z]],{x,0,25},{y,0,25},PlotLegends->Automatic,ImageSize->400,PlotLabel->"Stream: Field vector projection onto x-y plane.\n Density: Magnitude of total field (Gauss)",FrameLabel->{"X motor (mm)","Y motor (mm)"}],
+					StreamPlot[field[{x,y},z][[{1,2}]],{x,0,25},{y,0,25},ImageSize->400,StreamStyle->Orange],
+					Graphics[Locator[Dynamic@p]]
+				],
+				Spacer[20],
+				Column[{
+					Grid[{
+						{"Field Values in Gauss:",SpanFromLeft},
+						{"",""},
+						{"Cartesian: ",coordsxyz@field[p,z]},
+						{"Spherical: ",coordsxyz@Value@Spherical@Vector[field[p,z],Cartesian]}
+						},Alignment->Join[{Center},ConstantArray[{Right,Left},2]]
+					],
+					Spacer[40],Spacer[40],
+					Show[Graphics3D[{Thick,Orange,Arrow[{{0,0,0},field[p,z]/Norm[field[p,z]]}]},ImageSize->200,PlotRange->{-1,1}],PlotFrame[IdentityFrame]]
+				},Alignment->Center]
+			}],
+			{{z,6,"Z motor (mm)"},0,25}
+		]
+	]
+
+
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Carbon Hyperfine Estimation*)
 
 
@@ -920,6 +926,7 @@ EnhancedLarmourVisibility[staticField_,\[Alpha]_,A1_,A2_,A3_,tp_,\[CapitalOmega]
 	\[Rho]=UP.\[Rho].UP\[ConjugateTranspose];
 	\[Rho]=\[Rho]*(IdentityMatrix[3]\[CircleTimes]ConstantArray[1,{6,6}]);
 	data=Table[\[Rho]=dU.\[Rho].dU\[ConjugateTranspose];{n*dt,Re@Tr[\[Rho].M]},{n,ndata}];
+ListPlot[data]
 	model[t_]=offset+amp*Cos[2\[Pi] \[Omega] t];
 	soln=FindFit[data,model[t],{{offset,.75},{amp,0.5},{\[Omega],\[Omega]elGuess/10^6}},{t}];
 	{offset,amp,\[Omega]}/.soln
@@ -997,42 +1004,62 @@ EnhancedLarmourSimulation[staticField_,A_,T_,\[CapitalOmega]_,doplot_:True,order
 	]
 
 
-Options[ELVHyperfineReconstruction]={"weights"->Automatic,Method->"NelderMead","\[Alpha]Constraints"->{-5,0},"A1Constraints"->{12,18},"A2Constraints"->{10,15}};
-ELVHyperfineReconstruction[enhancedLarmourFreqs_,staticFields_,Asplit_,A\[Phi]_,OptionsPattern[]]:=
+Options[ELVHyperfineReconstruction]={"weights"->Automatic,Method->"NelderMead","\[Alpha]Constraints"->{-5,0},"A1Constraints"->{12,18},"A2Constraints"->{10,15},"pConstraints"->{-0.2,0.2},StepMonitor->None};
+ELVHyperfineReconstruction[elOffsets_,elAmplitudes_,enhancedLarmourFreqs_,staticFields_,pulseTimes_,rabis_,Asplit_,A\[Phi]_,OptionsPattern[]]:=
 	Module[
-		{\[Alpha],A1,A2,A3,cost,result,values,rotStaticFields,\[Alpha]c,A1c,A2c,A3c,B,\[Theta],\[Phi],data,weights},
+		{\[Alpha],A1,A2,A3,cost,result,values,rotStaticFields,\[Alpha]c,A1c,A2c,A3c,pc,B,\[Theta],\[Phi],data,weights,p,monfun,nSamples},
+
+		nSamples=Length[elOffsets];
 
 		weights=OptionValue["weights"];
-		If[weights===Automatic,weights=ConstantArray[1/Length[enhancedLarmourFreqs],Length[enhancedLarmourFreqs]]];
+		If[weights===Automatic,weights=ConstantArray[1/nSamples,nSamples]];
 
+		(* Rotate the static fields by azimuthal angle A\[Phi] *)
 		rotStaticFields=Value[Spherical[#]]&/@staticFields;
 		rotStaticFields[[All,2]]=rotStaticFields[[All,2]]-A\[Phi];
+		rotStaticFields=Vector[#,Spherical]&/@rotStaticFields;
+
+		(* Put all experimental data into a structure, denoting the unreliability of the contrast by p *)
+		data={(1-p)*elOffsets+p,(1-p)*elAmplitudes,enhancedLarmourFreqs}\[Transpose];
 
 		(* We can measure the hyperfine splitting, which gives A3^2+a^2 *)
 		A3=Sign[Asplit]*Sqrt[Asplit^2-\[Alpha]^2];
 
-		(* Compiling the cost function gives a ten-fold speedup *)
-		cost=Module[{expr,\[Alpha]\[Alpha],AA1,AA2,AA3},
-			expr=Total[weights*(EnhancedLarmourFormula[Sequence@@#,\[Alpha]\[Alpha],AA1,AA2,A3/.\[Alpha]->\[Alpha]\[Alpha]]&/@rotStaticFields - enhancedLarmourFreqs)^2]/10^6;
-			Compile[{\[Alpha],A1,A2},Evaluate[expr/.{\[Alpha]\[Alpha]->\[Alpha],AA1->A1,AA2->A2}]]
-		];
+		(* Cost function *)
+		cost[\[Alpha]\[Alpha]_,AA1_,AA2_,pp_]:=Sum[weights[[n]]*Norm[
+				EnhancedLarmourVisibility[rotStaticFields[[n]],\[Alpha]\[Alpha],AA1,AA2,A3/.\[Alpha]->\[Alpha]\[Alpha],pulseTimes[[n]],rabis[[n]]] - 
+				data[[n]]/.{p->pp}]^2,
+				{n,nSamples}
+			];
 
+		(* Limits of variables we are searching for *)
 		\[Alpha]c=OptionValue["\[Alpha]Constraints"];
 		A1c=OptionValue["A1Constraints"];
 		A2c=OptionValue["A2Constraints"];
+		pc=OptionValue["pConstraints"];
 
+		If[OptionValue[StepMonitor]===None,
+			monfun=None,
+			monfun:=OptionValue[StepMonitor][\[Alpha],A1,A2,p]
+		];
+
+		(* Optimize! *)
 		{result,values}=NMinimize[
 			{
-				Hold[cost[\[Alpha],A1,A2]],
+				Hold[cost[\[Alpha],A1,A2,p]],
 				\[Alpha]c[[1]]<=\[Alpha]<=\[Alpha]c[[2]],
 				A1c[[1]]<=A1<=A1c[[2]],
-				A2c[[1]]<=A2<=A2c[[2]]
+				A2c[[1]]<=A2<=A2c[[2]],
+				pc[[1]]<=p<=pc[[2]]
 			},
-			{\[Alpha],A1,A2},
+			{\[Alpha],A1,A2,p},
 			Method->OptionValue[Method],
-			MaxIterations->3000
+			MaxIterations->3000,
+			StepMonitor:>monfun,
+			AccuracyGoal->5,
+			PrecisionGoal->10
 		];
-		{Sqrt@result, {{A1,0,\[Alpha]},{0,A2,0},{\[Alpha],0,A3}}/.values}
+		{Sqrt@result, {{A1,0,\[Alpha]},{0,A2,0},{\[Alpha],0,A3}}/.values, p/.values}
 	]
 
 
@@ -1108,7 +1135,7 @@ EnhancedLarmourHyperfineErrorBars[enhancedLarmourFreqs_,enhancedLarmourStds_,sta
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Microwave Wire Functions*)
 
 
@@ -1148,7 +1175,7 @@ DistanceFromWire[pos_,end1_,end2_]:=Norm[ClosestWirePoint[pos,end1,end2]-pos]
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Epilog*)
 
 
