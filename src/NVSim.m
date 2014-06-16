@@ -1,6 +1,6 @@
 (* ::Package:: *)
 
-BeginPackage["NVSim`"]
+BeginPackage["NVSim`"];
 
 
 Needs["QuantumUtils`"];
@@ -12,6 +12,9 @@ Needs["QuantumUtils`"];
 
 (* ::Subsection:: *)
 (*Usage Declarations*)
+
+
+Lindblad::usage = "Lindblad[H,L1,L2,...] represents the Hamiltonian H with Lindblad dissipators L1, L2, ...";
 
 
 PulseShapeFileQ::usage = "PulseShapeFileQ[str] returns True iff str is a string pointing to a text file containg a pulse.";
@@ -34,6 +37,11 @@ DriftHamNonConstQ::usage = "DriftHamNonConst[H] returns True iff H is a function
 DriftHamQ::usage = "DriftHamQ[H] returns True iff one of DriftHamConstQ[H] or DriftHamNonConstQ[H] is True.";
 
 
+LindbladConstQ::usage = "LindbladConstQ[L] returns True iff L has Head Lindblad, has first argument satisfying DriftHamConstQ, and the rest of the arguments are square matrices. In other words, we are looking for the form Lindblad[H,L1,L2,...] where H is the Hamiltonian, and the Ls are the lindblad matrices.";
+LindbladNonConstQ::usage = "LindbladNonConst[L] returns True iff L has Head Lindblad, has first argument satisfying DriftHamNonConstQ, and the rest of the arguments are square matrices. In other words, we are looking for the form Lindblad[H,L1,L2,...] where is a single parameter function returning a Hamiltonian, and the Ls are the lindblad matrices.";
+LindbladQ::usage = "LindbladQ[L] returns True iff one of DriftHamConstQ[L] or DriftHamNonConstQ[L] is True.";
+
+
 DensityMatrixQ::usage = "DensityMatrixQ[\[Rho]] returns True iff \[Rho] is a square matrix.";
 ObservableListQ::usage = "ObservableListQ[obs] returns True iff obs is a list of square matrices.";
 FunctionListQ::usage = "FunctionListQ[lst] retruns True iff lst is a List.";
@@ -42,7 +50,7 @@ FunctionListQ::usage = "FunctionListQ[lst] retruns True iff lst is a List.";
 Else=True;
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Implementations*)
 
 
@@ -85,6 +93,15 @@ DriftHamNonConstQ[H_]:=SquareMatrixQ[H[0.0]]
 DriftHamQ[H_]:=DriftHamConstQ[H]||DriftHamNonConstQ[H]
 
 
+LindbladConstQ[L_]:=(Head[L]===Lindblad)&&DriftHamConstQ[First@L]&&(And@@(SquareMatrixQ/@(Rest@L)))
+
+
+LindbladNonConstQ[L_]:=(Head[L]===Lindblad)&&DriftHamNonConstQ[First@L]&&(And@@(SquareMatrixQ/@(Rest@L)))
+
+
+LindbladQ[L_]:=LindbladConstQ[L]||LindbladNonConstQ[L]
+
+
 ObservableListQ[obs_]:=ListQ[obs]&&(And@@(SquareMatrixQ/@obs))
 
 
@@ -101,7 +118,7 @@ End[];
 (*Options and Helper Functions*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Usage Declarations*)
 
 
@@ -117,6 +134,7 @@ NumericEvaluation::usage = "NumericEvaluation is a simulation option. If set to 
 
 
 TimeVector::usage = "TimeVector is a function Head used in a simulation's output. TimeVector[data] can also be used to extract the TimeVector from data.";
+Superoperators::usage = "Superoperators is two things: (1) an element of the SimulationOutput list, and (2) a function Superoperators[data] (or Superoperators[data,t]) which exctracts the super operators out of data (or extracts the superoperator which happens at the closest time to t calculated), where data is in the form as outputed by EvalPulse.";
 Unitaries::usage = "Unitaries is two things: (1) an element of the SimulationOutput list, and (2) a function Unitaries[data] (or Unitaries[data,t]) which exctracts the unitaries out of data (or extracts the unitary which happens at the closest time to t calculated), where data is in the form as outputed by EvalPulse.";
 States::usage = "States is two things: (1) an element of the SimulationOutput list, and (2) a function States[data] (or States[data,t]) which exctracts the states out of data (or extracts the state which happens at the closest time to t calculated), where data is in the form as outputed by EvalPulse.";
 Functions::usage = "Functions is three things: (1) simulation option which can be set to a list of functions which take a square matrix as input, (2) an element of the SimulationOutput list, and (3) a function Functions[data] (Functions[data,n]) which extracts all function values (n'th function values) from data, where data is in the format that EvalPulse outputs.";
@@ -142,7 +160,7 @@ MakeMultipleOf::usage = "MakeMultipleOf[dt,T] returns the largest integer multip
 Begin["`Private`"];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Options and Input Handling*)
 
 
@@ -154,7 +172,8 @@ Options[SimulationOptions]={
 	Functions->None,
 	SimulationOutput->Automatic,
 	SequenceMode->False,
-	NumericEvaluation->True
+	NumericEvaluation->True,
+	LindbladQ->False
 };
 
 
@@ -191,7 +210,7 @@ DivideEvenly[dt_,T_]:=T/Ceiling[T/dt]
 MakeMultipleOf[dt_,T_]:=Max[dt,dt*Floor[T/dt]]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Warnings*)
 
 
@@ -203,7 +222,43 @@ CheckStepSizeVsTotalTime[dt_,T_]:=
 	]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
+(*Superoperator functions*)
+
+
+(* ::Text:: *)
+(*Use column stacking. This means Roth's lemma reads ABC=devec(C\[Transpose]\[CircleTimes]A vec(B))*)
+
+
+vec[\[Rho]_]:=Flatten[\[Rho]\[Transpose]]
+devec[\[Rho]_]:=Partition[\[Rho],Sqrt[Length@\[Rho]]]\[Transpose]
+
+
+adjointsuper[H_]:=-I(\[DoubleStruckOne]\[CircleTimes]H - H\[Transpose]\[CircleTimes]\[DoubleStruckOne])
+lindbladtermsuper[L_]:=L\[Conjugate]\[CircleTimes]L-With[{LL=L\[ConjugateTranspose].L},\[DoubleStruckOne]\[CircleTimes]LL+LL\[Transpose]\[CircleTimes]\[DoubleStruckOne]]/2
+
+
+LindbladSuper[L_?LindbladConstQ]:=adjointsuper[First@L]+Total[lindbladtermsuper/@(List@@Rest[L])]
+LindbladSuper[L_?LindbladNonConstQ]:=adjointsuper[First[L][#]]+Total[lindbladtermsuper/@(List@@Rest[L])]&
+
+
+(* ::Text:: *)
+(*We are nice and allow the control hamiltonians to be input either in regular space, or superoperator space. In either case we need the imaginary fix.*)
+
+
+MakeSuperPulse[L_?LindbladConstQ,p_?ShapedPulseQ]:=If[
+	Length[First@Last@p]===Length[First@L], 
+	{First@p,I * adjointsuper/@(Last@p)},
+	{First@p,I * Last@p}
+]
+MakeSuperPulse[L_?LindbladNonConstQ,p_?ShapedPulseQ]:=If[
+	Length[First@Last@p]===Length[First[L][0]], 
+	{First@p,I * adjointsuper/@(Last@p)},
+	{First@p,I * Last@p}
+]
+
+
+(* ::Subsubsection::Closed:: *)
 (*Private Variables*)
 
 
@@ -213,6 +268,7 @@ funVar::usage = "A private variable to store the functions.";
 funAct::usage = "A private variable which performs the functions in funVar on either the states or unitaries.";
 
 
+sosVals::usage = "A private variable to store the super operators that will be returned.";
 uniVals::usage = "A private variable to store the unitaries that will be returned.";
 staVals::usage = "A private variable to store the states that will be returned.";
 obsVals::usage = "A private variable to store the observable values that will be returned.";
@@ -234,6 +290,7 @@ InitializePrivateVariables[OptionsPattern[SimulationOptions]]:=
 	(
 		(* initialize output storage containers*)
 		uniVals={};
+		sosVals={};
 		staVals={};
 		obsVals={};
 		funVals={};
@@ -245,7 +302,6 @@ InitializePrivateVariables[OptionsPattern[SimulationOptions]]:=
 		funVar=OptionValue[Functions];
 
 		(* initialize the outputList *)
-		outputList=FormatSimulationOutput[OptionsPattern[SimulationOptions]];
 		If[OptionValue[SimulationOutput]===Automatic,
 			If[DensityMatrixQ[staVar],
 					outputList=If[ObservableListQ[obsVar],{Observables},{}];,
@@ -258,10 +314,19 @@ InitializePrivateVariables[OptionsPattern[SimulationOptions]]:=
 			If[Not[DensityMatrixQ[staVar]]&&(MemberQ[outputList,States]||MemberQ[outputList,Observables]||MemberQ[outputList,Functions]),
 				Print["Warning: You asked for an output which requires an InitialState, but no InitialState was specified."]
 			];
+			If[DriftHamQ@H,
+				If[MemberQ[outputList,Superoperators],Print["Warning: You asked for an output which requires superoperators, but you are evolving under unitary dynamics."]];,
+				If[MemberQ[outputList,Unitaries],Print["Warning: You asked for an output which requires unities, but you are evolving under nonunitary dynamics."]];
+			];
 		];
 		AppendTo[outputList,TimeVector];
 
-		(* The functions can act either on the states or the unitaries. The behaviour is to act on states if InitialState exists, and on unitaries if not. *)
+		(* To avoid doing more logic than the above, we simply replace Unitaries output with Superoperators output in the case where we have dissipation. *)
+		If[OptionValue[LindbladQ],
+			outputList = outputList /. Unitaries->Superoperators;
+		];
+
+		(* The functions can act either on the states or the unitaries/superoperators. The behaviour is to act on states if InitialState exists, and on unitaries/superoperators if not. *)
 		If[DensityMatrixQ[staVar],
 			funAct[U_]:=(#[U.staVar.U\[ConjugateTranspose]])&/@funVar;,
 			funAct[U_]:=(#[U])&/@funVar;			
@@ -270,31 +335,59 @@ InitializePrivateVariables[OptionsPattern[SimulationOptions]]:=
 		(* decide which function NN is set to *)
 		NN=If[OptionValue[NumericEvaluation],N,Identity];
 
-		(* initialize the returnKey *)
-		returnKey=0;
-		If[MemberQ[outputList,Unitaries],returnKey+=2^0];
-		If[MemberQ[outputList,States],returnKey+=2^1];
-		If[MemberQ[outputList,Observables],returnKey+=2^2];
-		If[MemberQ[outputList,Functions],returnKey+=2^3];
+		If[Not@OptionValue[LindbladQ],
+			(* initialize the returnKey *)
+			returnKey=0;
+			If[MemberQ[outputList,Unitaries],returnKey+=2^0];
+			If[MemberQ[outputList,States],returnKey+=2^1];
+			If[MemberQ[outputList,Observables],returnKey+=2^2];
+			If[MemberQ[outputList,Functions],returnKey+=2^3];
 
-		(* for each returnKey we need a different AppendReturnables *)
-		Which[
-			returnKey==1,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[uniVals,U];),
-			returnKey==2,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[staVals,U.staVar.U\[ConjugateTranspose]];),
-			returnKey==3,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[staVals,U.staVar.U\[ConjugateTranspose]];),
-			returnKey==4,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[obsVals,Re[Tr[#.U.staVar.U\[ConjugateTranspose]]]&/@obsVar];),
-			returnKey==5,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[obsVals,Re[Tr[#.U.staVar.U\[ConjugateTranspose]]]&/@obsVar];),
-			returnKey==6,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];],
-			returnKey==7,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];],
-			returnKey==8,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[funVals,funAct[U]];),
-			returnKey==9,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[funVals,funAct[U]];),
-			returnKey==10,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[staVals,\[Rho]];AppendTo[funVals,funAct[U]]],
-			returnKey==11,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[funVals,funAct[U]]],
-			returnKey==12,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,funAct[U]]],
-			returnKey==13,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,funAct[U]]],
-			returnKey==14,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,funAct[U]]],
-			returnKey==15,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,funAct[U]]],
-			Else,AppendReturnables[U_,t_]:=Null
+			(* for each returnKey we need a different AppendReturnables *)
+			Which[
+				returnKey==1,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[uniVals,U];),
+				returnKey==2,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[staVals,U.staVar.U\[ConjugateTranspose]];),
+				returnKey==3,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[staVals,U.staVar.U\[ConjugateTranspose]];),
+				returnKey==4,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[obsVals,Re[Tr[#.U.staVar.U\[ConjugateTranspose]]]&/@obsVar];),
+				returnKey==5,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[obsVals,Re[Tr[#.U.staVar.U\[ConjugateTranspose]]]&/@obsVar];),
+				returnKey==6,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];],
+				returnKey==7,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];],
+				returnKey==8,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[funVals,funAct[U]];),
+				returnKey==9,AppendReturnables[U_,t_]:=(AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[funVals,funAct[U]];),
+				returnKey==10,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[staVals,\[Rho]];AppendTo[funVals,funAct[U]]],
+				returnKey==11,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[funVals,funAct[U]]],
+				returnKey==12,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,funAct[U]]],
+				returnKey==13,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,funAct[U]]],
+				returnKey==14,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,funAct[U]]],
+				returnKey==15,AppendReturnables[U_,t_]:=With[{\[Rho]=U.staVar.U\[ConjugateTranspose]},AppendTo[timVals,t];AppendTo[uniVals,U];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,funAct[U]]],
+				Else,AppendReturnables[U_,t_]:=Null
+			];,
+			(* initialize the returnKey *)
+			returnKey=0;
+			If[MemberQ[outputList,Superoperators],returnKey+=2^0];
+			If[MemberQ[outputList,States],returnKey+=2^1];
+			If[MemberQ[outputList,Observables],returnKey+=2^2];
+			If[MemberQ[outputList,Functions],returnKey+=2^3];
+
+			(* for each returnKey we need a different AppendReturnables *)
+			Which[
+				returnKey==1,AppendReturnables[S_,t_]:=(AppendTo[timVals,t];AppendTo[sosVals,S];),
+				returnKey==2,AppendReturnables[S_,t_]:=(AppendTo[timVals,t];AppendTo[staVals,devec[S.vec[staVar]]];),
+				returnKey==3,AppendReturnables[S_,t_]:=(AppendTo[timVals,t];AppendTo[sosVals,S];AppendTo[staVals,devec[S.vec[staVar]]];),
+				returnKey==4,AppendReturnables[S_,t_]:=(AppendTo[timVals,t];AppendTo[obsVals,Re[Tr[#.devec[S.vec[staVar]]]]&/@obsVar];),
+				returnKey==5,AppendReturnables[S_,t_]:=(AppendTo[timVals,t];AppendTo[sosVals,S];AppendTo[obsVals,Re[Tr[#.devec[S.vec[staVar]]]]&/@obsVar];),
+				returnKey==6,AppendReturnables[S_,t_]:=With[{\[Rho]=devec[S.vec[staVar]]},AppendTo[timVals,t];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];],
+				returnKey==7,AppendReturnables[S_,t_]:=With[{\[Rho]=devec[S.vec[staVar]]},AppendTo[timVals,t];AppendTo[sosVals,S];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];],
+				returnKey==8,AppendReturnables[S_,t_]:=(AppendTo[timVals,t];AppendTo[funVals,funAct[S]];),
+				returnKey==9,AppendReturnables[S_,t_]:=(AppendTo[timVals,t];AppendTo[sosVals,S];AppendTo[funVals,funAct[S]];),
+				returnKey==10,AppendReturnables[S_,t_]:=With[{\[Rho]=devec[S.vec[staVar]]},AppendTo[timVals,t];AppendTo[staVals,\[Rho]];AppendTo[funVals,funAct[S]]],
+				returnKey==11,AppendReturnables[S_,t_]:=With[{\[Rho]=devec[S.vec[staVar]]},AppendTo[timVals,t];AppendTo[sosVals,S];AppendTo[staVals,\[Rho]];AppendTo[funVals,funAct[S]]],
+				returnKey==12,AppendReturnables[S_,t_]:=With[{\[Rho]=devec[S.vec[staVar]]},AppendTo[timVals,t];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,funAct[S]]],
+				returnKey==13,AppendReturnables[S_,t_]:=With[{\[Rho]=devec[S.vec[staVar]]},AppendTo[timVals,t];AppendTo[sosVals,S];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,funAct[S]]],
+				returnKey==14,AppendReturnables[S_,t_]:=With[{\[Rho]=devec[S.vec[staVar]]},AppendTo[timVals,t];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,funAct[S]]],
+				returnKey==15,AppendReturnables[S_,t_]:=With[{\[Rho]=devec[S.vec[staVar]]},AppendTo[timVals,t];AppendTo[sosVals,S];AppendTo[staVals,\[Rho]];AppendTo[obsVals,Re[Tr[#.\[Rho]]]&/@obsVar];AppendTo[funVals,funAct[S]]],
+				Else,AppendReturnables[S_,t_]:=Null
+			];
 		];
 	)
 
@@ -305,16 +398,22 @@ InitializePrivateVariables[OptionsPattern[SimulationOptions]]:=
 
 FormatOutputAndReturn[]:=
 	(
-		outputList/.
-			{Unitaries->{Unitaries,uniVals},
+		outputList/.{
+			Superoperators->{Superoperators,sosVals},
+			Unitaries->{Unitaries,uniVals},
 			States->{States,staVals},
 			Observables->{Observables,obsVals},
 			Functions->{Functions,funVals},
-			TimeVector->{TimeVector,timVals}}
+			TimeVector->{TimeVector,timVals}
+		}
 	)
 
 
 TimeVector[data_]:=Select[data,(#[[1]]===TimeVector)&,1][[1,2]]
+
+
+Superoperators[data_]:=Select[data,(#[[1]]===Superoperators)&,1][[1,2]]
+Superoperators[data_,t_]:=With[{minpos=Ordering[Abs[t-#]&/@TimeVector[data],1][[1]]},Superoperators[data][[minpos]]]
 
 
 Unitaries[data_]:=Select[data,(#[[1]]===Unitaries)&,1][[1,2]]
@@ -355,7 +454,7 @@ Protect[PollingInterval,StepSize,IntitialState,NumericEvaluation,Observables,Fun
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Single Pulse Evaluator*)
 
 
@@ -373,7 +472,7 @@ EvalPulse::usage = "EvalPulse[H,p] is the work house of the simulator. H is the 
 Begin["`Private`"];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Shaped Pulse Evaluators*)
 
 
@@ -607,6 +706,51 @@ EvalPulse[H_?DriftHamNonConstQ,T_?DriftPulseQ,opts:OptionsPattern[SimulationOpti
 			FormatOutputAndReturn[]
 		]
 	]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Lindblad Pulse Evaluators*)
+
+
+(* ::Text:: *)
+(*MakeSuperPulse takes a pulse and decides how to turn it into a PulseQ usable by the lindblad evalutator. Most notably, for ShapedPulseQ, we check the dimension of the control Hamiltonians and enhance them to the superoperator space if necessary. See notes below for why we multiply the control supergenerators by "i".*)
+
+
+MakeSuperPulse[L_?LindbladConstQ,p_?ShapedPulseQ]:=If[
+	Length[First@Last@p]===Length[First@L], 
+	{First@p,I * adjointsuper/@(Last@p)},
+	{First@p,I * Last@p}
+]
+MakeSuperPulse[L_?LindbladNonConstQ,p_?ShapedPulseQ]:=If[
+	Length[First@Last@p]===Length[First[L][0]], 
+	{First@p,I * adjointsuper/@(Last@p)},
+	{First@p,I * Last@p}
+]
+
+
+(* ::Text:: *)
+(*These guys don't need any changes:*)
+
+
+MakeSuperPulse[L_?LindbladQ,p_?UnitaryPulseQ]:=p
+MakeSuperPulse[L_?LindbladQ,p_?ChannelPulseQ]:=p
+MakeSuperPulse[L_?LindbladQ,p_?DriftPulseQ]:=p
+
+
+(* ::Text:: *)
+(*We can just call the closed system evaluators, but give it a supergenerator instead of a Hamiltonian. Afterall, the most difficult thing EvalPulse does is work out time slicing.*)
+
+
+(* ::Text:: *)
+(*Since all MatrixExp calls in the DriftHamQ evaluators include the "-i" factor in front of the Hamiltonian, we need to be sure to multiply our super operators by "i" to undo this.*)
+
+
+EvalPulse[L_?LindbladQ,p_?PulseQ,opts:OptionsPattern[SimulationOptions]]:=EvalPulse[
+	I*LindbladSuper@L,
+	MakeSuperPulse[L,p],
+	LindbladQ->True,
+	opts
+]
 
 
 (* ::Subsubsection::Closed:: *)
