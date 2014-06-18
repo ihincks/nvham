@@ -153,7 +153,7 @@ DivideEvenly::usage = "DivideEvenly[dt,T] returns the largest number no bigger t
 MakeMultipleOf::usage = "MakeMultipleOf[dt,T] returns the largest integer multiple of dt smaller than T. (And if T<dt, just returns dt.)";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Implementations*)
 
 
@@ -771,7 +771,7 @@ End[];
 EvalPulseSequence::usage = "EvalPulseSequence[H,{p1,p2,p3,...}] evaluates the pulse sequence {p1,p2,p3,...} by evaluting each of EvalPulse[H,pi] where everything is properly tied together, ie., the initial state for one pulse is taken to be the final state of the previous pulse, etc. etc.";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Implementations*)
 
 
@@ -779,23 +779,37 @@ Begin["`Private`"];
 
 
 EvalPulseSequence[H_?DriftHamQ,seq_?PulseSequenceQ,options:OptionsPattern[SimulationOptions]]:=
-	Module[{JoinTwoFields,JoinTwoEvalPulses},
+	Module[{JoinTwoFields,JoinTwoEvalPulses,pollingInterval,timeStep,updatingOptions},
 		(* Define how to join each kind of output *)
 		JoinTwoFields[{TimeVector,f1_},{TimeVector,f2_}]:={TimeVector,Join[f1,Last[f1]+Rest[f2]]};
 		JoinTwoFields[{Unitaries,f1_},{Unitaries,f2_}]:={Unitaries,Join[f1,(#.Last[f1])&/@Rest[f2]]};
+		JoinTwoFields[{Superoperators,f1_},{Superoperators,f2_}]:={Superoperators,Join[f1,(#.Last[f1])&/@Rest[f2]]};
 		JoinTwoFields[{type_,f1_},{type_,f2_}]:={type,Join[f1,Rest[f2]]};
 
 		(* Define how to join two outputs from separate EvalPulse calls*)
 		JoinTwoEvalPulses[p1_,p2_]:=MapThread[JoinTwoFields,{p1,p2},1];
 		
+		(* Allow a different PollingInterval and TimeStep to be specified for each member of the pulse sequence. *)
+		If[ListQ[OptionValue[PollingInterval]],
+			If[Length@OptionValue@PollingInterval<Length@seq,Print["If Specifying multiple PollingIntervals, exactly one must be given for each item in your sequence."];Abort[];];
+			Module[{n=1},pollingInterval:=(OptionValue[PollingInterval][[n++]])];,
+			pollingInterval=OptionValue[PollingInterval];
+		];
+		If[ListQ[OptionValue[StepSize]],
+			If[Length@OptionValue@StepSize<Length@seq,Print["If Specifying multiple TimeSteps, exactly one must be given for each item in your sequence."];Abort[];];
+			Module[{n=1},timeStep:=(OptionValue[StepSize][[n++]])];,
+			timeStep=OptionValue[StepSize];
+		];
+		updatingOptions:=(Sequence@@Join[{PollingInterval->pollingInterval,StepSize->timeStep,SequenceMode->True},List[options]]);
+
 		(* Now iteravely join each pulse. We need to deal with the slight complication of passing 
 		   the previous final state to the new pulse as InitialState. This is only possible with 
 			the SequenceMode option. *)
 		Fold[
-			With[{newEval=EvalPulse[H,#2,InitialState->#1[[1]],SequenceMode->True,options]},
+			With[{newEval=EvalPulse[H,#2,InitialState->#1[[1]],updatingOptions]},
 				{newEval[[1]],JoinTwoEvalPulses[#1[[2]],newEval[[2]]]}
 			]&,
-			EvalPulse[H,First[seq],SequenceMode->True,options],
+			EvalPulse[H,First[seq],SequenceMode->True,updatingOptions],
 			Rest[seq]
 		][[2]]
 	]
