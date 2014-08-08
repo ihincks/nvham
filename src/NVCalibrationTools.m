@@ -534,6 +534,10 @@ NVZeemanSplitting::usage = "NVZeemanSplitting[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\
 NVCenterFrequency::usage = "NVCenterFrequency[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},nvOrientation] computes the center frequency of the NV electron in MHz given the magnetic field, the crystal orientation, and the nv orientation. Uses eigenvales; not the secular approximation.";
 
 
+TransitionFreq::usage = "TransitionFreq[transition_,B_Vector] returns the transition frequency in MHz of an NV with field B in the PAS. The transition input should be either 1 or -1.";
+FieldForTransitionFreq::usage = "FieldForTransitionFreq[transition_,transitionFreq_,{{Bxmin_,Bxmax_},{Bymin_,Bymax_},{Bzmin_,Bzmax_}}] finds the field, in the PAS frame, that will give the desired transition frequency (units of MHz input, Gauss output) with the specified constraints. The transition input should be either 1 or -1.";
+
+
 FakeData::usage = "FakeData[\[Sigma],points,nvOrientation_Integer,{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m]
 generates fake data of the form {{x1,y1,z1,splitting1,nvorientation1},...} by sampling from a Gaussian of variance \[Sigma] at each point of the list points={{x1,y1,z1},{x2,y2,z3},...}, with the given frame transformation z1,z2,z3,\[Alpha]1,\[Alpha]2,\[Alpha]3, offset field {B1,B2,B3} and magnitization m.
 FakeData[\[Sigma],points,nvOrientations_List,{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m]
@@ -568,8 +572,10 @@ finds the position you should set the motors to in order to get the magenetic fi
 {z1,z2,z3}, {B1,B2,B3}, and m, are part of the calibration solution.
 The output is in the form {costfunctionvalue,{x,y,z}}, where costfunctionvalue has units of MHz, {x,y,z} is where you should put the motors.
 PositionGivenField[solution,B,BCoords:Cartesian,minz:6] returns PositionGivenField[solution[[1]],solution[[3]],solution[[4]],Bvector,minz:6].";
+PositionGivenPASField::usage = "PositionGivenPASField[{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m,nvOrientation,B,minz:6] turns B in PAS coordinates into B in lab coordinates and then invokes PositionGivenField, thus telling you the motor position that will produce a given field in the PAS of your NV.";
 AlignField::usage = "AlignField[{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m,nvOrientation,absB,minz:6] invokes PositionGivenField to find the motor position at which the magnetic field is aligned with the given nvOrienation, and with field strength Babs in Gauss. WARNING: The sign of the field matters. For example, if you ask for an alignment with orientation 4, it will try to find a field which is parallel (and not anti-parallel) to that axis. You can input negative values of Babs if you want to search for anti-aligned solutions.
 AlignField[solution,nvOrientation,absB,minz:6] returns AlignField[Sequence@@solution,nvOrientation,absB,minz:6]";
+PositionGivenTransitionFreq::usage = "PositionGivenTransitionFreq[{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m,nvOrientation,transition,transitionFreq,{{Bxmin,Bxmax},{Bymin,Bymax},{Bzmin,Bzmax}},minz:6] combines FieldForTransition and PositionGivenPASField. The input transition should be either -1 or 1, and transitionFreq should be in MHz.";
 
 
 PredictSplitting::usage = "PredictSplitting[{r1,r2,r3},nvOrientation,{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m] 
@@ -670,6 +676,18 @@ NVCenterFrequency[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},5]:=NVCente
 NVCenterFrequency[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},6]:=NVCenterFrequency[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},2]
 NVCenterFrequency[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},7]:=NVCenterFrequency[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},3]
 NVCenterFrequency[{Bx_,By_,Bz_},{\[Theta]z1_,\[Theta]y_,\[Theta]z2_},8]:=NVCenterFrequency[{Bx,By,Bz},{\[Theta]z1,\[Theta]y,\[Theta]z2},4]
+
+
+TransitionFreq[transition_,B_]:=NVCenterFrequency[Value@Cartesian@B,{0,0,0},1]+transition NVZeemanSplitting[Value@Cartesian@B,{0,0,0},1]/2
+
+
+FieldForTransitionFreq[transition_,transitionFreq_,{{Bxmin_,Bxmax_},{Bymin_,Bymax_},{Bzmin_,Bzmax_}}]:=Module[{Bx,By,Bz,cost},
+	cost[BBx_?NumericQ,BBy_,BBz_]:=Re[(TransitionFreq[transition,Vector[{BBx,BBy,BBz},Cartesian]]-transitionFreq)^2];
+	Vector[
+		{Bx,By,Bz}/.Last@NMinimize[{cost[Bx,By,Bz],Bxmin<=Bx<=Bxmax&&Bymin<=By<=Bymax&&Bzmin<=Bz<=Bzmax},{Bx,By,Bz}],
+		Cartesian
+	]
+]
 
 
 FakeData[\[Sigma]_,points_,nvOrientation_Integer,{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,B3_},m_]:=
@@ -800,12 +818,29 @@ PositionGivenField[{z1_,z2_,z3_},{B1_,B2_,B3_},m_,Bvec_,minz_:6]:=
 PositionGivenField[solution_,Bvec_,minz_:6]:=PositionGivenField[solution[[1]],solution[[3]],solution[[4]],Bvec,minz]
 
 
-AlignField[{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,B3_},m_,nvOrientation_,absB_,minz_:6]:=
+PositionGivenPASField[{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,B3_},m_,nvOrientation_,B_,minz_:6]:=
 	PositionGivenField[
 		{z1,z2,z3},
 		{B1,B2,B3},
 		m,
-		Vector[FrameChange[{0,0,absB},FrameCompose[EulerAngles[\[Alpha]1,\[Alpha]2,\[Alpha]3],NVOrientationToFrame[nvOrientation]],IdentityFrame],Cartesian],
+		Vector[FrameChange[B,FrameCompose[EulerAngles[\[Alpha]1,\[Alpha]2,\[Alpha]3],NVOrientationToFrame[nvOrientation]],IdentityFrame],Cartesian],
+		minz
+	];
+PositionGivenPASField[solution_,nvOrientation_,B_,minz_:6]:=PositionGivenPASField[Sequence@@solution,nvOrientation,B,minz]
+
+
+PositionGivenTransitionFreq[{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,B3_},m_,nvOrientation_,transition_,transitionFreq_,{{Bxmin_,Bxmax_},{Bymin_,Bymax_},{Bzmin_,Bzmax_}},minz:6]:=
+	With[
+		{B=Value@Cartesian@FieldForTransitionFreq[transition,transitionFreq,{{Bxmin,Bxmax},{Bymin,Bymax},{Bzmin,Bzmax}}]},
+		PositionGivenPASField[{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m,nvOrientation,B,minz]
+	];
+PositionGivenTransitionFreq[solution_,nvOrientation_,transition_,transitionFreq_,{{Bxmin_,Bxmax_},{Bymin_,Bymax_},{Bzmin_,Bzmax_}},minz_:6]:=PositionGivenTransitionFreq[Sequence@@solution,nvOrientation,transition,transitionFreq,{{Bxmin,Bxmax},{Bymin,Bymax},{Bzmin,Bzmax}},minz]
+
+
+AlignField[{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,B3_},m_,nvOrientation_,absB_,minz_:6]:=
+	PositionGivenPASField[
+		{z1,z2,z3},{\[Alpha]1,\[Alpha]2,\[Alpha]3},{B1,B2,B3},m,nvOrientation,
+		{0,0,absB},
 		minz
 	];
 AlignField[solution_,nvOrientation_,absB_,minz_:6]:=AlignField[Sequence@@solution,nvOrientation,absB,minz]
@@ -858,7 +893,7 @@ FieldExplorer[solution_]:=Module[
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Carbon Hyperfine Estimation*)
 
 
@@ -1135,7 +1170,7 @@ EnhancedLarmourHyperfineErrorBars[enhancedLarmourFreqs_,enhancedLarmourStds_,sta
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Microwave Wire Functions*)
 
 
