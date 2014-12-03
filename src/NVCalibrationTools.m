@@ -620,6 +620,12 @@ ImportSplittingData[filename_String,nvOrientation_Integer,scale_List:{1,1,1,1,1}
 	]
 
 
+ImportCWMagnetData[filename_]:=Module[{data,pos,freq},
+{data,pos,freq}=Import[filename];
+
+]
+
+
 ExtractPositionArray[data_]:={#[[1]],#[[2]],#[[3]]}&/@data
 
 
@@ -718,7 +724,7 @@ PlotSplittingData[data_,minsplit_:0,plotRange_:{0,25}]:=
 		Graphics3D[
 			{
 				If[#[[4]]>minsplit,colours[#[[5]]],Black],
-				Sphere[{#[[1]],#[[2]],#[[3]]},#[[4]]/max]
+				Tooltip[Sphere[{#[[1]],#[[2]],#[[3]]},#[[4]]/max],#]
 			}&/@data,
 			Axes->True,
 			AxesLabel->{"x (mm)","y (mm)","z (mm)"},
@@ -807,7 +813,7 @@ PositionGivenField[{z1_,z2_,z3_},{B1_,B2_,B3_},m_,Bvec_,minz_:6]:=
 		{result,values}=NMinimize[
 			{
 				cost[r1,r2,r3],
-				0<=r1<=25,0<=r2<=25,minz<=r3<=25
+				0<=r1<=25,0<=r2<=25,0<=r3<=17
 			},
 			{r1,r2,r3},
 			MaxIterations->3000,
