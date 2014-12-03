@@ -192,6 +192,73 @@ End[];
 
 
 (* ::Section:: *)
+(*Visualization Tools*)
+
+
+(* ::Subsection:: *)
+(*Usage Declarations*)
+
+
+NVForm::usage = "NVForm[H] displayes the NV Hamiltonian matrix in a convenient readable form.";
+
+
+(* ::Subsection:: *)
+(*Implementations*)
+
+
+Begin["`Private`"];
+
+
+NVForm[H_,simplifier_:Simplify]:=Module[
+	{
+		hasNitrogen,
+		numCarbon,
+		mask,
+		labels,
+		basis,
+		coeffs,
+		i
+	},
+	(* Determine relevant dimensions *)
+	If[Mod[Length@H,3]=!=0,Print["Invalid Hamiltonian dimension."];Abort[];];
+	hasNitrogen = Mod[Length@H/3,3]===0;
+	numCarbon = Log2@If[hasNitrogen, Length@H/9, Length@H/3];
+
+	(* Construct basis and basis labels *)
+	basis = {S0,Sz.Sz,Sx,Sy,Sz,Sxp,Syp,Sxx,Syy};
+	labels = {"\!\(\*SubscriptBox[\(S\), \(0\)]\)","\!\(\*SuperscriptBox[SubscriptBox[\(S\), \(z\)], \(2\)]\)","\!\(\*SubscriptBox[\(S\), \(x\)]\)","\!\(\*SubscriptBox[\(S\), \(y\)]\)","\!\(\*SubscriptBox[\(S\), \(z\)]\)","\!\(\*SubscriptBox[\(S\), \(x\)]\)'","\!\(\*SubscriptBox[\(S\), \(y\)]\)'","\!\(\*SubscriptBox[\(S\), \(xx\)]\)","\!\(\*SubscriptBox[\(S\), \(yy\)]\)"};
+	If[hasNitrogen, 
+		basis = Flatten[Outer[KroneckerProduct, basis, basis, 1], 1];
+		labels = Flatten[Outer[#1<>"\[CircleTimes]"<>#2&, labels, labels, 1], 1];
+	];
+	For[i=1, i<=numCarbon, i++,
+		basis = Flatten[Outer[KroneckerProduct, basis, {Subscript[\[DoubleStruckOne], 2],X,Y,Z}, 1], 1];
+		labels = Flatten[Outer[#1<>"\[CircleTimes]"<>#2&, labels, {"\[DoubleStruckOne]","X","Y","Z"}, 1], 1];
+	];
+
+	(* determine the coefficient of each basis element; assumes basis is orthogonal (which it is) *)
+	coeffs = simplifier[(Tr[#\[ConjugateTranspose].H]/Tr[#\[ConjugateTranspose].#])&/@basis];
+
+	(* only print non-zero coeffecients. *)
+	mask=Not@*PossibleZeroQ/@coeffs;
+
+	(* use a combination of MatrixForm and Row to get the desired form *)
+	Inner[
+		Row[{MatrixForm[{{#1}}],#2}]&,
+		Pick[coeffs,mask],
+		Style[#,Bold,Italic,16]&/@Pick[labels,mask],
+		Plus
+	]
+]
+
+
+{{1}}\[CircleTimes]X
+
+
+End[];
+
+
+(* ::Section::Closed:: *)
 (*Frames and Vectors*)
 
 
@@ -1013,7 +1080,7 @@ Taminiau12Nucleus[6] = Carbon[10^6*{{0,0,0},{0,0,0},{0.0251 Sin[51*\[Pi]/180],0,
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Hamiltonians*)
 
 
