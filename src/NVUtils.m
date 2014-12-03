@@ -34,9 +34,15 @@ Y::usage = "The 2x2 Pauli Y operator.";
 Z::usage = "The 2x2 Pauli Z operator.";
 
 
-Sx::usage = "The 3x3 Spin-1 X operator.";
-Sy::usage = "The 3x3 Spin-1 Y operator.";
-Sz::usage = "The 3x3 Spin-1 Z operator.";
+Si::usage="Spin-1 Identity Matrix";
+Sx::usage="Spin-1 X Matrix.";
+Sy::usage="Spin-1 Y Matrix.";
+Sz::usage="Spin-1 Z Matrix.";
+Syp::uage="Spin-1 Y Matrix in the interaction frame of Sz.Sz.";
+Sxp::usage="Spin-1 X Matrix in the interaction frame of Sz.Sz.";
+Sxx::usage="Spin-1 basis filler: gets the -1->1 transition";
+Syy::usage="Spin-1 basis filler: gets the -1->1 transition";
+S0::usage="Spin-1 basis filler: the projection onto ms=0";
 
 
 Spin::usage = "Spin[s] returns the spin operators for spin s particles. Spin[Carbon[...]] and Spin[Nitrogen[...]] return the spin operators of the respected nucleus.";
@@ -73,6 +79,13 @@ Z={{1,0},{0,-1}};
 Sx={{0,1,0},{1,0,1},{0,1,0}}/Sqrt[2];
 Sy={{0,-I,0},{I,0,-I},{0,I,0}}/Sqrt[2];
 Sz={{1,0,0},{0,0,0},{0,0,-1}};
+
+Si=IdentityMatrix[3];
+Syp={{0,-I,0},{I,0,I},{0,-I,0}}/Sqrt[2];
+Sxp={{0,-1,0},{-1,0,1},{0,1,0}}/Sqrt[2];
+Sxx={{0,0,1},{0,0,0},{1,0,0}};
+Syy={{0,0,-I},{0,0,0},{I,0,0}};
+S0={{0,0,0},{0,1,0},{0,0,0}};
 
 
 Spin[1/2]={X,Y,Z}/2;
