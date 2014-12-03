@@ -10,7 +10,7 @@ Needs["QuantumUtils`"];
 (*Predicates*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Usage Declarations*)
 
 
@@ -45,6 +45,9 @@ LindbladQ::usage = "LindbladQ[L] returns True iff one of DriftHamConstQ[L] or Dr
 DensityMatrixQ::usage = "DensityMatrixQ[\[Rho]] returns True iff \[Rho] is a square matrix.";
 ObservableListQ::usage = "ObservableListQ[obs] returns True iff obs is a list of square matrices.";
 FunctionListQ::usage = "FunctionListQ[lst] retruns True iff lst is a List.";
+
+
+DistributionQ::usage = "DistributionQ[dist] returns True iff dist is of the form {{prob1,prob2,...},{{symb1->val11,symb2->val12,...},{symb1->val21,symb2->val22,...},...}}.";
 
 
 Else=True;
@@ -111,6 +114,9 @@ DensityMatrixQ[\[Rho]_]:=SquareMatrixQ[\[Rho]]
 FunctionListQ[lst_]:=ListQ[lst]
 
 
+DistributionQ[dist_]:=ListQ[dist]&&(Length[dist]==2)&&(Length[First@dist]==Length[Last@dist])&&(Mean[Length/@(Last@dist)]==Length[First@Last@dist])
+
+
 End[];
 
 
@@ -153,7 +159,7 @@ DivideEvenly::usage = "DivideEvenly[dt,T] returns the largest number no bigger t
 MakeMultipleOf::usage = "MakeMultipleOf[dt,T] returns the largest integer multiple of dt smaller than T. (And if T<dt, just returns dt.)";
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Implementations*)
 
 
@@ -235,6 +241,7 @@ devec[\[Rho]_]:=Partition[\[Rho],Sqrt[Length@\[Rho]]]\[Transpose]
 
 
 adjointsuper[H_]:=-I(\[DoubleStruckOne]\[CircleTimes]H - H\[Transpose]\[CircleTimes]\[DoubleStruckOne])
+conjugation[U_]:=U\[Conjugate]\[CircleTimes]U
 lindbladtermsuper[L_]:=L\[Conjugate]\[CircleTimes]L-With[{LL=L\[ConjugateTranspose].L},\[DoubleStruckOne]\[CircleTimes]LL+LL\[Transpose]\[CircleTimes]\[DoubleStruckOne]]/2
 
 
@@ -246,16 +253,14 @@ LindbladSuper[L_?LindbladNonConstQ]:=adjointsuper[First[L][#]]+Total[lindbladter
 (*We are nice and allow the control hamiltonians to be input either in regular space, or superoperator space. In either case we need the imaginary fix.*)
 
 
-MakeSuperPulse[L_?LindbladConstQ,p_?ShapedPulseQ]:=If[
-	Length[First@Last@p]===Length[First@L], 
-	{First@p,I * adjointsuper/@(Last@p)},
-	{First@p,I * Last@p}
-]
-MakeSuperPulse[L_?LindbladNonConstQ,p_?ShapedPulseQ]:=If[
-	Length[First@Last@p]===Length[First[L][0]], 
-	{First@p,I * adjointsuper/@(Last@p)},
-	{First@p,I * Last@p}
-]
+MakeSuperPulse[L_?LindbladConstQ,p_?ShapedPulseQ]:=With[{dim=Length@First@L},{
+	First@p,
+	If[Length[#]===dim, {I*adjointsuper[#]}, {I*#}]&/@(Last@p)
+}]
+MakeSuperPulse[L_?LindbladNonConstQ,p_?ShapedPulseQ]:=With[{dim=Length[First@L][0]},{
+	First@p,
+	If[Length[#]===dim, {I*adjointsuper[#]}, {I*#}]&/@(Last@p)
+}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -328,7 +333,10 @@ InitializePrivateVariables[OptionsPattern[SimulationOptions]]:=
 
 		(* The functions can act either on the states or the unitaries/superoperators. The behaviour is to act on states if InitialState exists, and on unitaries/superoperators if not. *)
 		If[DensityMatrixQ[staVar],
-			funAct[U_]:=(#[U.staVar.U\[ConjugateTranspose]])&/@funVar;,
+			If[OptionValue[LindbladQ],
+				funAct[U_]:=(#[devec[U.vec[staVar]]])&/@funVar;,
+				funAct[U_]:=(#[U.staVar.U\[ConjugateTranspose]])&/@funVar;
+			],
 			funAct[U_]:=(#[U])&/@funVar;			
 		];
 
@@ -771,7 +779,7 @@ End[];
 EvalPulseSequence::usage = "EvalPulseSequence[H,{p1,p2,p3,...}] evaluates the pulse sequence {p1,p2,p3,...} by evaluting each of EvalPulse[H,pi] where everything is properly tied together, ie., the initial state for one pulse is taken to be the final state of the previous pulse, etc. etc.";
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Implementations*)
 
 
@@ -813,6 +821,96 @@ EvalPulseSequence[H_?DriftHamQ,seq_?PulseSequenceQ,options:OptionsPattern[Simula
 			Rest[seq]
 		][[2]]
 	]
+
+
+End[];
+
+
+(* ::Section::Closed:: *)
+(*Pulse Evaluator over a Distribution*)
+
+
+(* ::Subsection::Closed:: *)
+(*Usage Declarations*)
+
+
+EvalPulseOverDist::usage = "EvalPulseOverDist[H, pulse, distribution, options] evaluates EvalPulse[H, pulse, options] for each member of the distribution and takes the expectation value over results. In the case of Unitaries, the expectation value is taken in superoperator space. The distribution should be formatted as in GDistribution: distribution={{prob1,prob2,...},{{symb1->val11,symb2->val12,...},{symb1->val21,symb2->val22,...},...}}.";
+EvalPulseSequenceOverDist::usage = "EvalPulseSequenceOverDist[H, pulse, distribution, options] evaluates EvalPulseSequence[H, pulse, options] for each member of the distribution and takes the expectation value over results. In the case of Unitaries, the expectation value is taken in superoperator space. The distribution should be formatted as in GDistribution: distribution={{prob1,prob2,...},{{symb1->val11,symb2->val12,...},{symb1->val21,symb2->val22,...},...}}.";
+
+
+(* ::Subsection::Closed:: *)
+(*Implementation*)
+
+
+Begin["`Private`"];
+
+
+EvalPulseOverDist[H_?DriftHamQ,pulse_?PulseQ,distribution_?DistributionQ,opt:OptionsPattern[SimulationOptions]]:=Module[
+	{allData,probs,reps,heads,AddHead,out={}},
+
+	{probs,reps}=distribution;
+	allData=Table[
+		With[{Hval=H/.rep,pval=pulse/.rep,optval={opt}/.rep},
+			EvalPulse[Hval,pval,Sequence@@optval]
+		],
+		{rep,reps}
+	];
+
+	heads=allData[[1,All,1]];
+	AddHead[head_,val_]:=AppendTo[out,{head,val}];
+
+	AddHead[TimeVector,TimeVector[First@allData]];
+	If[MemberQ[heads,States],
+		AddHead[States,Sum[probs[[n]]States[allData[[n]]],{n,Length@probs}]]
+	];
+	If[MemberQ[heads,Observables],
+		AddHead[Observables,Sum[probs[[n]]Observables[allData[[n]]]\[Transpose],{n,Length@probs}]]
+	];
+	If[MemberQ[heads,Functions],
+		AddHead[Functions,Sum[probs[[n]]Functions[allData[[n]]]\[Transpose],{n,Length@probs}]]
+	];
+	If[MemberQ[heads,Superoperators],
+		AddHead[Superoperators,Sum[probs[[n]]Superoperators[allData[[n]]],{n,Length@probs}]]
+	];
+	If[MemberQ[heads,Unitaries],
+		AddHead[Superoperators,Sum[probs[[n]](conjugation/@Unitaries[allData[[n]]]),{n,Length@probs}]]
+	];
+	out
+]
+
+
+EvalPulseSequenceOverDist[H_?DriftHamQ,pulse_?PulseSequenceQ,distribution_?DistributionQ,opt:OptionsPattern[SimulationOptions]]:=Module[
+	{allData,probs,reps,heads,AddHead,out={}},
+
+	{probs,reps}=distribution;
+	allData=Table[
+		With[{Hval=H/.rep,pval=pulse/.rep,optval={opt}/.rep},
+			EvalPulseSequence[Hval,pval,Sequence@@optval]
+		],
+		{rep,reps}
+	];
+
+	heads=allData[[1,All,1]];
+	AddHead[head_,val_]:=AppendTo[out,{head,val}];
+
+	AddHead[TimeVector,TimeVector[First@allData]];
+	If[MemberQ[heads,States],
+		AddHead[States,Sum[probs[[n]]States[allData[[n]]],{n,Length@probs}]]
+	];
+	If[MemberQ[heads,Observables],
+		AddHead[Observables,Sum[probs[[n]]Observables[allData[[n]]]\[Transpose],{n,Length@probs}]]
+	];
+	If[MemberQ[heads,Functions],
+		AddHead[Functions,Sum[probs[[n]]Functions[allData[[n]]]\[Transpose],{n,Length@probs}]]
+	];
+	If[MemberQ[heads,Superoperators],
+		AddHead[Superoperators,Sum[probs[[n]]Superoperators[allData[[n]]],{n,Length@probs}]]
+	];
+	If[MemberQ[heads,Unitaries],
+		AddHead[Superoperators,Sum[probs[[n]](conjugation/@Unitaries[allData[[n]]]),{n,Length@probs}]]
+	];
+	out
+]
 
 
 End[];
