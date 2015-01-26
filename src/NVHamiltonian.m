@@ -553,7 +553,7 @@ PlotFrame[frames__]:=
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*NV and Lattice Geometry*)
 
 
@@ -572,8 +572,9 @@ E3::usage = "The 3rd diamond lattice vector. This direction is rotated down from
 
 UnitCell::usage = "UnitCell is a list of Vectors specifying the location of the 18 atoms in a diamond lattice. The coordinates are normalized such that the distance between nearest atoms is 1. The width of the cell is therefore 4/Sqrt[3], and the diameter is 4.";
 UnitCellWidth::usage = "The width of the cube containing the diamond unit cell, given that the distance between atoms is normalized to 1. Thus, this value is 4/Sqrt[3].";
-UnitCellGraphic::usage = "UnitCellGraphic is a graphic of all atoms in the diamond unit cell.";
+UnitCellGraphic::usage = "UnitCellGraphic is a graphic of all atoms in the diamond unit cell. See also LaticePositionsGraphic.";
 LatticePositions::usage = "LatticePositions[radius] returns a list of Vectors of the positions of all atoms in a diamond lattice no farther than radius from the origin. Radius is in units of nm, or, can contain the symbol \[Lambda], which is the distance between adjacent atoms in the lattice. If radius contains floating point, then the output is likewise numeric, otherwise, it is exact, and takes much longer.";
+LatticePositionsGraphic::usage = "LatticePositionsGraphic[radius_,plotNV_:True,carbonOpacity_:1,OptionsPattern[Graphiccs3D]] plots all of the lattice positions from LatticePositions[radius]. See also UnitCellGraphic.";
 
 
 (* ::Subsection:: *)
@@ -600,7 +601,7 @@ NVOrientationToFrame[8]=EulerAngles[0,ArcCos[-1/3]-\[Pi],4\[Pi]/3];
 End[]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Lattice Positions*)
 
 
@@ -642,8 +643,8 @@ UnitCellWidth = Norm[E0-E2+E3-E1];
 UnitCellGraphic := Module[{lines, positions},
 	positions = Value/@UnitCell;
 	lines = Flatten[Outer[If[Norm[#1-#2]==1,Tube[{##}],{}]&,positions,positions,1]];
-	lines = Join[lines, Flatten[Outer[If[Norm[#1-#2]==4/Sqrt[3],Tube[{##}],{}]&,positions,positions,1]]];
-	Graphics3D[Join[Tooltip[Sphere[#,0.2],Simplify@#]&/@positions,lines],Boxed->False]
+	lines = Join[lines, Flatten[Outer[If[MemberQ[positions[[{1,18,17,16,15,11,10,9}]],#1]&&Norm[#1-#2]==4/Sqrt[3],Tube[{##}],{}]&,positions,positions,1]]];
+	Graphics3D[{GrayLevel[.5],Tooltip[Sphere[#,0.2],Simplify@#]&/@positions,White,lines},Boxed->False]
 ]
 
 
@@ -651,20 +652,46 @@ UnitCellGraphic := Module[{lines, positions},
 (*This implementation is rather computationally ineffecient.*)
 
 
-LatticePositions[radius_] := Module[{positions, ncells, unitrad, numeric, uc, output},
+LatticePositions[radius_] := Module[{positions, ncells, unitrad, numeric, uc, output,ex,ey,ez},
 	numeric = Not[(radius/.x_Real:>I)===radius];
 	unitrad = InsertConstants@Simplify[radius / \[Lambda]];
 	ncells = Round[1.1*InsertConstants[unitrad / (UnitCellWidth)]];
 	uc = If[numeric, N@UnitCell, UnitCell];
+	(*these are the unit vectors in the coordinate frame of the cell*)
+	ex = Vector[{-1/Sqrt[6],1/Sqrt[2],1/Sqrt[3]},Cartesian];
+	ey=Vector[{Sqrt[2/3],0,1/Sqrt[3]},Cartesian];
+	ez=Vector[{-1/Sqrt[6],-1/Sqrt[2],1/Sqrt[3]},Cartesian];
 	output = Select[DeleteDuplicates[
 		Flatten@Table[
-			(Vector[{x,y,z}*UnitCellWidth,Cartesian]+#&/@uc),
+			((UnitCellWidth*(x*ex+y*ey+z*ez)+#)&/@uc),
 			{x,-ncells,ncells},
 			{y,-ncells,ncells},
 			{z,-ncells,ncells}
 		]
 	], Norm[Value@#]<=unitrad&];
 	output
+]
+
+
+LatticePositionsGraphic[radius_,plotNV_:True,carbonOpacity_:1,opt:OptionsPattern[Graphics3D]]:=Module[{O={0,0,0},r=.3,tr=1/10,tc=Yellow,lp,tubelist},
+	lp=Value/@LatticePositions[radius];
+	tubelist=DeleteDuplicates[Select[Flatten[Outer[If[0<Norm[#1-#2]<=1.1,{#1,#2},None]&,lp,lp,1],1],#=!=None&],#1==#2||#1==Reverse[#2]&];
+	If[plotNV,
+		lp=Select[lp,Norm[#-{0,0,1}]>0&&Norm[#]>0&];
+	];
+	Graphics3D[
+		{
+			If[plotNV,
+				{Yellow,Map[{Opacity[#[[1]]],Sphere[O,#[[2]]*r]}&,{{1,0.6},{0.6,0.8},{0.2,1},{0.1,1.2}},1]},
+				{}
+			],
+			Opacity[1],Blue,Sphere[Value@E0,r],
+			GrayLevel[.2],Opacity[carbonOpacity],Map[Sphere[#,r]&,lp],
+			Yellow,Tube[#,tr]&/@tubelist
+		},
+		opt,
+		Boxed->False
+	]
 ]
 
 
@@ -765,7 +792,7 @@ CheckOptions[OptionsPattern[NVHamiltonian]]:=
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Nuclei*)
 
 
