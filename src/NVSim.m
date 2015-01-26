@@ -120,11 +120,11 @@ DistributionQ[dist_]:=ListQ[dist]&&(Length[dist]==2)&&(Length[First@dist]==Lengt
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Options and Helper Functions*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Usage Declarations*)
 
 
@@ -157,6 +157,9 @@ GetPollingInterval::usage = "GetPollingInterval[pollingInterval,T] returns T if 
 
 DivideEvenly::usage = "DivideEvenly[dt,T] returns the largest number no bigger than dt such that T/dt is an integer.";
 MakeMultipleOf::usage = "MakeMultipleOf[dt,T] returns the largest integer multiple of dt smaller than T. (And if T<dt, just returns dt.)";
+
+
+LindbladSuper::usage = "LindbladSuper[L_?LindbladQ] returns the super generator of the given Lindblad form in column stacking convention.";
 
 
 (* ::Subsection:: *)
@@ -228,7 +231,7 @@ CheckStepSizeVsTotalTime[dt_,T_]:=
 	]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Superoperator functions*)
 
 
@@ -474,14 +477,40 @@ EvalPulse::usage = "EvalPulse[H,p] is the work house of the simulator. H is the 
 
 
 (* ::Subsection:: *)
+(*Messages*)
+
+
+EvalPulse::badControlDim = "The internal Hamiltonian dimension, `1`, is neither equal to nor a multiple of (one of) the control Hamiltonian dimension(s), `2`.";
+
+
+(* ::Subsection:: *)
 (*Implementations*)
 
 
 Begin["`Private`"];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Shaped Pulse Evaluators*)
+
+
+(* ::Text:: *)
+(*This helper function finds out whether the dimension of the internal Hamiltonian is a multiple of the dimension of a given control Hamiltonian. If this multiple exists, the control Hamiltonian is tensored with an identity of the correct size.*)
+
+
+MakeControlHamiltonian[dim_,Hctl_]:=Module[{ctlDim=Length@Hctl},
+	If[dim==ctlDim,
+		Hctl,
+		If[dim/ctlDim==Round[dim/ctlDim],
+			KroneckerProduct[Hctl,IdentityMatrix[dim/ctlDim]],
+			Message[EvalPulse::badControlDim,dim,ctlDim];
+		]
+	]
+]
+
+
+(* ::Text:: *)
+(*Now begin painful bookkeeping.*)
 
 
 EvalPulse[H_?DriftHamConstQ,p_?ShapedPulseQ,opts:OptionsPattern[SimulationOptions]]:=
@@ -492,14 +521,17 @@ EvalPulse[H_?DriftHamConstQ,p_?ShapedPulseQ,opts:OptionsPattern[SimulationOption
 			amps = NN[If[Length[pulse[[1]]]>2,pulse[[All,2;;-1]],pulse[[All,{2}]]]];
 			dt = pulse[[All,1]];
 		];
-		Hctls = p[[2]];
-		
+
 		(* Make a list of the times at which the pulse amplitude changes *)
 		dtAcc=Accumulate[dt];
 		T=Last@dtAcc;
 		
 		pt=GetPollingInterval[OptionValue[PollingInterval],T];
 		dim=Length[H];
+
+		(* Check size of/resize control Hamiltonians *)
+		Hctls = MakeControlHamiltonian[dim,#]&/@p[[2]];
+
 		(* Make a list of the times we need to poll at *)
 		pollTimes=Table[s,{s,pt,T,pt}];
 		(* For each of the following times, we need to do a MatrixExp *)
@@ -541,7 +573,6 @@ EvalPulse[H_?DriftHamNonConstQ,p_?ShapedPulseQ,opts:OptionsPattern[SimulationOpt
 			amps = NN[If[Length[pulse[[1]]]>2,pulse[[All,2;;-1]],pulse[[All,{2}]]]];
 			dt = pulse[[All,1]];
 		];
-		Hctls = p[[2]];
 		nSteps=Length[dt];
 
 		(* Make a list of the times at which the pulse amplitude changes *)
@@ -551,6 +582,9 @@ EvalPulse[H_?DriftHamNonConstQ,p_?ShapedPulseQ,opts:OptionsPattern[SimulationOpt
 		dim=Length[H[0.0]];
 		ds=GetStepSize[H,OptionValue[StepSize]];
 		pt=GetPollingInterval[OptionValue[PollingInterval],T,ds];
+
+		(* Check size of/resize control Hamiltonians *)
+		Hctls = MakeControlHamiltonian[dim,#]&/@p[[2]];
 
 		(* Make a list of the times we need to poll at *)
 		pollTimes=Table[s,{s,pt,T,pt}];
@@ -716,7 +750,7 @@ EvalPulse[H_?DriftHamNonConstQ,T_?DriftPulseQ,opts:OptionsPattern[SimulationOpti
 	]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Lindblad Pulse Evaluators*)
 
 
