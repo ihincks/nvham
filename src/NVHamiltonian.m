@@ -72,7 +72,7 @@ Numerical::badinput = "The option Numerical must be set to one of True, False, o
 AngularUnits::badinput = "The option AngularUnits must be set to one of True, False, or Automatic.";
 
 
-ZeroFieldSplitting::badinput = "The ZeroFieldSplitting must be a single number/symbol, or a list of length three (Each one will be multiplied by Sx.Sx, Sy.Sy, and Sz.Sz respectively.).";
+ZeroFieldSplitting::badinput = "The ZeroFieldSplitting must be a single number/symbol, or a list of length three (Each one will be multiplied by Sx.Sx, Sy.Sy, and Sz.Sz respectively.), or a list of two, {Dpar, Dperp}, Dpar Sz.Sz and Dperp (Sx.Sx-Sy.Sy).";
 
 
 OutputFrame::badframe = "The output frame must be one of LabFrame, CrystalFrame, ZFSFrame, or ZeemanFrame.";
@@ -93,7 +93,7 @@ DipoleDipoleHamiltonian::equallocations = "The dipole-dipole Hamilotian was requ
 (*Predicates*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Usage Declarations*)
 
 
@@ -103,6 +103,7 @@ NucleusQ::usage = "CarbonQ[c] returns True iff one of CarbonQ or NitrogenQ holds
 
 
 Vector3Q::usage = "Vector3Q[v] returns True iff v is a vector of length 3.";
+Vector2Q::usage = "Vector2Q[v] returns True iff v is a vector of length 2.";
 Matrix3Q::usage = "Matrix3Q[m] returns True iff m is a matrix of height 3.";
 
 
@@ -117,7 +118,7 @@ LabFrame::usage = "";ZFSFrame::usage = "";CrystalFrame::usage =  "";ZeemanFrame:
 Carbon::usage = ""; Nitrogen::usage = "";
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Implementations*)
 
 
@@ -129,6 +130,7 @@ NitrogenQ[c_]:=Head[c]===Nitrogen
 NucleusQ[c_]:=CarbonQ[c]||NitrogenQ[c]
 
 
+Vector2Q[v_]:=VectorQ[v]&&Length[v]==2
 Vector3Q[v_]:=VectorQ[v]&&Length[v]==3
 Matrix3Q[m_]:=MatrixQ[m]&&Length[m]==3
 
@@ -191,7 +193,7 @@ InsertConstants[expr_]:=expr/.$constants
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Visualization Tools*)
 
 
@@ -551,7 +553,7 @@ PlotFrame[frames__]:=
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*NV and Lattice Geometry*)
 
 
@@ -566,6 +568,12 @@ E0::usage = "The 0th diamond lattice vector. This direction is parallel to the Z
 E1::usage = "The 1st diamond lattice vector. This direction is rotated down from the ZFS axis by angle ArcCos[-1/3]. This vector has unit length 1, and so represents a length equal to one bond length.";
 E2::usage = "The 2nd diamond lattice vector. This direction is rotated down from the ZFS axis by angle ArcCos[-1/3], and clockwise about z by 2\[Pi]/3. This vector has unit length 1, and so represents a length equal to one bond length.";
 E3::usage = "The 3rd diamond lattice vector. This direction is rotated down from the ZFS axis by angle ArcCos[-1/3], and clockwise about z by 4\[Pi]/3. This vector has unit length 1, and so represents a length equal to one bond length.";
+
+
+UnitCell::usage = "UnitCell is a list of Vectors specifying the location of the 18 atoms in a diamond lattice. The coordinates are normalized such that the distance between nearest atoms is 1. The width of the cell is therefore 4/Sqrt[3], and the diameter is 4.";
+UnitCellWidth::usage = "The width of the cube containing the diamond unit cell, given that the distance between atoms is normalized to 1. Thus, this value is 4/Sqrt[3].";
+UnitCellGraphic::usage = "UnitCellGraphic is a graphic of all atoms in the diamond unit cell.";
+LatticePositions::usage = "LatticePositions[radius] returns a list of Vectors of the positions of all atoms in a diamond lattice no farther than radius from the origin. Radius is in units of nm, or, can contain the symbol \[Lambda], which is the distance between adjacent atoms in the lattice. If radius contains floating point, then the output is likewise numeric, otherwise, it is exact, and takes much longer.";
 
 
 (* ::Subsection:: *)
@@ -592,7 +600,7 @@ NVOrientationToFrame[8]=EulerAngles[0,ArcCos[-1/3]-\[Pi],4\[Pi]/3];
 End[]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Lattice Positions*)
 
 
@@ -609,6 +617,57 @@ E2=Cartesian@Vector[{1,2\[Pi]/3,ArcCos[-1/3]},Spherical];
 E3=Cartesian@Vector[{1,4\[Pi]/3,ArcCos[-1/3]},Spherical];
 
 
+(* ::Text:: *)
+(*The standard diamond lattice. It is rotated, such that the cube enclosing the cell is not square to cartesian coordinates.*)
+
+
+UnitCell = {
+	0*E0,E0,
+	E0-E1,E0-E2,E0-E3,
+	2*E0-E1, 2*E0-E2, 2*E0-E3,
+	2*E0-2*E1, 2*E0-2*E2, 2*E0-2*E3,
+	2*E0-E1-E2, 2*E0-E2-E3, 2*E0-E3-E1,
+	E0-E2+E3-E1, E0-E3+E1-E2, E0-E1+E2-E3,
+	3*E0-E1-E2-E3
+};
+
+
+(* ::Text:: *)
+(*Evaluates to 4/Sqrt[3].*)
+
+
+UnitCellWidth = Norm[E0-E2+E3-E1];
+
+
+UnitCellGraphic := Module[{lines, positions},
+	positions = Value/@UnitCell;
+	lines = Flatten[Outer[If[Norm[#1-#2]==1,Tube[{##}],{}]&,positions,positions,1]];
+	lines = Join[lines, Flatten[Outer[If[Norm[#1-#2]==4/Sqrt[3],Tube[{##}],{}]&,positions,positions,1]]];
+	Graphics3D[Join[Tooltip[Sphere[#,0.2],Simplify@#]&/@positions,lines],Boxed->False]
+]
+
+
+(* ::Text:: *)
+(*This implementation is rather computationally ineffecient.*)
+
+
+LatticePositions[radius_] := Module[{positions, ncells, unitrad, numeric, uc, output},
+	numeric = Not[(radius/.x_Real:>I)===radius];
+	unitrad = InsertConstants@Simplify[radius / \[Lambda]];
+	ncells = Round[1.1*InsertConstants[unitrad / (UnitCellWidth)]];
+	uc = If[numeric, N@UnitCell, UnitCell];
+	output = Select[DeleteDuplicates[
+		Flatten@Table[
+			(Vector[{x,y,z}*UnitCellWidth,Cartesian]+#&/@uc),
+			{x,-ncells,ncells},
+			{y,-ncells,ncells},
+			{z,-ncells,ncells}
+		]
+	], Norm[Value@#]<=unitrad&];
+	output
+]
+
+
 End[];
 
 
@@ -616,7 +675,7 @@ End[];
 (*Options*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Usage Declarations*)
 
 
@@ -690,7 +749,7 @@ CheckOptions[OptionsPattern[NVHamiltonian]]:=
 		If[Not[MemberQ[{True,False,Automatic},OptionValue[Numerical]]],Message[Numerical::badinput];abort=True];
 		If[Not[MemberQ[{True,False,Automatic},OptionValue[AngularUnits]]],Message[AngularUnits::badinput];abort=True];
 
-		If[ListQ[OptionValue[ZeroFieldSplitting]]&&Not[Vector3Q[OptionValue[ZeroFieldSplitting]]],Message[ZeroFieldSplitting::badinput];abort=True];
+		If[ListQ[OptionValue[ZeroFieldSplitting]]&&Not[Vector2Q[OptionValue[ZeroFieldSplitting]]||Vector3Q[OptionValue[ZeroFieldSplitting]]],Message[ZeroFieldSplitting::badinput];abort=True];
 
 		If[Not[ValidReferenceFrameQ[OptionValue[OutputFrame]]],Message[OutputFrame::badframe];abort=True];
 
@@ -706,7 +765,7 @@ CheckOptions[OptionsPattern[NVHamiltonian]]:=
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Nuclei*)
 
 
@@ -763,7 +822,7 @@ Carbon/:GyromagneticRatio[Carbon[___]]:=\[Gamma]c
 End[];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Dipole Carbon*)
 
 
@@ -1091,7 +1150,7 @@ End[];
 ClearAll[ZeemanHamiltonian,HyperfineHamiltonian];
 
 
-ZFSHamiltonian::usage = "";
+ZFSHamiltonian::usage = "ZFSHamiltonian[{Dx_,Dy_,Dz_},nvSpin_], ZFSHamiltonian[{Dpar, Dperp},nvSpin_], or ZFSHamiltonian[D,nvSpin_]";
 
 
 ZeemanHamiltonian::usage = "";
@@ -1121,6 +1180,7 @@ Begin["`Private`"];
 
 
 ZFSHamiltonian[{Dx_,Dy_,Dz_},nvSpin_]:= Dx Spin[nvSpin,1].Spin[nvSpin,1] + Dy Spin[nvSpin,2].Spin[nvSpin,2] + Dz Spin[nvSpin,3].Spin[nvSpin,3];
+ZFSHamiltonian[{Dpar_,Dperp_},nvSpin_]:= Dperp( Spin[nvSpin,1].Spin[nvSpin,1] - Spin[nvSpin,2].Spin[nvSpin,2]) + Dpar Spin[nvSpin,3].Spin[nvSpin,3];
 ZFSHamiltonian[D_,nvSpin_]:= D Spin[nvSpin,3].Spin[nvSpin,3];
 
 
