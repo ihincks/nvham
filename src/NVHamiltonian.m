@@ -142,7 +142,7 @@ End[];
 
 
 (* ::Section::Closed:: *)
-(*Physical Quantities*)
+(*Physical Quantities and Spin*)
 
 
 (* ::Subsection::Closed:: *)
@@ -167,6 +167,22 @@ $constants::usage = "A list of replacement rules for the numerical values of phy
 InsertConstants::usage = "InsertConstants[expr] replaces all physical constants appearing in the expression expr with their numerical value. Check the usage text of a given physical constant for the units used.";
 
 
+X::usage = "The 2x2 Pauli X operator.";
+Y::usage = "The 2x2 Pauli Y operator.";
+Z::usage = "The 2x2 Pauli Z operator.";
+
+
+Si::usage="Spin-1 Identity Matrix";
+Sx::usage="Spin-1 X Matrix.";
+Sy::usage="Spin-1 Y Matrix.";
+Sz::usage="Spin-1 Z Matrix.";
+Syp::uage="Spin-1 Y Matrix in the interaction frame of Sz.Sz.";
+Sxp::usage="Spin-1 X Matrix in the interaction frame of Sz.Sz.";
+Sxx::usage="Spin-1 basis filler: gets the -1->1 transition";
+Syy::usage="Spin-1 basis filler: gets the -1->1 transition";
+S0::usage="Spin-1 basis filler: the projection onto ms=0";
+
+
 (* ::Subsection::Closed:: *)
 (*Implementations*)
 
@@ -188,6 +204,23 @@ $constants =
 
 
 InsertConstants[expr_]:=expr/.$constants
+
+
+X={{0,1},{1,0}};
+Y={{0,-I},{I,0}};
+Z={{1,0},{0,-1}};
+
+
+Sx={{0,1,0},{1,0,1},{0,1,0}}/Sqrt[2];
+Sy={{0,-I,0},{I,0,-I},{0,I,0}}/Sqrt[2];
+Sz={{1,0,0},{0,0,0},{0,0,-1}};
+
+Si=IdentityMatrix[3];
+Syp={{0,-I,0},{I,0,I},{0,-I,0}}/Sqrt[2];
+Sxp={{0,-1,0},{-1,0,1},{0,1,0}}/Sqrt[2];
+Sxx={{0,0,1},{0,0,0},{1,0,0}};
+Syy={{0,0,-I},{0,0,0},{I,0,0}};
+S0={{0,0,0},{0,1,0},{0,0,0}};
 
 
 End[];
@@ -254,9 +287,6 @@ NVForm[H_,simplifier_:Simplify]:=Module[
 ]
 
 
-{{1}}\[CircleTimes]X
-
-
 End[];
 
 
@@ -264,7 +294,7 @@ End[];
 (*Frames and Vectors*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Usage Declarations*)
 
 
@@ -306,7 +336,7 @@ EulerAngles::usage = "EulerAngles[\[Theta]z1,\[Theta]y,\[Theta]z2] returns a Fra
 PlotFrame::usage = "PlotFrame[frame1,frame2,...] plots each Frame given as an argement on the same figure.";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Implementations*)
 
 

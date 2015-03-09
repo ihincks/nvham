@@ -21,28 +21,12 @@ Spin::badindex = "An invalid spin index was entered.";
 IdentityInsert::baddimensions = "The size of the input matrix does not match the product of the specified dimensions.";
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Matrices, Bases, and Linear Algebra*)
 
 
 (* ::Subsection:: *)
 (*Usage Declarations*)
-
-
-X::usage = "The 2x2 Pauli X operator.";
-Y::usage = "The 2x2 Pauli Y operator.";
-Z::usage = "The 2x2 Pauli Z operator.";
-
-
-Si::usage="Spin-1 Identity Matrix";
-Sx::usage="Spin-1 X Matrix.";
-Sy::usage="Spin-1 Y Matrix.";
-Sz::usage="Spin-1 Z Matrix.";
-Syp::uage="Spin-1 Y Matrix in the interaction frame of Sz.Sz.";
-Sxp::usage="Spin-1 X Matrix in the interaction frame of Sz.Sz.";
-Sxx::usage="Spin-1 basis filler: gets the -1->1 transition";
-Syy::usage="Spin-1 basis filler: gets the -1->1 transition";
-S0::usage="Spin-1 basis filler: the projection onto ms=0";
 
 
 Spin::usage = "Spin[s] returns the spin operators for spin s particles. Spin[Carbon[...]] and Spin[Nitrogen[...]] return the spin operators of the respected nucleus.";
@@ -69,23 +53,6 @@ NestCom[B,A,n]=Com[B,NestCom[B,A,n-1]].";
 
 
 Begin["`Private`"];
-
-
-X={{0,1},{1,0}};
-Y={{0,-I},{I,0}};
-Z={{1,0},{0,-1}};
-
-
-Sx={{0,1,0},{1,0,1},{0,1,0}}/Sqrt[2];
-Sy={{0,-I,0},{I,0,-I},{0,I,0}}/Sqrt[2];
-Sz={{1,0,0},{0,0,0},{0,0,-1}};
-
-Si=IdentityMatrix[3];
-Syp={{0,-I,0},{I,0,I},{0,-I,0}}/Sqrt[2];
-Sxp={{0,-1,0},{-1,0,1},{0,1,0}}/Sqrt[2];
-Sxx={{0,0,1},{0,0,0},{1,0,0}};
-Syy={{0,0,-I},{0,0,0},{I,0,0}};
-S0={{0,0,0},{0,1,0},{0,0,0}};
 
 
 Spin[1/2]={X,Y,Z}/2;
