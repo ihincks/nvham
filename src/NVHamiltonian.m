@@ -9,7 +9,7 @@ BeginPackage["NVHamiltonian`",{"QuantumSystems`","Tensor`"}];
 (*-Move the SpectrumData function here, or into QuantumUtils` from NVUtils`*)
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Error Messages*)
 
 
@@ -47,7 +47,10 @@ MagneticField::notvector = "The static field must be input as a Vector, e.g., Ve
 DipoleDipoleHamiltonian::equallocations = "The dipole-dipole Hamilotian was requested for two spins at the same physical locatian; this would result in division by 0. Instead, the 0 Hamiltonian has been return as the dipole-dipole Hamiltonian.";
 
 
-(* ::Section:: *)
+NVAverageHamiltonian::timeDep = "The Hamiltonian was detected as being time dependent, but the time dependence was not the same frequency as the rotating frame. If this is surprising, check symbols, units, and AngularUnits. Otherwise, your time dependence must be very slow compared to your rotating frame for this approximation to be effective. "
+
+
+(* ::Section::Closed:: *)
 (*Predicates*)
 
 
@@ -105,6 +108,10 @@ End[];
 
 (* ::Subsection:: *)
 (*Usage Declarations*)
+
+
+t::usage = "Time. Steal the symbol t all for ourselves.";
+Protect[t];
 
 
 \[Gamma]e::usage = "The gyromagnetic ratio of an electron. Units of Hz/G.";
@@ -701,7 +708,7 @@ LatticePositionsGraphic[radius_,plotNV_:True,carbonOpacity_:1,opt:OptionsPattern
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Options*)
 
 
@@ -1170,7 +1177,7 @@ Taminiau12Nucleus[6] = Carbon[10^6*{{0,0,0},{0,0,0},{0.0251 Sin[51*\[Pi]/180],0,
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Hamiltonians*)
 
 
@@ -1429,7 +1436,7 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[]]:=
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Approximation Tools*)
 
 
@@ -1453,7 +1460,7 @@ Begin["`Private`"];
 
 NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 	Module[
-		{H,H0,U,ndim,sgn,t,\[Omega],numerical,angularUnits,Heff,Hm,Hp,Hout,z,rotation},
+		{H,H0,Hm,Hp,U,ndim,sgn,\[Omega],numerical,angularUnits,Heff,Hout,z,rotation,com,getBlock},
 
 		(* First calculate the lab frame hamiltonian *)
 		H = NVHamiltonian[nuclei, opt];
@@ -1469,30 +1476,57 @@ NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamilton
 		ndim = Times@@(SpinDim/@{nuclei});
 		\[Omega]=If[numerical,InsertConstants[\[Omega]rot],\[Omega]rot];
 		If[angularUnits,\[Omega]=2*\[Pi]*\[Omega]];
-
-    	(* Finally, do the actual calculation *)
+		
+		(* Finally, do the actual calculation *)
 		If[order < 0,
 			H0 = ZFSHamiltonian[\[Omega], OptionValue[NVSpin]]\[CircleTimes]IdentityMatrix[ndim];
 			U[sgn_] = MatrixExp[sgn I t H0];
-			Heff[s_]=U[1].(H-H0).U[-1]/.t->s;Heff,
+			U[1].(H-H0).U[-1],
+			If[FreeQ[H, t],
+				H0 = H;
+				Hp = ConstantArray[0, {Length[H],Length[H]}];
+				Hm = ConstantArray[0, {Length[H],Length[H]}];,
+				H = H // TrigToExp;
+				Hp = Coefficient[H, Exp[I \[Omega] t]];
+				Hm = Coefficient[H, Exp[-I \[Omega] t]];
+				H0 = H - Hp Exp[I \[Omega] t] - Hm Exp[-I \[Omega] t];
+				If[Norm[Hp]==0,Message[NVAverageHamiltonian::timeDep]];
+			];
+			
+			com[m_,n_]:=Com[Heff[m],Heff[n]];
+			com[m_,n_,k_]:=Com[Heff[m],com[n,k]];
+			getBlock[M_,i_,j_]:=M[[(i-1)*ndim+1;;i*ndim, (j-1)*ndim+1;;j*ndim]];
 
 			z=ConstantArray[0,{ndim,ndim}];
 			rotation=\[Omega]*IdentityMatrix[ndim];
 			(* Compute the three Floquet coefficients *)
-			H0 = ArrayFlatten[{{H[[1;;ndim,1;;ndim]]-rotation,z,H[[1;;ndim,2*ndim+1;;-1]]},{z,H[[ndim+1;;2*ndim,ndim+1;;2*ndim]],z},{H[[2*ndim+1;;-1,1;;ndim]],z,H[[2*ndim+1;;-1,2*ndim+1;;-1]]-rotation}}];
-			Hm = ArrayFlatten[{{z,z,z},{H[[ndim+1;;2*ndim,1;;ndim]],z,H[[ndim+1;;2*ndim,2*ndim+1;;-1]]},{z,z,z}}];
-			Hp = ArrayFlatten[{{z,H[[1;;ndim,ndim+1;;2*ndim]],z},{z,z,z},{z,H[[2*ndim+1;;-1,ndim+1;;2*ndim]],z}}];
-			Hout=H0;
+			Heff[0] = ArrayFlatten[{
+				{getBlock[H0,1,1]-rotation,z,getBlock[H0,1,3]},
+				{z,getBlock[H0,2,2],z},
+				{getBlock[H0,3,1],z,getBlock[H0,3,3]-rotation}
+			}];
+			Heff[-1] = ArrayFlatten[{
+				{z,z,z},
+				{getBlock[H0,2,1],z,getBlock[H0,1,3]},
+				{z,z,z}
+			}];
+			Heff[1] = ArrayFlatten[{
+				{z,getBlock[H0,1,2],z},
+				{z,z,z},
+				{z,getBlock[H0,3,1],z}
+			}];
+			Hout=Heff[0];
+
 
 			If[order>=1,
-				Hout=Hout+(Com[H0,Hp]-Com[H0,Hm]-Com[Hm,Hp])/\[Omega];
+				Hout=Hout+(com[0,1]-com[0,-1]-com[-1,1])/\[Omega];
 			];
 			If[order>=2,
 				Hout=Hout+(
-					 (Com[Hm,Com[H0,Hp]]+Com[Hp,Com[H0,Hm]])
-					-2(Com[H0,Com[H0,Hp]]+Com[H0,Com[H0,Hm]])
-					+(Com[Hp,Com[Hp,H0]]+Com[Hm,Com[Hm,H0]]-Com[Hm,Com[Hp,H0]]-Com[Hp,Com[Hm,H0]])
-					+2(Com[Hp,Com[Hm,Hp]]+Com[Hm,Com[Hp,Hm]]))/(2*\[Omega]^2);
+					 (com[-1,0,1]+com[1,0,-1])
+					-2(com[0,0,1]+com[0,0,-1])
+					+(com[1,1,0]+com[-1,-1,0]-com[-1,1,0]-com[1,-1,0])
+					+2(com[1,-1,1]+com[-1,1,-1]))/(2*\[Omega]^2);
 			];
 			If[order>=3,Print["Warning: Third order AH not implemented. Truncating to second order instead."];];
 			Hout
