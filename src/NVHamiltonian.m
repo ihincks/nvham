@@ -9,7 +9,7 @@ BeginPackage["NVHamiltonian`",{"QuantumSystems`","Tensor`"}];
 (*-Move the SpectrumData function here, or into QuantumUtils` from NVUtils`*)
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Error Messages*)
 
 
@@ -36,8 +36,8 @@ ZeroFieldSplitting::badinput = "The ZeroFieldSplitting must be a single number/s
 OutputFrame::badframe = "The output frame must be one of LabFrame, CrystalFrame, ZFSFrame, or ZeemanFrame.";
 
 
-StaticField::badframe = "The static field's frame must be one of LabFrame, CrystalFrame, or ZFSFrame.";
-StaticField::notvector = "The static field must be input as a Vector, e.g., Vector[{0,0,10}, Cartesian].";
+MagneticField::badframe = "The static field's frame must be one of LabFrame, CrystalFrame, or ZFSFrame.";
+MagneticField::notvector = "The static field must be input as a Vector, e.g., Vector[{0,0,10}, Cartesian].";
 
 
 (* ::Subsection:: *)
@@ -47,7 +47,7 @@ StaticField::notvector = "The static field must be input as a Vector, e.g., Vect
 DipoleDipoleHamiltonian::equallocations = "The dipole-dipole Hamilotian was requested for two spins at the same physical locatian; this would result in division by 0. Instead, the 0 Hamiltonian has been return as the dipole-dipole Hamiltonian.";
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Predicates*)
 
 
@@ -99,7 +99,7 @@ ValidReferenceFrameQ[input_]:=MemberQ[{LabFrame,ZFSFrame,CrystalFrame,ZeemanFram
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Physical Quantities and Spin*)
 
 
@@ -347,7 +347,7 @@ ChangeCoordinates[v_Vector,newCoords_]:=Vector[ChangeCoordinates[Value@v,Coordin
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Vectors*)
 
 
@@ -712,8 +712,8 @@ End[];
 NVHamiltonian::usage = "";
 NVOrientation::usage = "";
 ZeroFieldSplitting::usage = "";
-StaticField::usage = "";
-StaticFieldFrame::usage = "";
+MagneticField::usage = "";
+MagneticFieldFrame::usage = "";
 NVSpin::usage = "";
 OutputFrame::usage = "";
 CrystalOrientation::usage = "";
@@ -745,8 +745,8 @@ Options[NVHamiltonian]=
 	{
 		ZeroFieldSplitting -> \[CapitalDelta],
 		NVOrientation -> 1,
-		StaticField -> Vector[{0,0,0},Cartesian],
-		StaticFieldFrame -> LabFrame,
+		MagneticField -> Vector[{0,0,0},Cartesian],
+		MagneticFieldFrame -> LabFrame,
 		NVSpin -> 1,
 		OutputFrame -> ZFSFrame,		
 		CrystalOrientation -> IdentityFrame,
@@ -783,9 +783,9 @@ CheckOptions[OptionsPattern[NVHamiltonian]]:=
 
 		If[Not[ValidReferenceFrameQ[OptionValue[OutputFrame]]],Message[OutputFrame::badframe];abort=True];
 
-		If[Not[ValidReferenceFrameQ[OptionValue[StaticFieldFrame]]],Message[StaticField::badframe];abort=True];
-		If[OptionValue[StaticFieldFrame]===ZeemanFrame,Message[StaticField::badframe];abort=True];
-		If[Head[OptionValue[StaticField]]=!=Vector,Message[StaticField::notvector];abort=True];
+		If[Not[ValidReferenceFrameQ[OptionValue[MagneticFieldFrame]]],Message[MagneticField::badframe];abort=True];
+		If[OptionValue[MagneticFieldFrame]===ZeemanFrame,Message[MagneticField::badframe];abort=True];
+		If[Head[OptionValue[MagneticField]]=!=Vector,Message[MagneticField::notvector];abort=True];
 
 		If[abort,Abort[];]
 	]
@@ -795,7 +795,7 @@ CheckOptions[OptionsPattern[NVHamiltonian]]:=
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Nuclei*)
 
 
@@ -906,7 +906,7 @@ Nitrogen/:GyromagneticRatio[Nitrogen[x___]]:=If[Isotope[Nitrogen[x]]===15,\[Gamm
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Nuclear Database*)
 
 
@@ -1174,7 +1174,7 @@ End[];
 (*Hamiltonians*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Usage Declarations*)
 
 
@@ -1203,7 +1203,7 @@ NVHamiltonian::usage = "";
 (*Implementations*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*ZFS Hamlitonian*)
 
 
@@ -1218,7 +1218,7 @@ ZFSHamiltonian[D_,nvSpin_]:= D Spin[3][nvSpin].Spin[3][nvSpin];
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Zeeman Hamiltonian*)
 
 
@@ -1231,7 +1231,7 @@ ZeemanHamiltonian[\[Mu]_,{Bx_,By_,Bz_},spin_] := \[Mu](Bx Spin[1][spin] + By Spi
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Hyperfine Hamiltonian*)
 
 
@@ -1245,7 +1245,7 @@ HyperfineHamiltonian[spin1_,spin2_,A_]:= Sum[With[{i=ii,j=jj},A[[i,j]]*(Spin[i][
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Dipole Dipole Hamiltonian*)
 
 
@@ -1265,7 +1265,7 @@ DipoleDipoleHamiltonian[spin1_,spin2_,\[Gamma]1_,\[Gamma]2_,v1_Vector,v2_Vector]
 End[];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Quadrapolar Hamiltonian*)
 
 
@@ -1301,8 +1301,8 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[]]:=
 		CheckOptions[opt];
 
 		(* Convert the B field to various coordinate systems *)
-		cartesianB = Value@ChangeCoordinates[OptionValue[StaticField],Cartesian];
-		sphericalB = Value@ChangeCoordinates[OptionValue[StaticField],Spherical];
+		cartesianB = Value@ChangeCoordinates[OptionValue[MagneticField],Cartesian];
+		sphericalB = Value@ChangeCoordinates[OptionValue[MagneticField],Spherical];
 
 		(* We will need to be able to convert the placeholder frame names to actual Frames *)
 		frames:={LabFrame->labFrame, CrystalFrame->crystalFrame, ZFSFrame->zfsFrame, ZeemanFrame->zeemanFrame};
@@ -1310,36 +1310,36 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[]]:=
 		(* Deal with all of the frames first (except nuclei frames) *)
 		(* The idea is simple: set the OutputFrame to be the canonical basis, and compose all other frames with respect to this. *)
 		(* There is the natural ordering LabFrame > CrystalFrame > ZFSFrame. The ZeemanFrame is sort of independent of this 
-		higherarchy, and is determined by the option StaticFieldFrame *)
+		higherarchy, and is determined by the option MagneticFieldFrame *)
 		Which[
 			OptionValue[OutputFrame]===LabFrame,
 				labFrame = IdentityFrame;
 				crystalFrame = OptionValue[CrystalOrientation];
 				zfsFrame = FrameCompose[NVOrientationToFrame[OptionValue[NVOrientation]],crystalFrame];
-				zeemanFrame = FrameCompose[NVEulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[StaticFieldFrame]/.frames];,
+				zeemanFrame = FrameCompose[NVEulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[MagneticFieldFrame]/.frames];,
 			OptionValue[OutputFrame]===CrystalFrame,
 				crystalFrame = IdentityFrame;
 				labFrame = FrameInverse[OptionValue[CrystalOrientation]];
 				zfsFrame = NVOrientationToFrame[OptionValue[NVOrientation]];
-				zeemanFrame = FrameCompose[NVEulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[StaticFieldFrame]/.frames];,
+				zeemanFrame = FrameCompose[NVEulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[MagneticFieldFrame]/.frames];,
 			OptionValue[OutputFrame]===ZFSFrame,
 				zfsFrame = IdentityFrame;
 				crystalFrame = FrameInverse[NVOrientationToFrame[OptionValue[NVOrientation]]];
 				labFrame = FrameCompose[crystalFrame,FrameInverse[OptionValue[CrystalOrientation]]];
-				zeemanFrame = FrameCompose[OptionValue[StaticFieldFrame]/.frames,NVEulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];,
+				zeemanFrame = FrameCompose[OptionValue[MagneticFieldFrame]/.frames,NVEulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];,
 			OptionValue[OutputFrame]===ZeemanFrame,
 				zeemanFrame = IdentityFrame;
-				(* The ZeemanFrame case is special because the StaticField has the option of being written in any frame. *)
+				(* The ZeemanFrame case is special because the MagneticField has the option of being written in any frame. *)
 				Which[
-					OptionValue[StaticFieldFrame]===LabFrame,
+					OptionValue[MagneticFieldFrame]===LabFrame,
 						labFrame = FrameInverse[NVEulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];
 						crystalFrame = FrameCompose[OptionValue[CrystalOrientation],labFrame];
 						zfsFrame = FrameCompose[NVOrientationToFrame[OptionValue[NVOrientation]],crystalFrame];,
-					OptionValue[StaticFieldFrame]===CrystalFrame,
+					OptionValue[MagneticFieldFrame]===CrystalFrame,
 						crystalFrame = FrameInverse[NVEulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];
 						labFrame = FrameCompose[FrameInverse[OptionValue[CrystalOrientation]],crystalFrame];
 						zfsFrame = FrameCompose[NVOrientationToFrame[OptionValue[NVOrientation]],crystalFrame];,
-					OptionValue[StaticFieldFrame]===ZFSFrame,
+					OptionValue[MagneticFieldFrame]===ZFSFrame,
 						zfsFrame = FrameInverse[NVEulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];
 						crystalFrame = FrameCompose[FrameInverse[NVOrientationToFrame[OptionValue[NVOrientation]]],zfsFrame];
 						labFrame = FrameCompose[FrameInverse[OptionValue[CrystalOrientation]],crystalFrame];
@@ -1347,7 +1347,7 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[]]:=
 		];
 
 		(* Now write the magnetic field in the appropriate frame *)
-		cartesianB = FrameChange[cartesianB, OptionValue[StaticFieldFrame]/.frames, IdentityFrame];
+		cartesianB = FrameChange[cartesianB, OptionValue[MagneticFieldFrame]/.frames, IdentityFrame];
 
 		(* Determine the spin of the NV center. *)
 		nvSpin = OptionValue[NVSpin];
