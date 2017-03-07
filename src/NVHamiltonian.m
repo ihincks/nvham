@@ -40,7 +40,7 @@ If[$hasNVUtils,Needs["NVUtils`"]];
 
 
 (* ::Text:: *)
-(*The following unlucky functions are defined QuantumUtils`, but have different defintions in NVHamiltonian`. Therefore, it makes the most sense just to remove them here.*)
+(*The following unlucky functions are defined QuantumUtils`, but have different definitions in NVHamiltonian`. Therefore, it makes the most sense just to remove them here.*)
 
 
 If[$hasQuantumUtils,
@@ -141,11 +141,11 @@ ValidReferenceFrameQ[input_]:=MemberQ[{LabFrame,ZFSFrame,CrystalFrame,ZeemanFram
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Physical Quantities and Spin*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Usage Declarations*)
 
 
@@ -167,6 +167,10 @@ $constants::usage = "A list of replacement rules for the numerical values of phy
 InsertConstants::usage = "InsertConstants[expr] replaces all physical constants appearing in the expression expr with their numerical value. Check the usage text of a given physical constant for the units used.";
 
 
+SpinDim::usage = "SpinDim[halfInteger] returns the Hilbert space dimension of the given spin number";
+IdentityInsert::usage = "IdentityInsert[C,dimA,dimB,n1,n2,n3] assumes C is a square matrix acting on a bipartite system with dimensions dimA and dimB and proceeds to add identity operations before, in-between, and after the bipartite system, with dimensions n1, n2, and n3, respectively.";
+
+
 X::usage = "The 2x2 Pauli X operator.";
 Y::usage = "The 2x2 Pauli Y operator.";
 Z::usage = "The 2x2 Pauli Z operator.";
@@ -183,7 +187,7 @@ Syy::usage="Spin-1 basis filler: gets the -1->1 transition";
 S0::usage="Spin-1 basis filler: the projection onto ms=0";
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Implementations*)
 
 
@@ -201,6 +205,17 @@ $constants =
 	\[Lambda]     -> 0.154*10^-9,
 	\[HBar]     -> 1.054571726*10^\[Minus]34
 };
+
+
+SpinDim[s_?NumericQ]:=2*s+1
+
+
+IdentityInsert[C_,dimA_,dimB_,n_]:=
+	If[Length[C]!=dimA*dimB,
+		Message[IdentityInsert::baddimensions];Abort;,
+		ArrayFlatten[Map[IdentityMatrix[n]\[CircleTimes]#&,Partition[C,{dimB,dimB}],{2}]]
+	];
+IdentityInsert[C_,dimA_,dimB_,n1_,n2_,n3_]:=IdentityMatrix[n1]\[CircleTimes]IdentityInsert[C,dimA,dimB,n2]\[CircleTimes]IdentityMatrix[n3]
 
 
 InsertConstants[expr_]:=expr/.$constants
@@ -290,7 +305,7 @@ NVForm[H_,simplifier_:Simplify]:=Module[
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Frames and Vectors*)
 
 
@@ -583,7 +598,7 @@ PlotFrame[frames__]:=
 End[];
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*NV and Lattice Geometry*)
 
 
@@ -732,7 +747,7 @@ End[];
 (*Options*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Usage Declarations*)
 
 
@@ -822,11 +837,11 @@ CheckOptions[OptionsPattern[NVHamiltonian]]:=
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Nuclei*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Usage Declarations*)
 
 
@@ -842,13 +857,14 @@ Location::usage = "";
 QuadrapoleTensor::usage = "";
 Isotope::usage = "";
 GyromagneticRatio::usage = "";
+SpinValue::usage = "";
 
 
 (* ::Subsection:: *)
 (*Implementations*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Carbon*)
 
 
@@ -867,7 +883,7 @@ Carbon/:Location[Carbon[_]]:=Vector[{0,0,0},Cartesian]
 Carbon/:Isotope[Carbon[___]]:=13
 
 
-Carbon/:Spin[Carbon[___]]:=1/2
+Carbon/:SpinValue[Carbon[___]]:=1/2
 
 
 Carbon/:SpinDim[Carbon[___]]:=2
@@ -899,7 +915,7 @@ DipoleCarbon[vector_Vector]:=
 End[];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Nitrogen*)
 
 
@@ -920,10 +936,10 @@ Nitrogen/:QuadrapoleTensor[Nitrogen[_,_,Q_]]:=DiagonalMatrix[{0,0,Q}]
 Nitrogen/:Isotope[Nitrogen[isotope_,___]]:=isotope
 
 
-Nitrogen/:Spin[Nitrogen[x___]]:=If[Isotope[Nitrogen[x]]===15,1/2,1]
+Nitrogen/:SpinValue[Nitrogen[x___]]:=If[Isotope[Nitrogen[x]]===15,1/2,1]
 
 
-Nitrogen/:SpinDim[n:Nitrogen[___]]:=SpinDim[Spin[n]]
+Nitrogen/:SpinDim[n:Nitrogen[___]]:=SpinDim[SpinValue[n]]
 
 
 Nitrogen/:GyromagneticRatio[Nitrogen[x___]]:=If[Isotope[Nitrogen[x]]===15,\[Gamma]n15,\[Gamma]n14]
@@ -932,7 +948,7 @@ Nitrogen/:GyromagneticRatio[Nitrogen[x___]]:=If[Isotope[Nitrogen[x]]===15,\[Gamm
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Nuclear Database*)
 
 
@@ -940,7 +956,7 @@ End[];
 (*In this section, for convenience, we catalog various measurements and calculations of nuclear hyperfine tensors from literature.*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Usage Declarations*)
 
 
@@ -995,7 +1011,7 @@ Nuclear Spins Using a Weakly Coupled Electron Spin\", DOI: 10.1103/PhysRevLett.1
 (*Implementations*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Nuclear Database*)
 
 
@@ -1200,7 +1216,7 @@ End[];
 (*Hamiltonians*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Usage Declarations*)
 
 
@@ -1229,49 +1245,49 @@ NVHamiltonian::usage = "";
 (*Implementations*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*ZFS Hamlitonian*)
 
 
 Begin["`Private`"];
 
 
-ZFSHamiltonian[{Dx_,Dy_,Dz_},nvSpin_]:= Dx Spin[nvSpin,1].Spin[nvSpin,1] + Dy Spin[nvSpin,2].Spin[nvSpin,2] + Dz Spin[nvSpin,3].Spin[nvSpin,3];
-ZFSHamiltonian[{Dpar_,Dperp_},nvSpin_]:= Dperp( Spin[nvSpin,1].Spin[nvSpin,1] - Spin[nvSpin,2].Spin[nvSpin,2]) + Dpar Spin[nvSpin,3].Spin[nvSpin,3];
-ZFSHamiltonian[D_,nvSpin_]:= D Spin[nvSpin,3].Spin[nvSpin,3];
+ZFSHamiltonian[{Dx_,Dy_,Dz_},nvSpin_]:= Dx Spin[1][nvSpin].Spin[1][nvSpin] + Dy Spin[2][nvSpin].Spin[2][nvSpin] + Dz Spin[3][nvSpin].Spin[3][nvSpin];
+ZFSHamiltonian[{Dpar_,Dperp_},nvSpin_]:= Dperp( Spin[1][nvSpin].Spin[1][nvSpin] - Spin[2][nvSpin].Spin[2][nvSpin]) + Dpar Spin[3][nvSpin].Spin[3][nvSpin];
+ZFSHamiltonian[D_,nvSpin_]:= D Spin[3][nvSpin].Spin[3][nvSpin];
 
 
 End[];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Zeeman Hamiltonian*)
 
 
 Begin["`Private`"];
 
 
-ZeemanHamiltonian[\[Mu]_,{Bx_,By_,Bz_},spin_] := \[Mu](Bx Spin[spin,1] + By Spin[spin,2] + Bz Spin[spin,3])
+ZeemanHamiltonian[\[Mu]_,{Bx_,By_,Bz_},spin_] := \[Mu](Bx Spin[1][spin] + By Spin[2][spin] + Bz Spin[3][spin])
 
 
 End[];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Hyperfine Hamiltonian*)
 
 
 Begin["`Private`"];
 
 
-HyperfineHamiltonian[spin1_,spin2_,A_]:=
-	Sum[A[[i,j]]*Spin[spin1,i]\[CircleTimes]Spin[spin2,j],{i,3},{j,3}]
+(* Need with-injection to avoid Spin HoldForm craziness *)
+HyperfineHamiltonian[spin1_,spin2_,A_]:= Sum[With[{i=ii,j=jj},A[[i,j]]*(Spin[i][spin1]\[CircleTimes]Spin[j][spin2])],{ii,3},{jj,3}]
 
 
 End[];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Dipole Dipole Hamiltonian*)
 
 
@@ -1283,7 +1299,7 @@ DipoleDipoleHamiltonian[spin1_,spin2_,\[Gamma]1_,\[Gamma]2_,v1_Vector,v2_Vector]
 		If[PossibleZeroQ[R],
 			Message[DipoleDipoleHamiltonian::equallocations];
 			ConstantArray[0,{SpinDim[spin1]*SpinDim[spin2],SpinDim[spin1]*SpinDim[spin2]}],
-			(2 \[Pi] (-\[Mu]0 \[Gamma]1 \[Gamma]2 \[HBar])/(4\[Pi] R^3))*(3(Total@(Spin[spin1]*e))\[CircleTimes](Total@(Spin[spin2]*e))/R^2-Spin[spin1,1]\[CircleTimes]Spin[spin2,1]-Spin[spin1,2]\[CircleTimes]Spin[spin2,2]-Spin[spin1,3]\[CircleTimes]Spin[spin2,3])
+			(2 \[Pi] (-\[Mu]0 \[Gamma]1 \[Gamma]2 \[HBar])/(4\[Pi] R^3))*(3(Total@(Array[Spin[#][spin1]&,3]*e))\[CircleTimes](Total@(Array[Spin[#][spin2]&,3]*e))/R^2-Spin[1][spin1]\[CircleTimes]Spin[1][spin2]-Spin[2][spin1]\[CircleTimes]Spin[2][spin2]-Spin[3][spin1]\[CircleTimes]Spin[3][spin2])
 		]
 	]
 
@@ -1291,14 +1307,14 @@ DipoleDipoleHamiltonian[spin1_,spin2_,\[Gamma]1_,\[Gamma]2_,v1_Vector,v2_Vector]
 End[];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Quadrapolar Hamiltonian*)
 
 
 Begin["`Private`"];
 
 
-QuadrapolarHamiltonian[spin_,A_?Matrix3Q]:=Total[Table[A[[i,j]]*Spin[spin,i].Spin[spin,j],{i,3},{j,3}],2];
+QuadrapolarHamiltonian[spin_,A_?Matrix3Q]:=Sum[With[{i=ii,j=jj},A[[i,j]]*Spin[i][spin].Spin[j][spin]],{ii,3},{jj,3}];
 
 
 End[];
@@ -1401,21 +1417,21 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[]]:=
 		AppendTo[termList,Term[ZeemanHamiltonian[\[Gamma]e,cartesianB,nvSpin],1]];
 
 		(* Add all of the nuclei Zeeman terms *)
-		NuclearZeemanTerm[nucleus_,index_]:=Term[ZeemanHamiltonian[GyromagneticRatio[nucleus],cartesianB,Spin[nucleus]],index+1];
+		NuclearZeemanTerm[nucleus_,index_]:=Term[ZeemanHamiltonian[GyromagneticRatio[nucleus],cartesianB,SpinValue[nucleus]],index+1];
 		termList = Join[termList,MapIndexed[NuclearZeemanTerm[#1,First@#2]&, nucleiList]];
 
 		(* Calculate and store all of the hyperfine interaction terms *)
-		HyperfineTerm[nucleus_,index_]:=Term[HyperfineHamiltonian[nvSpin,Spin[nucleus],FrameChange[Tensor[nucleus],IdentityFrame,zfsFrame]], 1, index+1];
+		HyperfineTerm[nucleus_,index_]:=Term[HyperfineHamiltonian[nvSpin,SpinValue[nucleus],FrameChange[Tensor[nucleus],IdentityFrame,zfsFrame]], 1, index+1];
 		termList = Join[termList,MapIndexed[HyperfineTerm[#1,First@#2]&, nucleiList]];
 
 		(* Add the quadrapolar term for the Nitrogen *)
 		If[hasN,
-			AppendTo[termList,Term[QuadrapolarHamiltonian[Spin@First@nucleiList,QuadrapoleTensor@First@nucleiList],2]];
+			AppendTo[termList,Term[QuadrapolarHamiltonian[SpinValue@First@nucleiList,QuadrapoleTensor@First@nucleiList],2]];
 		];
 
 		(* Add all of the dipole-dipole interactions *)
 		DipoleDipoleTerm[nucleus1_,nucleus2_,index1_,index2_]:=
-			Term[DipoleDipoleHamiltonian[Spin[nucleus1],Spin[nucleus2],GyromagneticRatio[nucleus1],GyromagneticRatio[nucleus2],\[Lambda]*Location[nucleus1],\[Lambda]*Location[nucleus2]],index1+1,index2+1];
+			Term[DipoleDipoleHamiltonian[SpinValue[nucleus1],SpinValue[nucleus2],GyromagneticRatio[nucleus1],GyromagneticRatio[nucleus2],\[Lambda]*Location[nucleus1],\[Lambda]*Location[nucleus2]],index1+1,index2+1];
 		termList = Join[termList,Flatten@Table[DipoleDipoleTerm[nucleiList[[i]],nucleiList[[j]],i,j],{i,Length[nucleiList]},{j,i+1,Length[nucleiList]}]];
 
 		(* Define rules for turning a Term into a matrix on the full Hilbert space. *)
@@ -1455,7 +1471,7 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[]]:=
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Approximation Tools*)
 
 
