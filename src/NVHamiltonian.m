@@ -290,7 +290,7 @@ NVForm[H_,simplifier_:Simplify]:=Module[
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Frames and Vectors*)
 
 
@@ -330,13 +330,13 @@ FrameCompose::usage = "FrameCompose[framen,...,frame2,frame1] returns the result
 
 IdentityFrame::usage = "IdentityFrame";
 BondFrame::usage = "BondFrame[{a,b,c},coords_]";
-EulerAngles::usage = "EulerAngles[\[Theta]z1,\[Theta]y,\[Theta]z2] returns a Frame corresponding to rotating the IdenityFrame by the extrinsic ZYZ Euler angles \[Theta]z1,\[Theta]y,\[Theta]z2.";
+NVEulerAngles::usage = "NVEulerAngles[\[Theta]z1,\[Theta]y,\[Theta]z2] returns a Frame corresponding to rotating the IdenityFrame by the extrinsic ZYZ Euler angles \[Theta]z1,\[Theta]y,\[Theta]z2.";
 
 
 PlotFrame::usage = "PlotFrame[frame1,frame2,...] plots each Frame given as an argement on the same figure.";
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Implementations*)
 
 
@@ -517,7 +517,7 @@ FrameCompose[fa_Frame,fb_Frame,rest___]:=FrameCompose[Frame[Simplify[FrameMatrix
 End[];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Special Frames*)
 
 
@@ -535,14 +535,14 @@ IdentityFrame=Frame[{1,0,0},{0,1,0},{0,0,1},Cartesian];
 (*We use the extrinsic ZYZ convention.*)
 
 
-EulerAngles[\[Theta]z1_,\[Theta]y_,\[Theta]z2_]=Frame[RotationMatrix[\[Theta]z2, {0,0,1}].RotationMatrix[\[Theta]y, {0,1,0}].RotationMatrix[\[Theta]z1, {0,0,1}]];
+NVEulerAngles[\[Theta]z1_,\[Theta]y_,\[Theta]z2_]=Frame[RotationMatrix[\[Theta]z2, {0,0,1}].RotationMatrix[\[Theta]y, {0,1,0}].RotationMatrix[\[Theta]z1, {0,0,1}]];
 
 
 (* ::Text:: *)
 (*The bond frame is most easily describable in spherical coordinates, so convert first. Note that all "bond frame means" is some frame in which the z vector is parallel to the input vector of BondFrame; the x-y vectors are chosen sort of arbitrarily, but it doesn't matter because the tensor should be cylindrically symmetric.*)
 
 
-BondFrame[v_Vector]:=With[{s=Value@ChangeCoordinates[v,Spherical]},EulerAngles[0,s[[3]],s[[2]]]]
+BondFrame[v_Vector]:=With[{s=Value@ChangeCoordinates[v,Spherical]},NVEulerAngles[0,s[[3]],s[[2]]]]
 
 
 End[];
@@ -583,7 +583,7 @@ PlotFrame[frames__]:=
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*NV and Lattice Geometry*)
 
 
@@ -611,7 +611,7 @@ LatticePositionsGraphic::usage = "LatticePositionsGraphic[radius_,plotNV_:True,c
 (*Implementations*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*NV Orientations*)
 
 
@@ -619,13 +619,13 @@ Begin["`Private`"];
 
 
 NVOrientationToFrame[1]=IdentityFrame;
-NVOrientationToFrame[2]=EulerAngles[0,ArcCos[-1/3],0];
-NVOrientationToFrame[3]=EulerAngles[0,ArcCos[-1/3],2\[Pi]/3];
-NVOrientationToFrame[4]=EulerAngles[0,ArcCos[-1/3],4\[Pi]/3];
-NVOrientationToFrame[5]=EulerAngles[0,\[Pi],0];
-NVOrientationToFrame[6]=EulerAngles[0,ArcCos[-1/3]-\[Pi],0];
-NVOrientationToFrame[7]=EulerAngles[0,ArcCos[-1/3]-\[Pi],2\[Pi]/3];
-NVOrientationToFrame[8]=EulerAngles[0,ArcCos[-1/3]-\[Pi],4\[Pi]/3];
+NVOrientationToFrame[2]=NVEulerAngles[0,ArcCos[-1/3],0];
+NVOrientationToFrame[3]=NVEulerAngles[0,ArcCos[-1/3],2\[Pi]/3];
+NVOrientationToFrame[4]=NVEulerAngles[0,ArcCos[-1/3],4\[Pi]/3];
+NVOrientationToFrame[5]=NVEulerAngles[0,\[Pi],0];
+NVOrientationToFrame[6]=NVEulerAngles[0,ArcCos[-1/3]-\[Pi],0];
+NVOrientationToFrame[7]=NVEulerAngles[0,ArcCos[-1/3]-\[Pi],2\[Pi]/3];
+NVOrientationToFrame[8]=NVEulerAngles[0,ArcCos[-1/3]-\[Pi],4\[Pi]/3];
 
 
 End[]
@@ -1196,7 +1196,7 @@ Taminiau12Nucleus[6] = Carbon[10^6*{{0,0,0},{0,0,0},{0.0251 Sin[51*\[Pi]/180],0,
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Hamiltonians*)
 
 
@@ -1342,31 +1342,31 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[]]:=
 				labFrame = IdentityFrame;
 				crystalFrame = OptionValue[CrystalOrientation];
 				zfsFrame = FrameCompose[NVOrientationToFrame[OptionValue[NVOrientation]],crystalFrame];
-				zeemanFrame = FrameCompose[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[StaticFieldFrame]/.frames];,
+				zeemanFrame = FrameCompose[NVEulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[StaticFieldFrame]/.frames];,
 			OptionValue[OutputFrame]===CrystalFrame,
 				crystalFrame = IdentityFrame;
 				labFrame = FrameInverse[OptionValue[CrystalOrientation]];
 				zfsFrame = NVOrientationToFrame[OptionValue[NVOrientation]];
-				zeemanFrame = FrameCompose[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[StaticFieldFrame]/.frames];,
+				zeemanFrame = FrameCompose[NVEulerAngles[0,sphericalB[[3]],sphericalB[[2]]],OptionValue[StaticFieldFrame]/.frames];,
 			OptionValue[OutputFrame]===ZFSFrame,
 				zfsFrame = IdentityFrame;
 				crystalFrame = FrameInverse[NVOrientationToFrame[OptionValue[NVOrientation]]];
 				labFrame = FrameCompose[crystalFrame,FrameInverse[OptionValue[CrystalOrientation]]];
-				zeemanFrame = FrameCompose[OptionValue[StaticFieldFrame]/.frames,EulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];,
+				zeemanFrame = FrameCompose[OptionValue[StaticFieldFrame]/.frames,NVEulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];,
 			OptionValue[OutputFrame]===ZeemanFrame,
 				zeemanFrame = IdentityFrame;
 				(* The ZeemanFrame case is special because the StaticField has the option of being written in any frame. *)
 				Which[
 					OptionValue[StaticFieldFrame]===LabFrame,
-						labFrame = FrameInverse[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];
+						labFrame = FrameInverse[NVEulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];
 						crystalFrame = FrameCompose[OptionValue[CrystalOrientation],labFrame];
 						zfsFrame = FrameCompose[NVOrientationToFrame[OptionValue[NVOrientation]],crystalFrame];,
 					OptionValue[StaticFieldFrame]===CrystalFrame,
-						crystalFrame = FrameInverse[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];
+						crystalFrame = FrameInverse[NVEulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];
 						labFrame = FrameCompose[FrameInverse[OptionValue[CrystalOrientation]],crystalFrame];
 						zfsFrame = FrameCompose[NVOrientationToFrame[OptionValue[NVOrientation]],crystalFrame];,
 					OptionValue[StaticFieldFrame]===ZFSFrame,
-						zfsFrame = FrameInverse[EulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];
+						zfsFrame = FrameInverse[NVEulerAngles[0,sphericalB[[3]],sphericalB[[2]]]];
 						crystalFrame = FrameCompose[FrameInverse[NVOrientationToFrame[OptionValue[NVOrientation]]],zfsFrame];
 						labFrame = FrameCompose[FrameInverse[OptionValue[CrystalOrientation]],crystalFrame];
 				];
