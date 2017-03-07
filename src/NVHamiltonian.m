@@ -1,54 +1,12 @@
 (* ::Package:: *)
 
-BeginPackage["NVHamiltonian`"];
+BeginPackage["NVHamiltonian`",{"QuantumSystems`","Tensor`"}];
 
 
 (* ::Text:: *)
 (*Todo:*)
 (*-Change the static field frame if necessary*)
 (*-Move the SpectrumData function here, or into QuantumUtils` from NVUtils`*)
-
-
-(* ::Section::Closed:: *)
-(*Ensure dependencies are met*)
-
-
-(* ::Text:: *)
-(*QuantumUtils` is a private work-a-day Mathematica package maintained by CoryLab for internal use. Many functions required by the NVSim code package are implemented in QuantumUtils`. Since many users of NVSim` at CoryLab will also want to use QuantumUtils` in the same Kernel session, the following logic is necessary to avoid writing multiple definitions of the same symbol in different contexts. Note that this logic is self contained, and will not appear in other sections of this package.*)
-
-
-$hasQuantumUtils = Length[Position[$Packages,"QuantumUtils`"]]>0;
-$hasNVUtils = Length[Position[$Packages,"NVUtils`"]]>0;
-
-
-(* ::Text:: *)
-(*Automatically import NVUtils` if neither of the *Utils` are around.*)
-
-
-If[Not[$hasQuantumUtils||$hasNVUtils],
-	Print["Warning: Neither QuantumUtils` nor NVUtils` was detected. Automatically importing NVUtils`."];
-	Needs["NVUtils`"];
-];
-
-
-(* ::Text:: *)
-(*Since the BeginPackage command makes all contexts inactive besides System` and NVHamiltonian`, we need to call Needs between the BeginPackage and EndPackage command. This is usually acheived using the second argument to BeginPackage, but we have special circumstances.*)
-
-
-If[$hasQuantumUtils,Needs["QuantumUtils`"]];
-If[$hasNVUtils,Needs["NVUtils`"]];
-
-
-(* ::Text:: *)
-(*The following unlucky functions are defined QuantumUtils`, but have different definitions in NVHamiltonian`. Therefore, it makes the most sense just to remove them here.*)
-
-
-If[$hasQuantumUtils,
-	With[{removeMe={QuantumUtils`ZeemanHamiltonian,QuantumUtils`HyperfineHamiltonian}},
-		ClearAll/@removeMe;
-		Remove/@removeMe;
-	]
-];
 
 
 (* ::Section::Closed:: *)
@@ -743,7 +701,7 @@ LatticePositionsGraphic[radius_,plotNV_:True,carbonOpacity_:1,opt:OptionsPattern
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Options*)
 
 
