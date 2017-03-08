@@ -1532,19 +1532,19 @@ NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamilton
 			If[order>=1,
 				Hout=Hout+(
 					-1/2 Sum[
-						If[n==0,
+						If[n == 0,
 							0,
-							com[-n,n]/(n \[Omega])],
-						{n,-nmax,nmax}]
-					+Sum[If[n==0,0,com[0,n]/(n \[Omega])],{n,-nmax,nmax}])//Simplify;;
+							com[-n, n]/(n \[Omega])],
+						{n, -nmax, nmax}]
+					+Sum[If[n== 0, 0, com[0, n]/(n \[Omega])], {n, -nmax, nmax}])//Simplify;;
 			];
 			If[order>=2,
 				Hout=Hout+(
-					1/3 Sum[If[np == 0 || n == 0 || n == np || n-np < -2 || n-np > 2, 0, com[np, n-np, -n]/(n np \[Omega]^2)],{n,-nmax,nmax},{np,-nmax,nmax}]
-					+1/2Sum[If[n==0,0,com[n,0,-n]/(n \[Omega])^2],{n,-nmax,nmax}]
-					-1/2 Sum[If[n==0,0,com[0,0,n]/(n \[Omega])^2],{n,-nmax,nmax}]
-					+Sum[If[n==0\[Or]np==0,0,com[np,-np,n]/(n np \[Omega]^2)],{n,-nmax,nmax},{np,-nmax,nmax}]
-					+1/2Sum[If[n==0\[Or]np==0,0,com[np,n,0]/(n np \[Omega]^2)],{n,-nmax,nmax},{np,-nmax,nmax}])//Simplify;
+					1/3 Sum[If[np == 0 || n == 0 || n == np || n-np < -2 || n-np > 2, 0, com[np, n-np, -n]/(n np \[Omega]^2)], {n, -nmax, nmax}, {np, -nmax, nmax}]
+					+1/2Sum[If[n == 0, 0, com[n, 0, -n]/(n \[Omega])^2], {n, -nmax, nmax}]
+					-1/2 Sum[If[n == 0, 0, com[0, 0, n]/(n \[Omega])^2], {n, -nmax, nmax}]
+					+Sum[If[n == 0 || np == 0, 0, com[np, -np, n]/(n np \[Omega]^2)], {n, -nmax, nmax}, {np, -nmax, nmax}]
+					+1/2 Sum[If[n==0 || np == 0, 0, com[np, n, 0]/(n np \[Omega]^2)], {n, -nmax, nmax}, {np, -nmax, nmax}])//Simplify;
 			];
 			If[order>=3,Print["Warning: Third order AH not implemented. Truncating to second order instead."];];
 			Hout
