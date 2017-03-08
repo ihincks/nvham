@@ -1460,7 +1460,7 @@ Begin["`Private`"];
 
 NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 	Module[
-		{H,H0,Hm,Hp,U,ndim,sgn,\[Omega],numerical,angularUnits,Heff,Hout,z,rotation,com,getBlock},
+		{H,H0,Hm,Hp,U,ndim,sgn,\[Omega],numerical,angularUnits,Heff,Hout,z,rotation,com,getBlock,nmax},
 
 		(* First calculate the lab frame hamiltonian *)
 		H = NVHamiltonian[nuclei, opt];
@@ -1536,7 +1536,7 @@ NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamilton
 							0,
 							com[-n, n]/(n \[Omega])],
 						{n, -nmax, nmax}]
-					+Sum[If[n== 0, 0, com[0, n]/(n \[Omega])], {n, -nmax, nmax}])//Simplify;;
+					+Sum[If[n== 0, 0, com[0, n]/(n \[Omega])], {n, -nmax, nmax}])//Simplify;
 			];
 			If[order>=2,
 				Hout=Hout+(
