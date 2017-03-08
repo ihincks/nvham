@@ -1436,7 +1436,7 @@ NVHamiltonian[nuclei___,opt:OptionsPattern[]]:=
 End[];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Approximation Tools*)
 
 
@@ -1484,12 +1484,12 @@ NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamilton
 			U[1].(H-H0).U[-1],
 			If[FreeQ[H, t],
 				H0 = H;
-				Hp = ConstantArray[0, {Length[H],Length[H]}];
-				Hm = ConstantArray[0, {Length[H],Length[H]}];,
+				Hm = ConstantArray[0, {Length[H],Length[H]}];
+				Hp = ConstantArray[0, {Length[H],Length[H]}];,
 				H = H // TrigToExp;
-				Hp = Coefficient[H, Exp[I \[Omega] t]];
 				Hm = Coefficient[H, Exp[-I \[Omega] t]];
-				H0 = H - Hp Exp[I \[Omega] t] - Hm Exp[-I \[Omega] t];
+				Hp = Coefficient[H, Exp[I \[Omega] t]];
+				H0 = H - Hm Exp[- I \[Omega] t]- Hp Exp[I \[Omega] t];
 				If[Norm[Hp]==0,Message[NVAverageHamiltonian::timeDep]];
 			];
 			
@@ -1500,33 +1500,51 @@ NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamilton
 			z=ConstantArray[0,{ndim,ndim}];
 			rotation=\[Omega]*IdentityMatrix[ndim];
 			(* Compute the three Floquet coefficients *)
-			Heff[0] = ArrayFlatten[{
-				{getBlock[H0,1,1]-rotation,z,getBlock[H0,1,3]},
-				{z,getBlock[H0,2,2],z},
-				{getBlock[H0,3,1],z,getBlock[H0,3,3]-rotation}
-			}];
-			Heff[-1] = ArrayFlatten[{
+			Heff[-2] = ArrayFlatten[{
 				{z,z,z},
-				{getBlock[H0,2,1],z,getBlock[H0,1,3]},
+				{getBlock[Hm,2,1],z,getBlock[Hm,2,3]},
 				{z,z,z}
 			}];
+			Heff[-1] = ArrayFlatten[{
+				{getBlock[Hm,1,1],z,getBlock[Hm,1,3]},
+				{getBlock[H0,2,1],getBlock[Hm,2,2],getBlock[H0,2,3]},
+				{getBlock[Hm,3,1],z,getBlock[Hm,3,3]}
+			}];
+			Heff[0] = ArrayFlatten[{
+				{getBlock[H0,1,1]-rotation,getBlock[Hm,1,2],getBlock[H0,1,3]},
+				{getBlock[Hp,2,1],getBlock[H0,2,2],getBlock[Hp,1,2]},
+				{getBlock[H0,3,1],getBlock[Hm,3,2],getBlock[H0,3,3]-rotation}
+			}];
 			Heff[1] = ArrayFlatten[{
-				{z,getBlock[H0,1,2],z},
+				{getBlock[Hp,1,1],getBlock[H0,1,2],getBlock[Hp,1,3]},
+				{z,getBlock[Hp,2,2],z},
+				{getBlock[Hp,3,1],getBlock[H0,3,2],getBlock[Hp,3,3]}
+			}];
+			Heff[2] = ArrayFlatten[{
+				{z,getBlock[Hp,1,2],z},
 				{z,z,z},
-				{z,getBlock[H0,3,1],z}
+				{z,getBlock[Hp,3,2],z}
 			}];
 			Hout=Heff[0];
 
+			nmax = 2;
 
 			If[order>=1,
-				Hout=Hout+(com[0,1]-com[0,-1]-com[-1,1])/\[Omega];
+				Hout=Hout+(
+					-1/2 Sum[
+						If[n==0,
+							0,
+							com[-n,n]/(n \[Omega])],
+						{n,-nmax,nmax}]
+					+Sum[If[n==0,0,com[0,n]/(n \[Omega])],{n,-nmax,nmax}])//Simplify;;
 			];
 			If[order>=2,
 				Hout=Hout+(
-					 (com[-1,0,1]+com[1,0,-1])
-					-2(com[0,0,1]+com[0,0,-1])
-					+(com[1,1,0]+com[-1,-1,0]-com[-1,1,0]-com[1,-1,0])
-					+2(com[1,-1,1]+com[-1,1,-1]))/(2*\[Omega]^2);
+					1/3 Sum[If[np == 0 || n == 0 || n == np || n-np < -2 || n-np > 2, 0, com[np, n-np, -n]/(n np \[Omega]^2)],{n,-nmax,nmax},{np,-nmax,nmax}]
+					+1/2Sum[If[n==0,0,com[n,0,-n]/(n \[Omega])^2],{n,-nmax,nmax}]
+					-1/2 Sum[If[n==0,0,com[0,0,n]/(n \[Omega])^2],{n,-nmax,nmax}]
+					+Sum[If[n==0\[Or]np==0,0,com[np,-np,n]/(n np \[Omega]^2)],{n,-nmax,nmax},{np,-nmax,nmax}]
+					+1/2Sum[If[n==0\[Or]np==0,0,com[np,n,0]/(n np \[Omega]^2)],{n,-nmax,nmax},{np,-nmax,nmax}])//Simplify;
 			];
 			If[order>=3,Print["Warning: Third order AH not implemented. Truncating to second order instead."];];
 			Hout
