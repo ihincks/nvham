@@ -1489,7 +1489,7 @@ NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamilton
 				H = H // TrigToExp;
 				Hm = Coefficient[H, Exp[-I \[Omega] t]];
 				Hp = Coefficient[H, Exp[I \[Omega] t]];
-				H0 = H - Hm Exp[- I \[Omega] t]- Hp Exp[I \[Omega] t];
+				H0 = H /. {Exp[_?(Not[FreeQ[#,t]]&)]:>0};
 				If[Norm[Hp]==0,Message[NVAverageHamiltonian::timeDep]];
 			];
 			
@@ -1531,12 +1531,15 @@ NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamilton
 
 			If[order>=1,
 				Hout=Hout+(
-					-1/2 Sum[
-						If[n == 0,
-							0,
-							com[-n, n]/(n \[Omega])],
-						{n, -nmax, nmax}]
-					+Sum[If[n== 0, 0, com[0, n]/(n \[Omega])], {n, -nmax, nmax}])//Simplify;
+					-1/2*Sum[
+						If[n == 0, 0, com[-n, n]/(n \[Omega])],
+						{n, -nmax, nmax}
+					]
+					+ Sum[
+						If[n== 0, 0, com[0, n]/(n \[Omega])], 
+						{n, -nmax, nmax}
+					]
+				);
 			];
 			If[order>=2,
 				Hout=Hout+(
@@ -1544,7 +1547,8 @@ NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamilton
 					+1/2Sum[If[n == 0, 0, com[n, 0, -n]/(n \[Omega])^2], {n, -nmax, nmax}]
 					-1/2 Sum[If[n == 0, 0, com[0, 0, n]/(n \[Omega])^2], {n, -nmax, nmax}]
 					+Sum[If[n == 0 || np == 0, 0, com[np, -np, n]/(n np \[Omega]^2)], {n, -nmax, nmax}, {np, -nmax, nmax}]
-					+1/2 Sum[If[n==0 || np == 0, 0, com[np, n, 0]/(n np \[Omega]^2)], {n, -nmax, nmax}, {np, -nmax, nmax}])//Simplify;
+					+1/2 Sum[If[n==0 || np == 0, 0, com[np, n, 0]/(n np \[Omega]^2)], {n, -nmax, nmax}, {np, -nmax, nmax}]
+				);
 			];
 			If[order>=3,Print["Warning: Third order AH not implemented. Truncating to second order instead."];];
 			Hout
