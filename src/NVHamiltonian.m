@@ -1531,12 +1531,12 @@ NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamilton
 
 			If[order>=1,
 				Hout=Hout+(
-					-1/2*Sum[
-						If[n == 0, 0, com[-n, n]/(n \[Omega])],
-						{n, -nmax, nmax}
+					-1*Sum[
+						com[-n, n]/(n \[Omega]),
+						{n, nmax}
 					]
 					+ Sum[
-						If[n== 0, 0, com[0, n]/(n \[Omega])], 
+						If[n == 0, 0, com[0, n]/(n \[Omega])], 
 						{n, -nmax, nmax}
 					]
 				);
