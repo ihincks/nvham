@@ -1458,6 +1458,30 @@ Begin["`Private`"];
 (*Knowing what happens when we conjugate by the rotating frame unitary, we can precompute the average Hamiltonians a bit in terms of the floquet coefficients. In partucular, we can precompute all of the intergrals, and are just left with sums of nested comutators. These are the formulas used below.*)
 
 
+(*This helper function computes the average Hamiltonian of a given Hamiltonian Heff
+that has been supplied as a Floquet expansion \!\(
+\*SubscriptBox[\(\[Sum]\), \(n\)]\(Exp[I\ n\ \[Omega]]Heff[n]\)\)*)
+Havg[order_, Heff_, \[Omega]_, nmax_] := Module[{Hout=Heff[0], com},
+	If[order==0, Return[Hout]];
+	com[m_,n_]:=Com[Heff[m],Heff[n]];
+	com[m_,n_,k_]:=Com[Heff[m],com[n,k]];
+	Hout = Hout+(
+		-1*Sum[com[-n, n]/(n \[Omega]), {n, nmax}]
+		+ Sum[If[n == 0, 0, com[0, n]/(n \[Omega])], {n, -nmax, nmax}]
+	);
+	If[order==0, Return[Hout]];
+	Hout = Hout + (
+		(1/3)Sum[If[np == 0 || n == 0 || n == np || n-np < -2 || n-np > 2, 0, com[np, n-np, -n]/(n np \[Omega]^2)], {n, -nmax, nmax}, {np, -nmax, nmax}]
+		+(1/2)Sum[If[n == 0, 0, com[n, 0, -n]/(n \[Omega])^2], {n, -nmax, nmax}]
+		-(1/2)Sum[If[n == 0, 0, com[0, 0, n]/(n \[Omega])^2], {n, -nmax, nmax}]
+		+Sum[If[n == 0 || np == 0, 0, com[np, -np, n]/(n np \[Omega]^2)], {n, -nmax, nmax}, {np, -nmax, nmax}]
+		+(1/2)Sum[If[n==0 || np == 0, 0, com[np, n, 0]/(n np \[Omega]^2)], {n, -nmax, nmax}, {np, -nmax, nmax}]
+	);
+	If[order>=3, Print["Warning: Third order AH not implemented. Truncating to second order instead."];];
+	Hout
+]
+
+
 NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 	Module[
 		{H,H0,Hm,Hp,U,ndim,sgn,\[Omega],numerical,angularUnits,Heff,Hout,z,rotation,com,getBlock,nmax},
@@ -1525,33 +1549,8 @@ NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamilton
 				{z,z,z},
 				{z,getBlock[Hp,3,2],z}
 			}];
-			Hout=Heff[0];
-
-			nmax = 2;
-
-			If[order>=1,
-				Hout=Hout+(
-					-1*Sum[
-						com[-n, n]/(n \[Omega]),
-						{n, nmax}
-					]
-					+ Sum[
-						If[n == 0, 0, com[0, n]/(n \[Omega])], 
-						{n, -nmax, nmax}
-					]
-				);
-			];
-			If[order>=2,
-				Hout=Hout+(
-					1/3 Sum[If[np == 0 || n == 0 || n == np || n-np < -2 || n-np > 2, 0, com[np, n-np, -n]/(n np \[Omega]^2)], {n, -nmax, nmax}, {np, -nmax, nmax}]
-					+1/2Sum[If[n == 0, 0, com[n, 0, -n]/(n \[Omega])^2], {n, -nmax, nmax}]
-					-1/2 Sum[If[n == 0, 0, com[0, 0, n]/(n \[Omega])^2], {n, -nmax, nmax}]
-					+Sum[If[n == 0 || np == 0, 0, com[np, -np, n]/(n np \[Omega]^2)], {n, -nmax, nmax}, {np, -nmax, nmax}]
-					+1/2 Sum[If[n==0 || np == 0, 0, com[np, n, 0]/(n np \[Omega]^2)], {n, -nmax, nmax}, {np, -nmax, nmax}]
-				);
-			];
-			If[order>=3,Print["Warning: Third order AH not implemented. Truncating to second order instead."];];
-			Hout
+			
+			Havg[order, Heff, \[Omega], 2]
 		]
 	]
 
