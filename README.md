@@ -1,3 +1,10 @@
+Dependencies
+-----------------------------------------------------------
+
+This package is known to run on Mathematica 11, though earlier versions to about 9 should 
+also work (untested).
+This package requires [Quantum-Utils](https://github.com/QuantumUtils/quantum-utils-mathematica).
+
 Installation
 -----------------------------------------------------------
 
@@ -5,8 +12,6 @@ To install this library, just open up `Install.m` in
 Mathematica and goto
 
     Evaluation > Evaluate Notebook
-    
-Also install the required package [Quantum-Utils](https://github.com/QuantumUtils/quantum-utils-mathematica).
 
 Explanation of installation for those interested:
 This installer simply moves the contents of the 
@@ -18,6 +23,9 @@ which in this case, is the Applications subfolder of
 On Mac and Linux, simlinks are used for the convenience 
 of developing code in `src`.
 On Windows, we do an actual copy.
+
+To uninstall, go to `$UserBaseDirectory/Applications` in 
+your file explorer and delete the relevant files.
 
 Usage: Constructing Hamiltonians
 -----------------------------------------------------------
