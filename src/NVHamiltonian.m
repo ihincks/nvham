@@ -9,7 +9,7 @@ BeginPackage["NVHamiltonian`",{"QuantumSystems`","Tensor`"}];
 (*-Move the SpectrumData function here, or into QuantumUtils` from NVUtils`*)
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Error Messages*)
 
 
@@ -1482,9 +1482,24 @@ Havg[order_, Heff_, \[Omega]_, nmax_] := Module[{Hout=Heff[0], com},
 ]
 
 
+FloquetExpansion[Hin_, \[Omega]_]:=Module[{H,Hm,Hp,H0},
+	H = Hin // TrigToExp;
+	Hm = Coefficient[H, Exp[-I \[Omega] t]];
+	Hp = Coefficient[H, Exp[I \[Omega] t]];
+	H0 = H /. {Exp[_?(Not[FreeQ[#,t]]&)]:>0};
+	If[Norm[H[1]]==0, Message[NVAverageHamiltonian::timeDep]];
+	{Hm,H0,Hp}
+]
+
+
+getBlock[M_,i_,j_] := Module[{ndim=Length[M]/3},
+	M[[(i-1)*ndim+1;;i*ndim, (j-1)*ndim+1;;j*ndim]]
+];
+
+
 NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamiltonian]]:=
 	Module[
-		{H,H0,Hm,Hp,U,ndim,sgn,\[Omega],numerical,angularUnits,Heff,Hout,z,rotation,com,getBlock,nmax},
+		{H,H0,Hm,Hp,U,ndim,sgn,\[Omega],numerical,angularUnits,Heff,Hout,z,rotation,nmax},
 
 		(* First calculate the lab frame hamiltonian *)
 		H = NVHamiltonian[nuclei, opt];
@@ -1510,16 +1525,8 @@ NVAverageHamiltonian[order_,\[Omega]rot_,nuclei___,opt:OptionsPattern[NVHamilton
 				H0 = H;
 				Hm = ConstantArray[0, {Length[H],Length[H]}];
 				Hp = ConstantArray[0, {Length[H],Length[H]}];,
-				H = H // TrigToExp;
-				Hm = Coefficient[H, Exp[-I \[Omega] t]];
-				Hp = Coefficient[H, Exp[I \[Omega] t]];
-				H0 = H /. {Exp[_?(Not[FreeQ[#,t]]&)]:>0};
-				If[Norm[Hp]==0,Message[NVAverageHamiltonian::timeDep]];
+				{Hm,H0,Hp} = FloquetExpansion[H,\[Omega]];
 			];
-			
-			com[m_,n_]:=Com[Heff[m],Heff[n]];
-			com[m_,n_,k_]:=Com[Heff[m],com[n,k]];
-			getBlock[M_,i_,j_]:=M[[(i-1)*ndim+1;;i*ndim, (j-1)*ndim+1;;j*ndim]];
 
 			z=ConstantArray[0,{ndim,ndim}];
 			rotation=\[Omega]*IdentityMatrix[ndim];
