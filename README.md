@@ -1,30 +1,25 @@
 -----------------------------------------------------------
-INSTALLATION
+Installation
 -----------------------------------------------------------
 
-If you are looking at this file, you have probably 
-figured out GIT. You will also need to grab the 
-latest quantum-utils version off SVN and install it.
+To install this library, just open up `Install.m` in 
+Mathematica and goto
 
-To install NVSim, just open up Install.m in Mathematica 
-and goto
-	Evaluation > Evaluate Notebook
+    Evaluation > Evaluate Notebook
 
-Explanation of Installation for those interested:
-All "installation" does is put the packages where
-Mathematica expects to find them. When the Needs[] 
-command is called, Mathematica looks in two places:
-	$UserBaseDirectory
-	$BaseDirectory
-Since $BaseDirectory is often a protected folder needing 
-root permissions, the installation puts NVSim into
-$UserBaseDirectory. On Mac and Linux, simlinks are used.
-On Windows, we need to literally copy the file there
-(this is why Install.nb needs to be run everytime a
-Windows user grabs the newest version off SVN).
+Explanation of installation for those interested:
+This installer simply moves the contents of the 
+`src` folder into the search path of Mathematica,
+which in this case, is the Applications subfolder of 
+
+    $UserBaseDirectory
+
+On Mac and Linux, simlinks are used for the convenience 
+of developing code in `src`.
+On Windows, we do an actual copy.
 
 -----------------------------------------------------------
-WHERE TO BEGIN
+Usage
 -----------------------------------------------------------
 
 First of all, in every document that you want to 
@@ -47,7 +42,7 @@ This documentation is probably the best reference for
 the NVHamiltonian parameters.
 
 -----------------------------------------------------------
-FOLDER LAYOUT
+Folder layout
 -----------------------------------------------------------
 
 The NVSim packages are kept in the **src** folder.
