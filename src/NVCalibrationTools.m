@@ -1,6 +1,6 @@
 (* ::Package:: *)
 
-BeginPackage["NVCalibrationTools`",{"NVHamiltonian`","NVSim`"}]
+BeginPackage["NVCalibrationTools`",{"NVHamiltonian`","QuantumUtils`"}]
 
 
 (* ::Section:: *)
@@ -829,7 +829,7 @@ PositionGivenPASField[{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,
 		{z1,z2,z3},
 		{B1,B2,B3},
 		m,
-		Vector[FrameChange[B,FrameCompose[EulerAngles[\[Alpha]1,\[Alpha]2,\[Alpha]3],NVOrientationToFrame[nvOrientation]],IdentityFrame],Cartesian],
+		Vector[FrameChange[B,FrameCompose[NVEulerAngles[\[Alpha]1,\[Alpha]2,\[Alpha]3],NVOrientationToFrame[nvOrientation]],IdentityFrame],Cartesian],
 		minz
 	];
 PositionGivenPASField[solution_,nvOrientation_,B_,minz_:6]:=PositionGivenPASField[Sequence@@solution,nvOrientation,B,minz]
@@ -863,7 +863,7 @@ PredictCenterFreq[{r1_,r2_,r3_},nvOrientation_,solution_]:=PredictCenterFreq[{r1
 
 
 PredictNVPASVector[{r1_,r2_,r3_},nvOrientation_,{z1_,z2_,z3_},{\[Alpha]1_,\[Alpha]2_,\[Alpha]3_},{B1_,B2_,B3_},m_]:=
-	Vector[FrameChange[Field[MagToLab[{z1,z2,z3}-{r1,r2,r3}],m]+{B1,B2,B3},IdentityFrame,FrameCompose[EulerAngles[\[Alpha]1,\[Alpha]2,\[Alpha]3],NVOrientationToFrame[nvOrientation]]],Cartesian]
+	Vector[FrameChange[Field[MagToLab[{z1,z2,z3}-{r1,r2,r3}],m]+{B1,B2,B3},IdentityFrame,FrameCompose[NVEulerAngles[\[Alpha]1,\[Alpha]2,\[Alpha]3],NVOrientationToFrame[nvOrientation]]],Cartesian]
 PredictNVPASVector[{r1_,r2_,r3_},nvOrientation_,solution_]:=PredictNVPASVector[{r1,r2,r3},nvOrientation,Sequence@@solution]
 
 
