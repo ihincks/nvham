@@ -27,6 +27,13 @@ On Windows, we do an actual copy.
 To uninstall, go to `$UserBaseDirectory/Applications` in 
 your file explorer and delete the relevant files.
 
+Documentation
+-----------------------------------------------------------
+
+Though it is relatively feature-rich and runs smoothly, 
+the documentation is severely limited. See the examples, 
+read the source code, and feel free to help out.
+
 Usage: Constructing Hamiltonians
 -----------------------------------------------------------
 
