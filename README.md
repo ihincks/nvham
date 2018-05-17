@@ -1,4 +1,3 @@
------------------------------------------------------------
 Installation
 -----------------------------------------------------------
 
@@ -6,6 +5,8 @@ To install this library, just open up `Install.m` in
 Mathematica and goto
 
     Evaluation > Evaluate Notebook
+    
+Also install the required package [Quantum-Utils](https://github.com/QuantumUtils/quantum-utils-mathematica).
 
 Explanation of installation for those interested:
 This installer simply moves the contents of the 
@@ -18,46 +19,40 @@ On Mac and Linux, simlinks are used for the convenience
 of developing code in `src`.
 On Windows, we do an actual copy.
 
------------------------------------------------------------
-Usage
------------------------------------------------------------
-
-First of all, in every document that you want to 
-use NVSim, the command
-	Needs["NVSim`"]
-needs to be included. (NVSim automatically imports 
-quantum-utils if you were wondering.)
-Until a better help system is included, Example.nb is 
-the place to start.
-
-A start has been made at a better documentation system. 
-This documentation is installed when you run the 
-Install.nb notebook. You can search for NVSim in the
-documentation to get to it, or if you type in 
-NVHamiltonian anywhere in any note book and press F1 
-while the cursor is in the word, the documentation 
-should popup.
-
-This documentation is probably the best reference for 
-the NVHamiltonian parameters.
-
------------------------------------------------------------
-Folder layout
+Usage: Constructing Hamiltonians
 -----------------------------------------------------------
 
-The NVSim packages are kept in the **src** folder.
+Import a package:
 
-A couple of old files that some people may still want 
-pieces of are in the **old** folder. This folder will 
-be removed eventually.
+	Needs["NVHamiltonian`"]
 
-Install.nb and README.txt will be the only files in the 
-base directory eventually, all documentation will be
-put into new folders.
+Create a trivial Hamiltonian:
 
-The user-end documentation files are in the **nvdoc** 
-folder.
+![Create a trivial Hamiltonian](img/img1.png)
 
-The pre-deployed documentation source files are in the
-**nvdocsrc** folder. I use Wolfram Workbench to deal 
-with the documentation system.
+Create a Hamiltonian with a static magnetic field in cartesian coordinates of the principle axis:
+
+![Create a Hamiltonian with a static magnetic field](img/img2.png)
+
+Create a Hamiltonian including a 15-Nitrogen atom:
+
+![Create a Hamiltonian including a 15-Nitrogen atom](img/img3.png)
+
+Create a numerical Hamiltonian including the 14-Nitrogen tensor as measured by [Felton '09](https://doi.org/10.1103/PhysRevB.79.075203):
+
+![Create a numerical Hamiltonian including the 14-Nitrogen](img/img4.png)
+
+Compute the hyperfine tensor of a 13-Carbon located at the coordinate [5,0,10] (in units of atomic bond lengths) coupled by dipole-dipole interaction (assuming NV is a point):
+
+![Compute the hyperfine tensor of a 13-Carbon ](img/img5.png)
+
+Compute the average (stroboscopic) Hamiltonian at order-1 of an NV. Here we see the Bloch-Siegert shift.
+You can throw anything you want into this up to order-2; this example is simple for brevity.
+
+![Compute the average (stroboscopic) Hamiltonian](img/img6.png)
+
+Use `PulseSim` from `QuantumUtils` to simulate an NV connected to two 13-Carbons and a 14-Nitrogen under the
+second order average Hamiltonian, with a microwave field a 5MHz. One carbon has a hyperfine tensor as 
+measured by [Taminiau '12](https://doi.org/10.1103/PhysRevLett.109.137602).
+
+![Simulation example.](img/img7.png)
