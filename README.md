@@ -34,6 +34,12 @@ Though it is relatively feature-rich and runs smoothly,
 the documentation is severely limited. See the examples, 
 read the source code, and feel free to help out.
 
+Many functions will have (terse) doc strings attached, which can 
+be viewed by prepending a question mark to the function 
+name and running the cell:
+
+    ? Nitrogen
+    
 Usage: Constructing Hamiltonians
 -----------------------------------------------------------
 
