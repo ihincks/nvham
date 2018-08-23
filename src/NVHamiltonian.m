@@ -1469,7 +1469,7 @@ Havg[order_, Heff_, \[Omega]_, nmax_] := Module[{Hout=Heff[0], com},
 		-1*Sum[com[-n, n]/(n \[Omega]), {n, nmax}]
 		+ Sum[If[n == 0, 0, com[0, n]/(n \[Omega])], {n, -nmax, nmax}]
 	);
-	If[order==0, Return[Hout]];
+	If[order==1, Return[Hout]];
 	Hout = Hout + (
 		(1/3)Sum[If[np == 0 || n == 0 || n == np || n-np < -2 || n-np > 2, 0, com[np, n-np, -n]/(n np \[Omega]^2)], {n, -nmax, nmax}, {np, -nmax, nmax}]
 		+(1/2)Sum[If[n == 0, 0, com[n, 0, -n]/(n \[Omega])^2], {n, -nmax, nmax}]
